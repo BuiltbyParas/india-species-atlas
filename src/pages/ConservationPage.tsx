@@ -1,0 +1,27 @@
+import { StatusExplainer } from '../components/conservation/StatusExplainer';
+import { ProgrammesList } from '../components/conservation/ProgrammesList';
+import { ThreatsOverview } from '../components/conservation/ThreatsOverview';
+import { SectionHeading } from '../components/ui/SectionHeading';
+import ChartsPanel from '../components/charts/DataCharts';
+
+export function ConservationPage() {
+  return (
+    <div className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:px-6">
+      <StatusExplainer />
+
+      <section>
+        <SectionHeading
+          eyebrow="Data"
+          title="The selection in numbers"
+          description="Charts computed from the atlas dataset."
+        />
+        <div className="mt-6">
+          <ChartsPanel variant="full" />
+        </div>
+      </section>
+
+      <ThreatsOverview />
+      <ProgrammesList />
+    </div>
+  );
+}

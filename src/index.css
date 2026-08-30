@@ -1,0 +1,169 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+/*
+  India Species Atlas — design system
+  A restrained, scientific palette: deep forest greens, charcoal, off-white and
+  earth tones, with IUCN status colours used sparingly, for signal only.
+*/
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Spectral', ui-serif, Georgia, 'Times New Roman', serif;
+
+  --color-forest-950: #0a1710;
+  --color-forest-900: #0f1f17;
+  --color-forest-800: #14261c;
+  --color-forest-700: #1c3a2b;
+  --color-forest-600: #285a41;
+  --color-forest-500: #347d59;
+  --color-forest-400: #5aa47e;
+  --color-forest-300: #8fc7aa;
+  --color-forest-200: #c3e2d3;
+
+  --color-canvas: #f6f4ec;
+  --color-parchment: #efe9dc;
+  --color-ink: #14201b;
+  --color-ink-soft: #3d4a44;
+
+  --color-clay: #b9764a;
+  --color-sand: #d8c9a3;
+
+  /* IUCN status colours */
+  --color-status-cr: #d64545;
+  --color-status-en: #e0812b;
+  --color-status-vu: #e6b800;
+  --color-status-nt: #7a9e3f;
+  --color-status-lc: #3f8f5c;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-forest-950);
+  color: var(--color-canvas);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forest-300);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--color-forest-500);
+  color: #fff;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-forest-400) 40%, transparent);
+  border-radius: 999px;
+}
+
+/* --- Leaflet theming --- */
+.leaflet-container {
+  background: #0c1a13;
+  font-family: var(--font-sans);
+}
+/* Recolour the light OSM raster tiles into a muted dark-green basemap. */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.55)
+    sepia(0.15);
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--color-forest-900);
+  color: var(--color-canvas);
+  border-color: var(--color-forest-700);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-forest-900);
+  color: var(--color-canvas);
+  border: 1px solid var(--color-forest-700);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+}
+.leaflet-popup-content {
+  margin: 0.75rem 0.9rem;
+  line-height: 1.45;
+}
+.leaflet-popup-close-button {
+  color: var(--color-forest-300) !important;
+}
+.leaflet-control-attribution {
+  background: rgb(10 23 16 / 0.8) !important;
+  color: #9fb3a8 !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-forest-300) !important;
+}
+
+/* --- Map markers --- */
+.species-pin {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px 999px 999px 2px;
+  transform: rotate(45deg);
+  border: 2px solid rgb(255 255 255 / 0.9);
+  box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.5);
+  font-weight: 700;
+  font-size: 10px;
+  color: #14201b;
+}
+.species-pin > span {
+  transform: rotate(-45deg);
+}
+.region-label {
+  background: rgb(10 23 16 / 0.82);
+  border: 1px solid var(--color-forest-700);
+  color: var(--color-forest-200);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px -4px rgb(0 0 0 / 0.5);
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s ease-out both;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
