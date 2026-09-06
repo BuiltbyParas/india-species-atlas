@@ -41,8 +41,11 @@ project.
   camera from an orbital view against a starfield down to a low pass over the
   country, revealing markers in a north-to-south sweep, with selective bloom on
   the markers, depth of field, vignette and a colour grade that warms as the
-  camera descends. Confined to the hero on purpose: the map, cards, filters and
-  charts stay flat and data-first.
+  camera descends. Each of the twelve species is then introduced in turn over
+  its anchor locality on a silhouette plate — a drawn profile outline with the
+  common name, scientific name and IUCN category beside it — which rises, holds
+  and fades as the camera passes. Confined to the hero on purpose: the map,
+  cards, filters and charts stay flat and data-first.
 - Responsive (desktop → phone), keyboard-navigable, with visible focus states and
   no reliance on colour alone for status.
 
@@ -66,7 +69,7 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
 | Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
-| Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
+| Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Species plates are drawn into a single canvas atlas at runtime and billboarded as one instanced draw call; their captions are DOM text positioned per frame. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
 | Icons | lucide-react |
 | QR code | `qrcode` (offline, no external service) |
 | Charts | small custom component — no charting library |
@@ -90,6 +93,8 @@ src/
     heroScene.ts         camera journey + frame loop (lazy chunk; no React)
     heroTerrain.ts       GeoJSON -> extruded relief geometry
     heroPost.ts          bloom / depth of field / vignette / colour grade
+    heroPlates.ts        species plate atlas (canvas 2D, no image assets)
+    speciesSilhouettes.ts  hand-drawn profile outlines, one per species
 public/
   india-states.geojson   simplified state boundaries
 ```
@@ -200,10 +205,30 @@ Per-species sources live on each species' `sources` array. The general
 bibliography is in `src/data/sources.ts` (`BIBLIOGRAPHY`). Use the `iucnSearch()`
 helper for IUCN links so they stay valid across Red List updates.
 
-### Replace or add images
+### Species imagery and the hero silhouettes
 
 The atlas ships **no bundled photographs**; each species uses a generated
-placeholder tinted by IUCN status. To use a real image:
+placeholder tinted by IUCN status.
+
+The hero's species plates are **schematic silhouettes**, defined in
+`src/components/home/speciesSilhouettes.ts` and drawn to a canvas atlas at
+runtime. They are not photographs, scans or 3D models, and the interface says
+so. This is deliberate: no openly-licensed 3D model of these twelve species
+exists at a standard this project could cite — what museums have published
+under open licences is skulls, skeletons and scans of taxidermy, and the rest
+of what is freely available is stylised game art. Presenting either as a
+depiction of, say, *Ardeotis nigriceps* would be exactly the sort of unsourced
+claim the rest of the atlas avoids. A silhouette makes a weaker and therefore
+honest claim: this is the animal's body plan and posture, at the level of
+detail an outline can carry, drawn from the species' published description.
+
+Each silhouette carries a `note` recording what it depicts. Features that vary
+within a species are left out — the Asian Elephant is drawn without tusks,
+because most Indian elephants have none.
+
+### Replace or add images
+
+To use a real photograph for a species:
 
 1. Find a legally reusable file — e.g. on
    [Wikimedia Commons](https://commons.wikimedia.org/) (public domain or a

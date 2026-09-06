@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { buildTerrain, TERRAIN_DEPTH, type GeoCollection } from './heroTerrain';
 import { createPostChain, type PostQuality } from './heroPost';
+import { buildPlateAtlas, PLATE_CELL, PLATE_COLUMNS } from './heroPlates';
 
 export type { GeoCollection } from './heroTerrain';
 
@@ -25,12 +26,42 @@ export interface HeroPoint {
   lat: number;
   /** Literal hex, e.g. from `STATUS_HEX`. */
   color: string;
+  /** Scroll progress, 0-1, at which this marker starts to appear. */
+  revealAt: number;
+}
+
+/**
+ * One species plate: a silhouette card that rises over the species' anchor
+ * locality as the camera reaches that part of the country, then fades out
+ * again, leaving the occurrence markers behind it.
+ */
+export interface HeroPlate {
+  /** Species id, used to select the silhouette drawn on the plate. */
+  id: string;
+  lng: number;
+  lat: number;
+  /** Literal hex for the species' IUCN category. */
+  color: string;
+  /** Scroll progress, 0-1, at which the plate starts to appear. */
+  revealAt: number;
 }
 
 export interface HeroSceneOptions {
   canvas: HTMLCanvasElement;
   geojson: GeoCollection;
   points: HeroPoint[];
+  /** One plate per species, in the order the caller wants them laid out. */
+  plates: HeroPlate[];
+  /**
+   * Called after each pose is applied with the screen placement of every
+   * plate's caption anchor: three floats per plate, `[x, y, alpha]`, in CSS
+   * pixels relative to the canvas. The buffer is reused between calls and is
+   * only valid for the duration of the call — copy anything you keep.
+   *
+   * Captions are DOM rather than texture on purpose: real text stays crisp
+   * under the depth-of-field pass, costs no atlas memory, and can be read.
+   */
+  onLabels?: (layout: Float32Array) => void;
   /** Called after the first frame is on screen, for the fade-in. */
   onFirstFrame?: () => void;
   /**
@@ -81,10 +112,38 @@ const TARGET_END = new THREE.Vector3(-0.05, 0.55, 0.05);
 const CAMERA_NEAR = 0.25;
 const CAMERA_FAR = 120;
 
-/** Markers reveal across this span of the journey, swept north to south. */
-const REVEAL_FROM = 0.12;
-const REVEAL_SPAN = 0.46;
+/** How long a single occurrence marker takes to pop in, in scroll progress. */
 const REVEAL_DURATION = 0.16;
+
+/**
+ * A plate's life, in scroll progress, measured from its species' reveal point:
+ * it fades up, holds long enough to be read, then fades out as the camera
+ * passes. Fading out is what keeps the frame legible — with twelve plates left
+ * standing the low pass at the end of the journey would be a wall of cards.
+ */
+const PLATE_FADE_IN = 0.02;
+const PLATE_HOLD = 0.028;
+const PLATE_FADE_OUT = 0.024;
+
+/**
+ * Plate size is expressed on screen rather than in the world, as a fraction of
+ * the viewport height, because a plate is a caption: at true world scale the
+ * first ones would be specks twenty units out and the last would fill the
+ * frame. `PLATE_FALLOFF` puts a little of the depth cue back — distant plates
+ * still read as smaller — and the clamp keeps every plate legible.
+ */
+const PLATE_APPARENT = 0.2;
+const PLATE_APPARENT_MIN = 0.15;
+const PLATE_APPARENT_MAX = 0.26;
+const PLATE_REF_DISTANCE = 4;
+const PLATE_FALLOFF = 0.22;
+/**
+ * How far a plate is lifted above its locality, in plate half-heights, once it
+ * has finished rising. At 1 the card's bottom edge sits exactly on the point,
+ * so it reads as standing on the place it belongs to.
+ */
+const PLATE_RISE_FROM = 0.55;
+const PLATE_RISE_TO = 1;
 
 /**
  * Frame-time budget, measured while the scene is actually animating.
@@ -171,6 +230,41 @@ const POINTS_FRAGMENT = /* glsl */ `
   }
 `;
 
+/**
+ * Plates are billboarded in view space: the instance's world position goes
+ * through the model-view matrix, and the quad's corners are then added in
+ * *view* coordinates, which faces the card at the camera exactly without a
+ * per-instance matrix or a CPU-side lookAt.
+ */
+const PLATE_VERTEX = /* glsl */ `
+  attribute vec3 aOffset;
+  attribute float aScale;
+  attribute vec2 aCell;
+  attribute float aAlpha;
+  uniform vec2 uCellSize;
+  varying vec2 vUv;
+  varying float vAlpha;
+  void main() {
+    vAlpha = aAlpha;
+    vUv = aCell + uv * uCellSize;
+    vec4 mv = modelViewMatrix * vec4(aOffset, 1.0);
+    mv.xy += position.xy * aScale;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+const PLATE_FRAGMENT = /* glsl */ `
+  uniform sampler2D uAtlas;
+  varying vec2 vUv;
+  varying float vAlpha;
+  void main() {
+    vec4 texel = texture2D(uAtlas, vUv);
+    float a = texel.a * vAlpha;
+    if (a <= 0.004) discard;
+    gl_FragColor = vec4(texel.rgb, a);
+  }
+`;
+
 function makePointCloud(
   positions: Float32Array,
   sizes: Float32Array,
@@ -207,7 +301,7 @@ function makeRandom(seed: number) {
 }
 
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, geojson, points, onFirstFrame, onTooSlow } = options;
+  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels } = options;
 
   /* ---------------------------------------------------------------- renderer */
 
@@ -398,24 +492,19 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     color: THREE.Color;
   }> = [];
 
-  let latMin = Infinity;
-  let latMax = -Infinity;
-  for (const p of points) {
-    if (p.lat < latMin) latMin = p.lat;
-    if (p.lat > latMax) latMax = p.lat;
-  }
-  const latSpan = Math.max(latMax - latMin, 1e-6);
+  // The sweep itself is derived from the dataset by the caller and arrives on
+  // each point, so a species' occurrence markers light up with its plate
+  // rather than on a separate latitude schedule of their own.
+  let firstReveal = Infinity;
 
   for (let i = 0; i < markerCount; i++) {
     const p = points[i];
     const [x, y] = terrain.project(p.lng, p.lat);
     const height = STEM * (0.82 + ((i * 37) % 11) / 26);
-    // Swept north to south, matching the camera's drift down the subcontinent,
-    // with a little deterministic jitter so same-latitude markers don't pop
-    // in lockstep.
-    const northToSouth = 1 - (p.lat - latMin) / latSpan;
-    const jitter = (((i * 37) % 13) / 13) * 0.05;
-    const revealAt = REVEAL_FROM + northToSouth * REVEAL_SPAN + jitter;
+    // A little deterministic jitter, so the several points belonging to one
+    // species do not pop in lockstep.
+    const revealAt = p.revealAt + (((i * 37) % 13) / 13) * 0.03;
+    if (revealAt < firstReveal) firstReveal = revealAt;
     const color = new THREE.Color(p.color);
 
     markerBase.push({ x, y, height, revealAt, color });
@@ -434,6 +523,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     stemColors[i * 6 + 5] = color.b;
   }
 
+  // Only possible with an empty dataset, but it would otherwise leave the stem
+  // fade reading from Infinity and produce NaN opacities.
+  if (!Number.isFinite(firstReveal)) firstReveal = 0;
+
   const stemGeometry = new THREE.BufferGeometry();
   const stemPosition = new THREE.BufferAttribute(stemVertices, 3);
   stemPosition.setUsage(THREE.DynamicDrawUsage);
@@ -449,6 +542,78 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const stems = new THREE.LineSegments(stemGeometry, stemMaterial);
   stems.frustumCulled = false;
   scene.add(stems, markers, halos);
+
+  /* ---------------------------------------------------------------- plates */
+
+  const plateCount = plates.length;
+  // One canvas, one texture, one draw call for all twelve species plates.
+  const plateAtlas = buildPlateAtlas(plates.map((plate) => ({ id: plate.id, color: plate.color })));
+  const plateTexture = new THREE.CanvasTexture(plateAtlas);
+  plateTexture.colorSpace = THREE.SRGBColorSpace;
+  // No mipmaps: a plate is drawn at roughly its native 256 px, so there is
+  // nothing to gain, and the atlas is not power-of-two in both axes.
+  plateTexture.generateMipmaps = false;
+  plateTexture.minFilter = THREE.LinearFilter;
+  plateTexture.magFilter = THREE.LinearFilter;
+
+  const plateOffsets = new Float32Array(plateCount * 3);
+  const plateScales = new Float32Array(plateCount);
+  const plateAlphas = new Float32Array(plateCount);
+  const plateCells = new Float32Array(plateCount * 2);
+  for (let i = 0; i < plateCount; i++) {
+    const row = Math.floor(i / PLATE_COLUMNS);
+    plateCells[i * 2] = ((i % PLATE_COLUMNS) * PLATE_CELL) / plateAtlas.width;
+    // Textures are uploaded flipped (three's default `flipY`), so v runs from
+    // the bottom of the canvas upwards while the atlas is laid out from the
+    // top down. Without this the sheet is read a row out and every plate shows
+    // some other species' silhouette.
+    plateCells[i * 2 + 1] = 1 - (row * PLATE_CELL + PLATE_CELL) / plateAtlas.height;
+  }
+
+  const plateQuad = new THREE.PlaneGeometry(2, 2);
+  const plateGeometry = new THREE.InstancedBufferGeometry();
+  plateGeometry.index = plateQuad.index;
+  plateGeometry.setAttribute('position', plateQuad.attributes.position);
+  plateGeometry.setAttribute('uv', plateQuad.attributes.uv);
+  const plateOffsetAttribute = new THREE.InstancedBufferAttribute(plateOffsets, 3);
+  const plateScaleAttribute = new THREE.InstancedBufferAttribute(plateScales, 1);
+  const plateAlphaAttribute = new THREE.InstancedBufferAttribute(plateAlphas, 1);
+  plateOffsetAttribute.setUsage(THREE.DynamicDrawUsage);
+  plateScaleAttribute.setUsage(THREE.DynamicDrawUsage);
+  plateAlphaAttribute.setUsage(THREE.DynamicDrawUsage);
+  plateGeometry.setAttribute('aOffset', plateOffsetAttribute);
+  plateGeometry.setAttribute('aScale', plateScaleAttribute);
+  plateGeometry.setAttribute('aAlpha', plateAlphaAttribute);
+  plateGeometry.setAttribute('aCell', new THREE.InstancedBufferAttribute(plateCells, 2));
+  plateGeometry.instanceCount = plateCount;
+
+  const plateMaterial = new THREE.ShaderMaterial({
+    vertexShader: PLATE_VERTEX,
+    fragmentShader: PLATE_FRAGMENT,
+    uniforms: {
+      uAtlas: { value: plateTexture },
+      uCellSize: {
+        value: new THREE.Vector2(PLATE_CELL / plateAtlas.width, PLATE_CELL / plateAtlas.height),
+      },
+    },
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const plateMesh = new THREE.Mesh(plateGeometry, plateMaterial);
+  plateMesh.frustumCulled = false;
+  // Drawn after the terrain and the markers so the transparent cards blend
+  // over them rather than fighting for the same depth slot.
+  plateMesh.renderOrder = 3;
+  scene.add(plateMesh);
+
+  const plateBase = plates.map((plate) => {
+    const [x, y] = terrain.project(plate.lng, plate.lat);
+    return { x, y, revealAt: plate.revealAt };
+  });
+
+  /** Screen placement handed to the DOM captions: [x, y, alpha] per plate. */
+  const labelLayout = new Float32Array(plateCount * 3);
 
   /* --------------------------------------------------------------- lighting */
 
@@ -468,6 +633,9 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const quaternion = new THREE.Quaternion();
   const scaleVec = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
+  const plateAnchor = new THREE.Vector3();
+  const plateView = new THREE.Vector3();
+  const plateProjected = new THREE.Vector3();
   const cameraOffset = new THREE.Vector3();
   const rightVector = new THREE.Vector3();
   const forward = new THREE.Vector3();
@@ -647,7 +815,14 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     gridMaterial.opacity = clamp(1 - p / 0.5, 0, 1) * 0.9;
     borderMaterial.opacity = lerp(0.20, 0.58, j);
 
+    // The plate maths and the caption projection both read the camera's
+    // matrices, and `lookAt` only touches the quaternion — without this they
+    // would be working from the previous frame's pose.
+    camera.updateMatrixWorld(true);
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+
     applyMarkers(p);
+    applyPlates(p);
 
     if (post) {
       tintColor.copy(TINT_SPACE).lerp(TINT_GROUND, j);
@@ -703,7 +878,68 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     if (markers.instanceColor) markers.instanceColor.needsUpdate = true;
     if (halos.instanceColor) halos.instanceColor.needsUpdate = true;
     stemPosition.needsUpdate = true;
-    stemMaterial.opacity = clamp((p - REVEAL_FROM) / 0.3, 0, 1) * 0.65;
+    stemMaterial.opacity = clamp((p - firstReveal) / 0.3, 0, 1) * 0.65;
+  }
+
+  /**
+   * Sizes, places and fades each species plate, and reports where its caption
+   * should sit on screen.
+   */
+  function applyPlates(p: number) {
+    const halfFovTan = Math.tan((camera.fov * Math.PI) / 360);
+
+    for (let i = 0; i < plateCount; i++) {
+      const plate = plateBase[i];
+      const since = p - plate.revealAt;
+      const rise = clamp(since / PLATE_FADE_IN, 0, 1);
+      const leaving = clamp((since - PLATE_FADE_IN - PLATE_HOLD) / PLATE_FADE_OUT, 0, 1);
+      const alpha = rise * (1 - leaving);
+      const grow = easeOutCubic(rise);
+
+      plateAnchor.set(plate.x, plate.y, TERRAIN_DEPTH);
+      const distance = Math.max(camera.position.distanceTo(plateAnchor), CAMERA_NEAR);
+      const apparent = clamp(
+        PLATE_APPARENT * Math.pow(distance / PLATE_REF_DISTANCE, -PLATE_FALLOFF),
+        PLATE_APPARENT_MIN,
+        PLATE_APPARENT_MAX,
+      );
+      const scale = apparent * distance * halfFovTan;
+
+      // The lift is applied in *view* space, not world space. Lifting along
+      // world +z looks right only while the camera is level; looking steeply
+      // down at the opening of the journey it pushes the card towards the
+      // viewer instead of up the frame, and the plate ends up adrift in the
+      // sky a long way from the country it belongs to. Offsetting along the
+      // view's own vertical axis instead stands every plate directly on its
+      // locality whatever the camera is doing.
+      plateView.copy(plateAnchor).applyMatrix4(camera.matrixWorldInverse);
+      const behind = plateView.z > -CAMERA_NEAR;
+      const lift = scale * lerp(PLATE_RISE_FROM, PLATE_RISE_TO, grow);
+
+      // Caption anchor: the middle of the plate's bottom edge.
+      plateProjected
+        .set(plateView.x, plateView.y + lift - scale, plateView.z)
+        .applyMatrix4(camera.projectionMatrix);
+      labelLayout[i * 3] = (plateProjected.x * 0.5 + 0.5) * viewWidth;
+      labelLayout[i * 3 + 1] = (-plateProjected.y * 0.5 + 0.5) * viewHeight;
+      // The caption fades on a steeper curve than the plate. Two plates can be
+      // on screen together during a handover, but only one of their captions
+      // is ever at full strength, so the text never reads as a stack.
+      labelLayout[i * 3 + 2] = behind ? 0 : alpha * alpha;
+
+      plateView.y += lift;
+      plateView.applyMatrix4(camera.matrixWorld);
+      plateOffsets[i * 3] = plateView.x;
+      plateOffsets[i * 3 + 1] = plateView.y;
+      plateOffsets[i * 3 + 2] = plateView.z;
+      plateScales[i] = scale;
+      plateAlphas[i] = alpha;
+    }
+
+    plateOffsetAttribute.needsUpdate = true;
+    plateScaleAttribute.needsUpdate = true;
+    plateAlphaAttribute.needsUpdate = true;
+    onLabels?.(labelLayout);
   }
 
   function renderFrame() {
@@ -812,6 +1048,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       haloMaterial.dispose();
       markers.dispose();
       halos.dispose();
+      plateQuad.dispose();
+      plateGeometry.dispose();
+      plateMaterial.dispose();
+      plateTexture.dispose();
       post?.dispose();
       renderer.dispose();
     },
