@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { SPECIES } from '../../data/species';
 import { STATUS_HEX } from '../../theme';
 import { HeroArt } from './HeroArt';
@@ -16,6 +16,10 @@ const POINTS: HeroPoint[] = SPECIES.flatMap((species) =>
     color: STATUS_HEX[species.status],
   })),
 );
+
+/** The copy fades out over this span so the closest pass is unobstructed. */
+const COPY_FADE_FROM = 0.52;
+const COPY_FADE_TO = 0.76;
 
 /**
  * Result of the WebGL probe, which is a device fact and cannot change within a
@@ -39,9 +43,9 @@ function hasWebGL(): boolean {
 }
 
 /**
- * Whether it is reasonable to spend a WebGL context and ~137 kB (gzipped) of
+ * Whether it is reasonable to spend a WebGL context and ~140 kB (gzipped) of
  * three.js on decoration for this visitor. Anything short of a clear yes falls
- * back to the flat SVG, which is what the hero shipped with.
+ * back to the flat hero, which is the layout the site shipped with.
  */
 function canRender3D(): boolean {
   if (typeof window === 'undefined') return false;
@@ -60,45 +64,66 @@ function canRender3D(): boolean {
 }
 
 /**
- * The hero's scroll-linked 3D relief of India.
+ * The hero: a scroll-driven camera journey over a 3D relief of India.
  *
- * Scoped to the hero on purpose: the map, species cards, filters and charts
- * below stay flat and data-first. This is the only place on the site that
- * touches WebGL, and it is loaded in its own async chunk so visitors who never
- * qualify for it never download it.
+ * Two layouts live here on purpose. When the journey runs, the section becomes
+ * a tall scroll stage with a sticky, full-bleed canvas and the copy laid over
+ * it — a camera descent has nowhere to go inside a small side panel. Every
+ * degraded path instead gets the original hero: normal height, copy left, flat
+ * SVG artwork right. Nothing below the hero changes in either case.
  */
-export function HeroScrollScene() {
-  const wrapRef = useRef<HTMLDivElement>(null);
+export function HeroStage({ children }: { children: ReactNode }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Decided before first paint, so the flat art never flashes in and out.
+  const copyRef = useRef<HTMLDivElement>(null);
+
+  // Decided before first paint, so the flat hero never flashes in and out.
   const [mode, setMode] = useState<'probing' | 'live' | 'flat'>(() => (canRender3D() ? 'probing' : 'flat'));
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (!canRender3D()) return;
 
-    const wrap = wrapRef.current;
+    const section = sectionRef.current;
+    const stage = stageRef.current;
     const canvas = canvasRef.current;
-    if (!wrap || !canvas) return;
+    if (!section || !stage || !canvas) return;
 
     let scene: HeroScene | null = null;
     let cancelled = false;
     const cleanups: Array<() => void> = [];
 
-    /** Scroll distance over which the hero pose plays out, in pixels. */
+    /** Scroll distance over which the journey plays out, in pixels. */
     let runway = 1;
+    /** Document offset of the section's top edge. */
+    let sectionTop = 0;
 
     const measure = () => {
-      const rect = wrap.getBoundingClientRect();
-      // The hero sits at the top of the document, so scroll position alone is
-      // the progress input. The travel has to finish while the relief is still
-      // in view, which means anchoring the end of it to the panel's centre
-      // reaching the top of the viewport rather than its bottom edge — the
-      // latter lands the final pose after it has already scrolled past.
-      const centre = rect.top + window.scrollY + rect.height / 2;
-      runway = Math.max(240, centre - window.innerHeight * 0.08);
-      scene?.resize(Math.round(rect.width), Math.round(rect.height));
-      scene?.setProgress(window.scrollY / runway);
+      const rect = section.getBoundingClientRect();
+      sectionTop = rect.top + window.scrollY;
+      // The stage is sticky, so the journey lasts exactly as long as the
+      // section can scroll underneath it.
+      runway = Math.max(240, rect.height - window.innerHeight);
+      const stageRect = stage.getBoundingClientRect();
+      scene?.resize(Math.round(stageRect.width), Math.round(stageRect.height));
+      update();
+    };
+
+    /**
+     * Driven straight from the scroll event with no React state in the path —
+     * a re-render per scroll frame would cost far more than the scene does.
+     */
+    const update = () => {
+      const p = Math.min(1, Math.max(0, (window.scrollY - sectionTop) / runway));
+      scene?.setProgress(p);
+      const copy = copyRef.current;
+      if (copy) {
+        const fade = 1 - Math.min(1, Math.max(0, (p - COPY_FADE_FROM) / (COPY_FADE_TO - COPY_FADE_FROM)));
+        copy.style.opacity = String(fade);
+        copy.style.transform = `translateY(${(1 - fade) * -28}px)`;
+        copy.style.pointerEvents = fade < 0.12 ? 'none' : '';
+      }
     };
 
     const bail = () => {
@@ -130,45 +155,45 @@ export function HeroScrollScene() {
         setMode('live');
         measure();
 
-        const onScroll = () => scene?.setProgress(window.scrollY / runway);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        cleanups.push(() => window.removeEventListener('scroll', onScroll));
+        window.addEventListener('scroll', update, { passive: true });
+        cleanups.push(() => window.removeEventListener('scroll', update));
 
         const resizeObserver = new ResizeObserver(measure);
-        resizeObserver.observe(wrap);
+        resizeObserver.observe(stage);
+        resizeObserver.observe(section);
         cleanups.push(() => resizeObserver.disconnect());
 
         // Pause the render loop whenever the hero is off-screen or the tab is
-        // in the background — a static relief costs nothing to leave mounted.
+        // in the background — a static scene costs nothing to leave mounted.
         let onScreen = true;
         const sync = () => scene?.setActive(onScreen && !document.hidden);
         const intersectionObserver = new IntersectionObserver((entries) => {
           onScreen = entries.some((entry) => entry.isIntersecting);
           sync();
         });
-        intersectionObserver.observe(wrap);
+        intersectionObserver.observe(stage);
         cleanups.push(() => intersectionObserver.disconnect());
         document.addEventListener('visibilitychange', sync);
         cleanups.push(() => document.removeEventListener('visibilitychange', sync));
 
         if (window.matchMedia('(pointer: fine)').matches) {
           const onPointerMove = (event: PointerEvent) => {
-            const rect = wrap.getBoundingClientRect();
+            const rect = stage.getBoundingClientRect();
             scene?.setPointer(
               ((event.clientX - rect.left) / rect.width) * 2 - 1,
               ((event.clientY - rect.top) / rect.height) * 2 - 1,
             );
           };
           const onPointerLeave = () => scene?.setPointer(0, 0);
-          wrap.addEventListener('pointermove', onPointerMove);
-          wrap.addEventListener('pointerleave', onPointerLeave);
+          stage.addEventListener('pointermove', onPointerMove);
+          stage.addEventListener('pointerleave', onPointerLeave);
           cleanups.push(() => {
-            wrap.removeEventListener('pointermove', onPointerMove);
-            wrap.removeEventListener('pointerleave', onPointerLeave);
+            stage.removeEventListener('pointermove', onPointerMove);
+            stage.removeEventListener('pointerleave', onPointerLeave);
           });
         }
 
-        // If the user switches reduced motion on, drop back to the flat art.
+        // If the user switches reduced motion on, drop back to the flat hero.
         const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         const onMotionChange = () => {
           if (motionQuery.matches) bail();
@@ -188,40 +213,54 @@ export function HeroScrollScene() {
     };
   }, []);
 
-  return (
-    <div
-      ref={wrapRef}
-      className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-2xl border border-forest-800 bg-forest-900/40 p-2"
-    >
-      {/* Soft glow behind the relief, in CSS rather than a lit backdrop. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl"
-        style={{
-          background:
-            'radial-gradient(70% 65% at 50% 35%, color-mix(in srgb, var(--color-forest-600) 45%, transparent), transparent 70%)',
-        }}
-      />
-      {mode !== 'live' && (
-        <div className="relative h-full w-full">
-          <HeroArt />
+  if (mode === 'flat') {
+    return (
+      <section className="relative overflow-hidden border-b border-forest-800 bg-forest-950">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
+          <div>{children}</div>
+          <div className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-2xl border border-forest-800 bg-forest-900/40 p-2">
+            <HeroArt />
+          </div>
         </div>
-      )}
-      {mode !== 'flat' && (
+      </section>
+    );
+  }
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative border-b border-forest-800 bg-forest-950 h-[145vh] lg:h-[178vh]"
+    >
+      <div ref={stageRef} className="sticky top-0 h-screen h-[100svh] overflow-hidden">
         <canvas
           ref={canvasRef}
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full transition-opacity duration-700 motion-reduce:transition-none"
-          style={{ opacity: mode === 'live' && visible ? 1 : 0 }}
+          className="absolute inset-0 h-full w-full transition-opacity duration-[900ms] motion-reduce:transition-none"
+          style={{ opacity: visible ? 1 : 0 }}
         />
-      )}
+        {/* Legibility scrims: darkened top and bottom everywhere, plus a
+            left-hand wash on wide screens where the copy sits beside the relief. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-forest-950/94 via-forest-950/62 to-forest-950/28 lg:from-forest-950/80 lg:via-transparent lg:to-forest-950/70"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 hidden lg:block lg:bg-gradient-to-r lg:from-forest-950/92 lg:via-forest-950/40 lg:to-transparent"
+        />
+        <div className="relative mx-auto flex h-full max-w-7xl items-start pt-24 sm:pt-28 lg:items-center lg:pt-0 px-4 sm:px-6">
+          <div ref={copyRef} className="max-w-xl lg:max-w-2xl will-change-[opacity,transform]">
+            {children}
+          </div>
+        </div>
+      </div>
       {mode === 'live' && (
         <span className="sr-only">
           A three-dimensional relief of India showing indicative occurrence points for the species in this
-          atlas, coloured by IUCN Red List category. It rotates as the page scrolls; the same information is
-          available on the interactive map.
+          atlas, coloured by IUCN Red List category. The view descends towards the terrain as the page
+          scrolls; the same information is available on the interactive map.
         </span>
       )}
-    </div>
+    </section>
   );
 }

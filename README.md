@@ -35,10 +35,13 @@ project.
 - **"Discover a species"** — opens a random species profile.
 - **Presentation panel + QR code** — a screenshot-friendly summary card and a QR
   code generated at runtime from the live URL (no hard-coded address).
-- **Scroll-linked 3D hero** — the landing page opens on an extruded relief of
-  India, built at runtime from the same state boundaries the map uses, with a
-  marker for every occurrence point in the dataset. It tilts and rotates with
-  scroll position. Confined to the hero on purpose: the map, cards, filters and
+- **Scroll-linked 3D hero** — the landing page opens on a camera journey over a
+  relief of India, built at runtime from the same state boundaries the map uses,
+  with a marker for every occurrence point in the dataset. Scrolling flies the
+  camera from an orbital view against a starfield down to a low pass over the
+  country, revealing markers in a north-to-south sweep, with selective bloom on
+  the markers, depth of field, vignette and a colour grade that warms as the
+  camera descends. Confined to the hero on purpose: the map, cards, filters and
   charts stay flat and data-first.
 - Responsive (desktop → phone), keyboard-navigable, with visible focus states and
   no reliance on colour alone for status.
@@ -63,7 +66,7 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
 | Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
-| Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware |
+| Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
 | Icons | lucide-react |
 | QR code | `qrcode` (offline, no external service) |
 | Charts | small custom component — no charting library |
@@ -84,7 +87,9 @@ src/
   theme.ts      literal palette values for SVG / canvas / Leaflet
   components/home/
     HeroScrollScene.tsx  capability checks, scroll wiring, SVG fallback
-    heroScene.ts         the three.js scene (lazy chunk; no React)
+    heroScene.ts         camera journey + frame loop (lazy chunk; no React)
+    heroTerrain.ts       GeoJSON -> extruded relief geometry
+    heroPost.ts          bloom / depth of field / vignette / colour grade
 public/
   india-states.geojson   simplified state boundaries
 ```
