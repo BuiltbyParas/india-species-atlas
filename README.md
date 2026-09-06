@@ -35,6 +35,11 @@ project.
 - **"Discover a species"** — opens a random species profile.
 - **Presentation panel + QR code** — a screenshot-friendly summary card and a QR
   code generated at runtime from the live URL (no hard-coded address).
+- **Scroll-linked 3D hero** — the landing page opens on an extruded relief of
+  India, built at runtime from the same state boundaries the map uses, with a
+  marker for every occurrence point in the dataset. It tilts and rotates with
+  scroll position. Confined to the hero on purpose: the map, cards, filters and
+  charts stay flat and data-first.
 - Responsive (desktop → phone), keyboard-navigable, with visible focus states and
   no reliance on colour alone for status.
 
@@ -58,6 +63,7 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
 | Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
+| Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware |
 | Icons | lucide-react |
 | QR code | `qrcode` (offline, no external service) |
 | Charts | small custom component — no charting library |
@@ -76,6 +82,9 @@ src/
   types/        domain types
   utils/        stats (all headline numbers computed here), cn
   theme.ts      literal palette values for SVG / canvas / Leaflet
+  components/home/
+    HeroScrollScene.tsx  capability checks, scroll wiring, SVG fallback
+    heroScene.ts         the three.js scene (lazy chunk; no React)
 public/
   india-states.geojson   simplified state boundaries
 ```
