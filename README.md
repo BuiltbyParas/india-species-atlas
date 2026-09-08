@@ -97,6 +97,9 @@ src/
     speciesSilhouettes.ts  hand-drawn profile outlines, one per species
 public/
   india-states.geojson   simplified state boundaries
+scripts/
+  postbuild.mjs          writes dist/404.html for static hosts
+  promo/                 the promotional-video pipeline (see below)
 ```
 
 All species information lives in `src/data/` — components never hard-code it, and
@@ -175,6 +178,73 @@ generator, or run:
 ```bash
 npx qrcode "https://your-deployed-url/" -o atlas-qr.png
 ```
+
+---
+
+## Promotional video
+
+`npm run promo` builds a ~49-second, 1080×1920 (9:16) video of the site for
+social media and for the project submission. It is a script, not a recording:
+re-run it after changing the site and the video follows.
+
+```bash
+npm run promo                                    # uses the URL in scripts/promo/config.mjs
+npm run promo -- --url https://your-url/         # bake a different address into the end card
+npm run promo -- --no-voice                      # captions only
+npm run promo -- --music path/to/track.mp3       # mix a royalty-free track under the narration
+npm run promo -- --skip-record --no-build        # re-cut from the frames already captured
+```
+
+The output lands in `promo/` (git-ignored) together with the captured frames,
+the narration audio and a `timeline.json` describing what happens when.
+
+### What it does
+
+1. **Speaks the narration** with [edge-tts](https://github.com/rany2/edge-tts)
+   (free, no API key) and measures each line, so a section is never shorter
+   than the sentence it has to carry.
+2. **Drives a real browser** through the site with Playwright — the scroll-linked
+   3D hero, a pan and zoom of the Leaflet map, a pin click through to a species
+   profile, the search and the status filter, and the charts.
+3. **Draws the captions and the closing card** in that same browser, using the
+   site's own typefaces, and generates the end-card QR code offline from the
+   public URL with the same `qrcode` library the site uses.
+4. **Cuts it together** with ffmpeg: cross-dissolves between sections, captions
+   faded in over the footage, narration laid on the timeline, fade to black.
+
+No music ships with the repo, and none is added unless you pass `--music`.
+
+### Why it looks the way it does
+
+- **The mobile layout is recorded on purpose.** At 1080 px wide a desktop
+  layout puts 14 px body text into a frame a phone shows at roughly 1:1, which
+  is unreadable in a Reel. The page is driven at a 540×960 CSS viewport at 2×
+  device pixels, which lands exactly on 1080×1920 with no rescaling — and it is
+  what someone opening the link from Instagram would actually see.
+- **Frames are captured one at a time, not screen-recorded.** `requestAnimationFrame`
+  and `performance.now()` are replaced with a clock the recorder advances by
+  hand, so motion is a pure function of the frame number: the same run always
+  produces the same video, on any machine. It also keeps the hero alive — the 3D
+  scene drops itself to the flat fallback when it measures frame times above
+  32 ms, which a screenshot-per-frame recording would trigger immediately.
+
+### Requirements
+
+- `ffmpeg` with an H.264 encoder (`libx264`, or `libopenh264` on a
+  patent-clean build such as Fedora's — the pipeline picks whichever is there).
+- Chromium for Playwright: `npx playwright install chromium`.
+- Python 3 for edge-tts. A virtualenv is created under `promo/.venv` on the
+  first run if edge-tts is not already installed.
+- A GPU helps: the hero renders about fifteen times faster than under
+  SwiftShader. The pipeline falls back to software rendering automatically.
+
+### Changing the video
+
+`scripts/promo/config.mjs` holds the frame rate, capture geometry, voice and
+palette. `scripts/promo/shots.mjs` holds the sequence — each shot carries its
+own narration, captions and choreography, and is handed the exact number of
+frames it must produce, so re-timing the narration re-times the choreography
+with it.
 
 ---
 
