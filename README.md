@@ -21,6 +21,20 @@ project.
 - **Three map modes** — *Species* (markers by IUCN status), *Threats* (markers by
   the species' most prominent threat) and *Conservation* (sites linked to
   government/partner programmes).
+- **3D Conservation view** — an *opt-in* companion to the Conservation mode,
+  never a replacement for it: the flat map stays the default, and the toggle
+  sits beside it. States where a programme-covered species occurs are raised a
+  step out of an extruded relief of the same `india-states.geojson` the flat
+  map draws, and a marker stands at every programme site. What the geometry
+  claims is deliberately small — the step is a yes/no rather than a quantity,
+  because the atlas has no data a varying height could honestly encode, and a
+  marker is a plan shape rather than a picture of anything. Programmes are told
+  apart by outline first and colour second, so the legend survives being
+  printed in grey. Drag to turn (within about 30° of north-up, so the map stays
+  a map), arrow keys turn and tilt, and clicking a marker names its programme
+  in real text below the stage. Without WebGL, on a low-end device, or where
+  reduced motion is asked for, the flat map is shown instead with a note
+  saying why, and no three.js is ever fetched.
 - **Search** across common name, scientific name, state and region, updating
   instantly.
 - **Combinable filters** — conservation status, ecological region and habitat.
@@ -99,7 +113,9 @@ src/
   hooks/        useSpeciesFilters.ts
   pages/        Home, Atlas, Species, Conservation, About, Sources, 404
   types/        domain types
-  utils/        stats (all headline numbers computed here), cn
+  utils/        stats (all headline numbers computed here), cn,
+                geoExtrude (GeoJSON -> extruded geometry, shared by the hero
+                relief and the 3D Conservation view), canRender3D
   theme.ts      literal palette values for SVG / canvas / Leaflet
   components/home/
     HeroScrollScene.tsx  capability checks, scroll wiring, SVG fallback
@@ -108,6 +124,12 @@ src/
     heroPost.ts          bloom / depth of field / vignette / colour grade
     heroPlates.ts        species plate atlas (canvas 2D, no image assets)
     speciesSilhouettes.ts  hand-drawn profile outlines, one per species
+  components/map/
+    AtlasMap.tsx         the flat Leaflet map, and the default in every mode
+    ConservationView.tsx opt-in 3D view: capability checks, mounting, fallback
+    conservationScene.ts raised states + programme markers (lazy chunk; no React)
+    programmeSites.ts    which markers stand where, derived from the dataset
+    ProgrammeShape.tsx   a programme's plan outline, drawn flat for the legend
 public/
   india-states.geojson   simplified state boundaries
 src/assets/species/      one bundled photograph per species
