@@ -12,13 +12,13 @@ export function HomePage() {
       <StatsSection />
       <FeaturedSpecies />
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
         <SectionHeading
           eyebrow="At a glance"
           title="What the selection looks like"
           description="These charts summarise the atlas dataset. They are recalculated whenever the species data changes — no numbers are hard-coded."
         />
-        <div className="mt-8">
+        <div className="mt-9">
           <ChartsPanel variant="mini" />
         </div>
       </section>

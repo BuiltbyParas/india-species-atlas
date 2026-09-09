@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPinned } from 'lucide-react';
+import { buttonClasses } from '../ui/buttonClasses';
 import { HeroStage } from './HeroScrollScene';
 
 export function Hero() {
@@ -23,14 +24,14 @@ export function Hero() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           to="/atlas"
-          className="inline-flex items-center gap-2 rounded-lg bg-forest-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-forest-400"
+          className={buttonClasses('primary', 'md', 'px-5 py-3')}
         >
           Explore the Map
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
         <Link
           to="/about"
-          className="inline-flex items-center gap-2 rounded-lg border border-forest-600 bg-forest-950/40 px-5 py-3 text-sm font-semibold text-canvas backdrop-blur-sm transition hover:bg-forest-900"
+          className={buttonClasses('secondary', 'md', 'border-forest-600 bg-forest-950/40 px-5 py-3 backdrop-blur-sm')}
         >
           Learn About the Project
         </Link>

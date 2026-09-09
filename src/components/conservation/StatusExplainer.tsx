@@ -7,6 +7,8 @@ export function StatusExplainer() {
   return (
     <section id="understanding-status">
       <SectionHeading
+        as="h1"
+        size="page"
         eyebrow="Educational"
         title="Understanding conservation status"
         description="The IUCN Red List places each assessed species in a category of extinction risk, using standard criteria such as population size and trend, range size and fragmentation."

@@ -26,8 +26,10 @@ export function SourcesPage() {
   const { open } = useSpeciesProfile();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:py-16">
       <SectionHeading
+        as="h1"
+        size="page"
         eyebrow="References"
         title="Sources &amp; bibliography"
         description="The atlas prioritises authoritative sources: the IUCN Red List, Government of India ministries and agencies, national research institutions and established conservation organisations. Links open in a new tab."

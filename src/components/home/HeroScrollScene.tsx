@@ -3,6 +3,7 @@ import { SPECIES } from '../../data/species';
 import { STATUS_HEX } from '../../theme';
 import { StatusBadge } from '../ui/StatusBadge';
 import { HeroArt } from './HeroArt';
+import { canRender3D } from '../../utils/canRender3D';
 import type { GeoCollection, HeroPlate, HeroPoint, HeroScene } from './heroScene';
 
 /**
@@ -75,48 +76,6 @@ const LABEL_MARGIN = 12;
 
 const COPY_FADE_FROM = 0.08;
 const COPY_FADE_TO = 0.22;
-
-/**
- * Result of the WebGL probe, which is a device fact and cannot change within a
- * session — unlike the motion preference, which is re-read on every call.
- */
-let webglSupported: boolean | null = null;
-
-function hasWebGL(): boolean {
-  if (webglSupported !== null) return webglSupported;
-  // Probe for a real context rather than trusting feature detection, then hand
-  // it straight back — some devices advertise WebGL and fail to allocate.
-  try {
-    const probe = document.createElement('canvas');
-    const gl = (probe.getContext('webgl2') ?? probe.getContext('webgl')) as WebGLRenderingContext | null;
-    gl?.getExtension('WEBGL_lose_context')?.loseContext();
-    webglSupported = Boolean(gl);
-  } catch {
-    webglSupported = false;
-  }
-  return webglSupported;
-}
-
-/**
- * Whether it is reasonable to spend a WebGL context and ~140 kB (gzipped) of
- * three.js on decoration for this visitor. Anything short of a clear yes falls
- * back to the flat hero, which is the layout the site shipped with.
- */
-function canRender3D(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-
-  const nav = navigator as Navigator & {
-    connection?: { saveData?: boolean; effectiveType?: string };
-    deviceMemory?: number;
-  };
-  if (nav.connection?.saveData) return false;
-  if (nav.connection?.effectiveType && /^(slow-)?2g$/.test(nav.connection.effectiveType)) return false;
-  if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2) return false;
-  if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return false;
-
-  return hasWebGL();
-}
 
 /**
  * The hero: a scroll-driven camera journey over a 3D relief of India.

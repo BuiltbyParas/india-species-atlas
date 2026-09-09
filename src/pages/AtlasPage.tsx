@@ -41,10 +41,10 @@ export function AtlasPage() {
   }, [filters.results, selectedState]);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-3 py-5 sm:px-5">
-      <div className="mb-4">
+    <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:py-8">
+      <div className="mb-5">
         <h1 className="font-serif text-2xl font-semibold text-canvas sm:text-3xl">Interactive map</h1>
-        <p className="mt-1 max-w-2xl text-sm text-canvas/65">
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-canvas/65">
           Pan and zoom the map, click a state to list its species, click a pin to open a profile, and switch
           between Species, Threats and Conservation views. Use the filters to narrow the selection.
         </p>
@@ -68,7 +68,7 @@ export function AtlasPage() {
           </button>
           <div
             className={cn(
-              'mt-2 scroll-slim rounded-lg border border-forest-700/70 bg-forest-900 p-3 lg:mt-3 lg:block lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto',
+              'mt-2 scroll-slim rounded-xl border border-forest-800 bg-forest-900 p-4 lg:mt-3 lg:block lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto',
               showFilters ? 'block' : 'hidden',
             )}
           >
@@ -78,7 +78,7 @@ export function AtlasPage() {
 
         {/* Map + context */}
         <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
             <ModeSwitch mode={mode} onChange={setMode} />
             <p className="text-sm text-canvas/60" aria-live="polite">
               {filters.results.length} species · {pointCount} mapped location{pointCount === 1 ? '' : 's'}
@@ -86,7 +86,7 @@ export function AtlasPage() {
             </p>
           </div>
 
-          <div className="h-[62vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-700">
+          <div className="h-[62vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800">
             <Suspense
               fallback={
                 <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/50">

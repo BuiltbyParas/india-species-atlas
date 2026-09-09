@@ -24,7 +24,17 @@ project.
 - **Search** across common name, scientific name, state and region, updating
   instantly.
 - **Combinable filters** — conservation status, ecological region and habitat.
-- **Species profiles** — image/placeholder, scientific name, IUCN status with a
+- **3D species gallery** — the species directory opens on a ring of
+  photographic cards standing in real 3D space, which you turn by dragging, by
+  the arrow keys, or by clicking a card at the edge to bring it round. Each
+  card is an extruded slab with thickness and a bevelled edge, lit by a key
+  light it catches as it turns, backed by a soft halo in its IUCN status
+  colour, and captioned in the texture so the lettering keeps its perspective.
+  Moving the pointer moves the camera, so the ring parallaxes as an object
+  rather than as stacked layers. The photographs are photographs: nothing here
+  is a 3D model of an animal, and the stage says so. A *Grid* view sits beside
+  it for scanning, and the search and filters drive both.
+- **Species profiles** — photograph, scientific name, IUCN status with a
   plain-language definition, Indian distribution, habitat, major threats,
   conservation measures, government programmes, protected areas, a "why it
   matters" note, and per-species sources with a "last checked" date. Profiles are
@@ -47,7 +57,9 @@ project.
   and fades as the camera passes. Confined to the hero on purpose: the map,
   cards, filters and charts stay flat and data-first.
 - Responsive (desktop → phone), keyboard-navigable, with visible focus states and
-  no reliance on colour alone for status.
+  no reliance on colour alone for status. Every 3D element degrades to the flat
+  layout under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end
+  hardware — and fetches no three.js at all in that case.
 
 ## Species included (12)
 
@@ -69,6 +81,7 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
 | Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
+| Species gallery | three.js — photographic cards on a ring of extruded rounded slabs, card faces composited on a 2D canvas at runtime (photo, scrim, status chip, caption) and uploaded as textures. Lazy-loaded, and only once the section is scrolled near, so it never competes with the hero for the GPU |
 | Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Species plates are drawn into a single canvas atlas at runtime and billboarded as one instanced draw call; their captions are DOM text positioned per frame. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
 | Icons | lucide-react |
 | QR code | `qrcode` (offline, no external service) |
@@ -97,8 +110,10 @@ src/
     speciesSilhouettes.ts  hand-drawn profile outlines, one per species
 public/
   india-states.geojson   simplified state boundaries
+src/assets/species/      one bundled photograph per species
 scripts/
   postbuild.mjs          writes dist/404.html for static hosts
+  images/                sources and licence-checks the species photographs
   promo/                 the promotional-video pipeline (see below)
 ```
 
@@ -275,10 +290,41 @@ Per-species sources live on each species' `sources` array. The general
 bibliography is in `src/data/sources.ts` (`BIBLIOGRAPHY`). Use the `iucnSearch()`
 helper for IUCN links so they stay valid across Red List updates.
 
-### Species imagery and the hero silhouettes
+### Species photographs
 
-The atlas ships **no bundled photographs**; each species uses a generated
-placeholder tinted by IUCN status.
+Every species carries one photograph, bundled in `src/assets/species/` rather
+than hot-linked, so the atlas works offline and cannot suffer link rot.
+
+They are sourced by `scripts/images/fetch-species-photos.mjs`, which is where
+the provenance lives:
+
+```bash
+node scripts/images/fetch-species-photos.mjs --check   # report, change nothing
+node scripts/images/fetch-species-photos.mjs           # download + write the manifest
+```
+
+For each species it reads the lead photograph of the species' English Wikipedia
+article (or a file named explicitly in `OVERRIDES`, where the lead image is too
+small or is a museum skeleton rather than a live animal), then asks Commons for
+that file's metadata and **refuses anything that fails a check**:
+
+- the licence must be public domain, CC0, or a CC BY / CC BY-SA version — no
+  NonCommercial or NoDerivatives files, and no file with usage restrictions;
+- the species must be named in the *file's own* title, description or
+  categories, not merely in the article the file was reached through;
+- a photographer must be recorded.
+
+Every accepted file is then re-encoded to a consistent 1400 px width and
+recorded in `scripts/images/photo-manifest.json` with its photographer, licence,
+licence URL and Commons page. Those fields are copied onto the species entry in
+`src/data/species.ts`, and `PhotoCredit` renders them everywhere the picture
+appears — the gallery, the profile drawer — so no view can quietly drop the
+credit the licences require.
+
+The script also checks its species ids against `src/data/species.ts`, so
+renaming a species fails loudly instead of orphaning a photograph.
+
+### The hero silhouettes
 
 The hero's species plates are **schematic silhouettes**, defined in
 `src/components/home/speciesSilhouettes.ts` and drawn to a canvas atlas at
@@ -296,14 +342,11 @@ Each silhouette carries a `note` recording what it depicts. Features that vary
 within a species are left out — the Asian Elephant is drawn without tusks,
 because most Indian elephants have none.
 
-### Replace or add images
+### Replace a photograph
 
-To use a real photograph for a species:
-
-1. Find a legally reusable file — e.g. on
-   [Wikimedia Commons](https://commons.wikimedia.org/) (public domain or a
-   Creative Commons licence).
-2. In that species' `image` object set:
+Either name a different Commons file in `OVERRIDES` in
+`scripts/images/fetch-species-photos.mjs` and re-run it, or set the species'
+`image` object by hand in `src/data/species.ts`:
 
    ```ts
    image: {
@@ -316,9 +359,9 @@ To use a real photograph for a species:
    }
    ```
 
-3. If the image fails to load, the placeholder is shown automatically.
-
-To bundle images instead, put them in `src/assets/` and `import` them.
+If `src` is missing or the file fails to load, `SpeciesImage` falls back to a
+generated placeholder tinted by IUCN status, so a missing picture degrades
+rather than breaking the layout.
 
 ### Update the map boundaries
 
@@ -343,6 +386,11 @@ former parent states. Replace the file with any GeoJSON whose features expose a
 ## Licence / attribution
 
 - Code: free to reuse for educational purposes.
+- Species photographs: © their individual photographers, used under the
+  Creative Commons licence each one carries (CC BY, CC BY-SA, or public
+  domain), via Wikimedia Commons. Photographer, licence and source page are
+  shown beside every picture in the interface and recorded in
+  `scripts/images/photo-manifest.json`.
 - Basemap © OpenStreetMap contributors (ODbL).
 - State boundary data: community open dataset (see Sources page).
 - Not affiliated with the IUCN or the Government of India.
