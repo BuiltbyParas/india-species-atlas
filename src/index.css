@@ -28,6 +28,9 @@
   --color-clay: #b9764a;
   --color-sand: #d8c9a3;
 
+  /* One easing curve for the whole interface: a firm start, a soft landing. */
+  --ease-emphasis: cubic-bezier(0.2, 0.75, 0.25, 1);
+
   /* IUCN status colours */
   --color-status-cr: #d64545;
   --color-status-en: #e0812b;
@@ -64,6 +67,36 @@ body {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/*
+  Headings.
+
+  Spectral is a text face, and at display sizes its default tracking reads
+  loose against the tight measure the layout uses. A small negative letter-
+  spacing on headings alone — not on the body, which needs its default — is
+  what separates set type from browser defaults.
+*/
+h1,
+h2,
+h3 {
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+/*
+  Interactive surfaces share one curve and one duration, so a hover on a card
+  feels like a hover on a button. Components choose *what* changes; this
+  decides how it moves.
+*/
+a,
+button,
+summary,
+input,
+select,
+[role='tab'] {
+  transition-timing-function: var(--ease-emphasis);
+  transition-duration: 180ms;
 }
 
 :focus-visible {

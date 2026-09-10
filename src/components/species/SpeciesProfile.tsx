@@ -10,6 +10,7 @@ import { STATUS_INFO } from '../../data/statusInfo';
 import { REGION_LABELS, HABITAT_LABELS } from '../../data/regions';
 import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
+import { PhotoCredit } from '../ui/PhotoCredit';
 import { SpeciesImage } from '../ui/SpeciesImage';
 import { StatusBadge } from '../ui/StatusBadge';
 
@@ -40,12 +41,18 @@ export function SpeciesProfile({ species }: { species: Species }) {
     <article>
       <div className="relative">
         <SpeciesImage species={species} className="h-52 w-full sm:h-64" />
+        {/* A scrim, so the badge holds up over a pale photograph. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-forest-950/80 to-transparent"
+        />
         <div className="absolute left-4 top-4">
           <StatusBadge status={species.status} showName />
         </div>
       </div>
 
       <div className="px-5 py-5 sm:px-7">
+        <PhotoCredit species={species} className="mb-4" />
         <header>
           <h2 className="font-serif text-2xl font-semibold text-canvas">{species.commonName}</h2>
           <p className="italic text-canvas/60">{species.scientificName}</p>

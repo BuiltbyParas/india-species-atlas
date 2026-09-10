@@ -6,7 +6,7 @@ import ChartsPanel from '../components/charts/DataCharts';
 
 export function ConservationPage() {
   return (
-    <div className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-16 px-4 py-12 sm:px-6 lg:space-y-20 lg:py-16">
       <StatusExplainer />
 
       <section>

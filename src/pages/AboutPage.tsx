@@ -13,14 +13,16 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export function AboutPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:py-16">
       <SectionHeading
+        as="h1"
+        size="page"
         eyebrow="About this project"
         title="An educational atlas of India’s threatened wildlife"
         description="A student project for an environmental-studies / Computer-Aided Instruction (CAI) assignment."
       />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2">
         <Card title="Purpose">
           <p>
             To visually connect the <em>geography</em> of {totalSpecies} selected threatened species in India

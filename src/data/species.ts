@@ -2,6 +2,30 @@ import type { Species } from '../types';
 import { iucnSearch } from './sources';
 
 /**
+ * Species photographs, sourced from Wikimedia Commons and bundled rather than
+ * hot-linked, so the atlas works offline and cannot suffer link rot.
+ *
+ * The project cites its facts, and its pictures are held to the same standard:
+ * every file was checked to carry a licence that permits reuse and to actually
+ * depict the species it is filed under. `scripts/images/fetch-species-photos.mjs`
+ * performs both checks and can re-run the whole sourcing pass. Photographer,
+ * licence and source page travel with each entry below and are shown wherever
+ * the picture appears.
+ */
+import greatIndianBustardPhoto from '../assets/species/great-indian-bustard.jpg';
+import bengalTigerPhoto from '../assets/species/bengal-tiger.jpg';
+import redPandaPhoto from '../assets/species/red-panda.jpg';
+import gangesRiverDolphinPhoto from '../assets/species/ganges-river-dolphin.jpg';
+import nilgiriTahrPhoto from '../assets/species/nilgiri-tahr.jpg';
+import gharialPhoto from '../assets/species/gharial.jpg';
+import whiteRumpedVulturePhoto from '../assets/species/white-rumped-vulture.jpg';
+import snowLeopardPhoto from '../assets/species/snow-leopard.jpg';
+import indianRhinocerosPhoto from '../assets/species/indian-rhinoceros.jpg';
+import dugongPhoto from '../assets/species/dugong.jpg';
+import lionTailedMacaquePhoto from '../assets/species/lion-tailed-macaque.jpg';
+import asianElephantPhoto from '../assets/species/asian-elephant.jpg';
+
+/**
  * India Species Atlas — species dataset (12 species).
  *
  * Scope: a small, geographically balanced selection of threatened species,
@@ -63,7 +87,14 @@ export const SPECIES: Species[] = [
       { lat: 27.55, lng: 71.35, label: 'Pokhran field firing range area, Rajasthan', note: 'Part of the core Thar bustard landscape.' },
       { lat: 23.34, lng: 68.84, label: 'Abdasa / Naliya grasslands, Kutch, Gujarat', note: 'A remnant population of only a few birds.' },
     ],
-    image: { src: undefined, alt: 'Illustration representing the Great Indian Bustard, a tall grassland bird.' },
+    image: {
+      src: greatIndianBustardPhoto,
+      alt: 'Two Great Indian Bustards on dry grassland at the edge of thorn scrub, their white necks and dark crowns visible.',
+      credit: 'Dr. Raju Kasambe',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Great_Indian_Bustard_Ardeotis_nigriceps_by_Raju_Kasambe_DSCN9716_09.jpg',
+    },
     sources: [
       iucnSearch('Ardeotis nigriceps'),
       { label: 'Great Indian Bustard — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/great-indian-bustard-ardeotis-nigriceps', publisher: 'BirdLife International Data Zone' },
@@ -115,7 +146,14 @@ export const SPECIES: Species[] = [
       { lat: 21.95, lng: 88.9, label: 'Sundarbans Tiger Reserve, West Bengal', note: 'Mangrove-dwelling population.' },
       { lat: 26.5, lng: 76.42, label: 'Ranthambhore Tiger Reserve, Rajasthan' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a tiger, a large striped cat.' },
+    image: {
+      src: bengalTigerPhoto,
+      alt: 'A tiger walking through dry grass in open forest, seen side-on with its head turned towards the camera. Photographed in Sanjay Dubri Tiger Reserve.',
+      credit: 'Tisha Mukherjee',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Bengal_tiger_in_Sanjay_Dubri_Tiger_Reserve_December_2024_by_Tisha_Mukherjee_11.jpg',
+    },
     sources: [
       iucnSearch('Panthera tigris'),
       { label: 'Status of Tigers, Co-predators & Prey in India, 2022', url: 'https://ntca.gov.in/', publisher: 'NTCA / Wildlife Institute of India' },
@@ -162,7 +200,14 @@ export const SPECIES: Species[] = [
       { lat: 27.05, lng: 88.73, label: 'Neora Valley National Park, West Bengal' },
       { lat: 27.5, lng: 96.38, label: 'Namdapha National Park, Arunachal Pradesh' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a red panda, a small reddish-brown mammal with a striped tail.' },
+    image: {
+      src: redPandaPhoto,
+      alt: 'A red panda curled on a mossy branch with its ringed tail wrapped around it.',
+      credit: 'Sunuwargr',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Red_Panda,_Gentle_Tree-Dweller_of_the_Himalayas.jpg',
+    },
     sources: [
       iucnSearch('Ailurus fulgens'),
       wwf('red_panda', 'Red Panda'),
@@ -209,7 +254,14 @@ export const SPECIES: Species[] = [
       { lat: 26.5, lng: 78.35, label: 'Chambal river, National Chambal Sanctuary' },
       { lat: 26.2, lng: 91.7, label: 'Brahmaputra near Guwahati, Assam' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a river dolphin with a long narrow snout.' },
+    image: {
+      src: gangesRiverDolphinPhoto,
+      alt: 'A Ganges river dolphin surfacing in a silt-laden river, its long narrow beak clear of the water. Photographed at Koshi Barrage.',
+      credit: 'Anant.wildlife',
+      license: 'CC BY 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Ganges_River_Dolphin_sighted_in_Koshi_Barrage_(cropped).jpg',
+    },
     sources: [
       iucnSearch('Platanista gangetica'),
       { label: 'Project Dolphin', url: 'https://riverdolphin.in/about-the-project/', publisher: 'National Mission for Clean Ganga / MoEFCC' },
@@ -256,7 +308,14 @@ export const SPECIES: Species[] = [
       { lat: 10.35, lng: 76.95, label: 'Anamalai Tiger Reserve, Tamil Nadu' },
       { lat: 8.55, lng: 77.32, label: 'Kalakkad–Mundanthurai (Ashambu hills), Tamil Nadu' },
     ],
-    image: { src: undefined, alt: 'Illustration representing the Nilgiri Tahr, a stocky wild mountain goat.' },
+    image: {
+      src: nilgiriTahrPhoto,
+      alt: 'A Nilgiri Tahr on a grassy slope, showing its short curved horns and coarse grey-brown coat. Photographed in Eravikulam National Park.',
+      credit: 'Aveek Bandyopadhyay',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Nilgiri_Tahr_at_Eravikulam_National_Park.jpg',
+    },
     sources: [
       iucnSearch('Nilgiritragus hylocrius'),
       wwf('nilgiri_tahr', 'Nilgiri Tahr'),
@@ -303,7 +362,14 @@ export const SPECIES: Species[] = [
       { lat: 24.6, lng: 81.3, label: 'Son Gharial Sanctuary, Madhya Pradesh' },
       { lat: 26.85, lng: 84.5, label: 'Gandak river, Bihar' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a gharial, a crocodilian with a very narrow snout.' },
+    image: {
+      src: gharialPhoto,
+      alt: 'A male gharial at the water’s edge, its very narrow snout and the bulbous growth on the tip clearly visible.',
+      credit: 'Charles J. Sharp',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Gharial_(Gavialis_gangeticus)_male.jpg',
+    },
     sources: [
       iucnSearch('Gavialis gangeticus'),
       { label: 'Gharial conservation research', url: 'https://wii.gov.in/', publisher: 'Wildlife Institute of India' },
@@ -350,7 +416,14 @@ export const SPECIES: Species[] = [
       { lat: 26.5, lng: 76.42, label: 'Ranthambhore National Park, Rajasthan' },
       { lat: 26.6, lng: 93.2, label: 'Kaziranga–Karbi Anglong landscape, Assam' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a vulture, a large scavenging bird.' },
+    image: {
+      src: whiteRumpedVulturePhoto,
+      alt: 'A white-rumped vulture standing in short grassland, seen in profile. Photographed in Chitwan National Park.',
+      credit: 'Prasan Shrestha',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:White_rumped_vulture_in_chitwan_national_park.jpg',
+    },
     sources: [
       iucnSearch('Gyps bengalensis'),
       { label: 'White-rumped Vulture — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/white-rumped-vulture-gyps-bengalensis', publisher: 'BirdLife International Data Zone' },
@@ -398,7 +471,13 @@ export const SPECIES: Species[] = [
       { lat: 30.9, lng: 79.15, label: 'Gangotri National Park, Uttarakhand' },
       { lat: 27.7, lng: 88.6, label: 'Khangchendzonga National Park, Sikkim' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a snow leopard, a pale spotted mountain cat with a thick tail.' },
+    image: {
+      src: snowLeopardPhoto,
+      alt: 'A snow leopard standing on snow-covered rock, its thick pale spotted coat and long tail visible.',
+      credit: 'Irbis1983',
+      license: 'Public domain',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Irbis4.JPG',
+    },
     sources: [
       iucnSearch('Panthera uncia'),
       { label: 'Statement on the IUCN Red List status change of the snow leopard', url: 'https://snowleopard.org/statement-iucn-red-list-status-change-snow-leopard/', publisher: 'Snow Leopard Trust' },
@@ -447,7 +526,14 @@ export const SPECIES: Species[] = [
       { lat: 26.68, lng: 89.28, label: 'Jaldapara National Park, West Bengal' },
       { lat: 28.52, lng: 80.7, label: 'Dudhwa National Park, Uttar Pradesh', note: 'Reintroduced population in a fenced area.' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a one-horned rhinoceros with armour-like skin folds.' },
+    image: {
+      src: indianRhinocerosPhoto,
+      alt: 'A greater one-horned rhinoceros standing in shallow water, its single horn and folded, plated skin visible.',
+      credit: 'Payamfarahani',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Payamfarahani_-_Rhinoceros_unicornis_(26).jpg',
+    },
     sources: [
       iucnSearch('Rhinoceros unicornis'),
       { label: 'Indian Rhino Vision 2020', url: 'https://www.wwfindia.org/about_wwf/priority_species/threatened_species/one_horned_rhinoceros/', publisher: 'WWF India' },
@@ -494,7 +580,14 @@ export const SPECIES: Species[] = [
       { lat: 22.5, lng: 69.7, label: 'Gulf of Kachchh, Gujarat' },
       { lat: 12.0, lng: 93.0, label: 'Ritchie’s Archipelago, Andaman Islands' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a dugong, a rotund marine mammal with a fluked tail.' },
+    image: {
+      src: dugongPhoto,
+      alt: 'A dugong swimming in open blue water, seen from above with its broad fluked tail.',
+      credit: 'Gejuni',
+      license: 'CC BY-SA 3.0 de',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/de/deed.en',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Dugong.JPG',
+    },
     sources: [
       iucnSearch('Dugong dugon'),
       { label: 'Dugong Recovery Programme / seagrass work', url: 'https://wii.gov.in/', publisher: 'Wildlife Institute of India' },
@@ -541,7 +634,14 @@ export const SPECIES: Species[] = [
       { lat: 14.2, lng: 74.75, label: 'Sharavathi Valley, Karnataka' },
       { lat: 8.55, lng: 77.32, label: 'Kalakkad–Mundanthurai Tiger Reserve, Tamil Nadu' },
     ],
-    image: { src: undefined, alt: 'Illustration representing a lion-tailed macaque, a dark monkey with a grey mane.' },
+    image: {
+      src: lionTailedMacaquePhoto,
+      alt: 'A lion-tailed macaque seated, showing the silver-grey mane framing its black face. Photographed in a zoo.',
+      credit: 'Chris huh',
+      license: 'CC BY-SA 3.0',
+      licenseUrl: 'http://creativecommons.org/licenses/by-sa/3.0/',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Lion-tailed_Macaque_in_Bristol_Zoo.jpg',
+    },
     sources: [
       iucnSearch('Macaca silenus'),
       { label: 'Lion-tailed Macaque — mammals of India', url: 'https://www.mammalsofindia.org/macaca-silenus', publisher: 'Mammals of India (NCF / IISc)' },
@@ -589,7 +689,14 @@ export const SPECIES: Species[] = [
       { lat: 21.6, lng: 86.4, label: 'Similipal Tiger Reserve, Odisha' },
       { lat: 30.0, lng: 78.2, label: 'Rajaji National Park, Uttarakhand' },
     ],
-    image: { src: undefined, alt: 'Illustration representing an Asian elephant.' },
+    image: {
+      src: asianElephantPhoto,
+      alt: 'A tusked Asian elephant standing in green scrub forest. Photographed in Bandipur.',
+      credit: 'Yathin S Krishnappa',
+      license: 'CC BY-SA 3.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Elephas_maximus_(Bandipur).jpg',
+    },
     sources: [
       iucnSearch('Elephas maximus'),
       { label: 'Project Elephant — PIB release', url: 'https://pib.gov.in/PressReleaseIframePage.aspx?PRID=1884356', publisher: 'Press Information Bureau, Government of India' },
