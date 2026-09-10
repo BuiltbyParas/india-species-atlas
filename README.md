@@ -220,7 +220,7 @@ npx qrcode "https://your-deployed-url/" -o atlas-qr.png
 
 ## Promotional video
 
-`npm run promo` builds a ~49-second, 1080×1920 (9:16) video of the site for
+`npm run promo` builds a ~75-second, 1080×1920 (9:16) video of the site for
 social media and for the project submission. It is a script, not a recording:
 re-run it after changing the site and the video follows.
 
@@ -242,7 +242,9 @@ the narration audio and a `timeline.json` describing what happens when.
    than the sentence it has to carry.
 2. **Drives a real browser** through the site with Playwright — the scroll-linked
    3D hero, a pan and zoom of the Leaflet map, a pin click through to a species
-   profile, the search and the status filter, and the charts.
+   profile, the Conservation mode's 3D sites view being switched on and turned,
+   the species gallery's ring being dragged round, the search and the status
+   filter, and the charts.
 3. **Draws the captions and the closing card** in that same browser, using the
    site's own typefaces, and generates the end-card QR code offline from the
    public URL with the same `qrcode` library the site uses.

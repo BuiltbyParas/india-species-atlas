@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import {
@@ -82,7 +82,6 @@ export class Recorder {
     await this.context.addInitScript(VIRTUAL_CLOCK);
     this.page = await this.context.newPage();
     this.page.on('pageerror', (err) => console.warn('  page error:', err.message));
-    this.cdp = await this.context.newCDPSession(this.page);
 
     const renderer = await this.probeRenderer();
     console.log(`  renderer: ${renderer}`);
@@ -129,17 +128,28 @@ export class Recorder {
     await this.page.evaluate((n) => window.__promoClock.tick(n), steps);
   }
 
-  /** Advances page time by one video frame and writes that frame out. */
+  /**
+   * Advances page time by one video frame and writes that frame out.
+   *
+   * Playwright's own screenshot rather than a raw `Page.captureScreenshot`
+   * over CDP. The CDP call ignores the context's device scale and hands back
+   * CSS pixels — 540×960, which the editor then has to blow the whole video up
+   * from — and the obvious repair, asking for a clip at 2×, is worse than the
+   * disease: a clip is measured from the top of the *document*, so on any shot
+   * that has scrolled it selects a region the viewport no longer covers and
+   * the frame comes back empty. This captures the viewport at device scale,
+   * which is what lands on the 1080×1920 frame 1:1.
+   */
   async frame() {
     await this.tick(TICKS_PER_FRAME);
     if (this.dry) return;
-    const { data } = await this.cdp.send('Page.captureScreenshot', {
-      format: 'jpeg',
-      quality: this.quality,
-      captureBeyondViewport: false,
-    });
     const name = String(this.index++).padStart(5, '0');
-    await writeFile(join(this.shotDir, `${name}.jpg`), Buffer.from(data, 'base64'));
+    await this.page.screenshot({
+      path: join(this.shotDir, `${name}.jpg`),
+      type: 'jpeg',
+      quality: this.quality,
+      scale: 'device',
+    });
   }
 
   /** Holds the current state for `frames` frames. */

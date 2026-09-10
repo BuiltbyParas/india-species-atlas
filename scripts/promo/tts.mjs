@@ -54,6 +54,34 @@ export async function probeDuration(file) {
 }
 
 /**
+ * Speaks one line, retrying a few times before giving up.
+ *
+ * edge-tts talks to a remote service over a websocket, and a dropped
+ * connection there is common enough that it would otherwise throw away a
+ * pipeline run that has already built the site — the failure arrives before a
+ * single frame has been captured, but only just. The wait lengthens each time
+ * so a service having a bad minute is given one.
+ */
+async function speak(tts, text, file, attempts = 4) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await run(tts.cmd, [
+        ...tts.args,
+        '--voice', VOICE,
+        `--rate=${VOICE_RATE}`,
+        '--text', text,
+        '--write-media', file,
+      ]);
+      return;
+    } catch (err) {
+      if (attempt >= attempts) throw err;
+      console.warn(`  ! edge-tts failed (attempt ${attempt}/${attempts}), retrying`);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
+    }
+  }
+}
+
+/**
  * Speaks every narration line and reports how long each one runs, so the shot
  * that carries it can be given enough frames to cover it.
  */
@@ -63,13 +91,7 @@ export async function synthesise(lines, outDir, workRoot) {
   const out = [];
   for (const [i, line] of lines.entries()) {
     const file = join(outDir, `${String(i).padStart(2, '0')}.mp3`);
-    await run(tts.cmd, [
-      ...tts.args,
-      '--voice', VOICE,
-      `--rate=${VOICE_RATE}`,
-      '--text', line.text,
-      '--write-media', file,
-    ]);
+    await speak(tts, line.text, file);
     const seconds = await probeDuration(file);
     console.log(`  ${line.shot} · ${seconds.toFixed(2)}s · "${line.text.slice(0, 56)}…"`);
     out.push({ ...line, file, seconds });

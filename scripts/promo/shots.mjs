@@ -42,14 +42,19 @@ async function centreOf(rec, selector, nth = 0) {
 }
 
 /**
- * Drags the map by a fixed pixel offset, one increment per frame.
+ * Drags something by a fixed pixel offset, one increment per frame.
+ *
+ * Used by every shot that turns a thing with the pointer: the Leaflet map, the
+ * species gallery's ring and the 3D conservation stage.
  *
  * The pointer is brought to rest before the button is released: Leaflet reads
  * the last few pointer samples to decide whether to throw the map into an
  * inertial glide, and a glide is timed by the browser rather than by us, which
- * would put motion in the video that the frame counter does not control.
+ * would put motion in the video that the frame counter does not control. The
+ * two 3D stages settle to whole steps on release instead, and a pause before
+ * letting go suits them too.
  */
-async function dragMap(rec, frames, from, dx, dy, ease = smoother) {
+async function drag(rec, frames, from, dx, dy, ease = smoother) {
   await rec.page.mouse.move(from.x, from.y);
   await rec.page.mouse.down();
   await rec.animate(frames, (t) => {
@@ -60,8 +65,45 @@ async function dragMap(rec, frames, from, dx, dy, ease = smoother) {
   await rec.page.mouse.up();
 }
 
+/** The stages the two opt-in WebGL views draw into. */
+const GALLERY_STAGE = '[role="group"][aria-label^="Species gallery"]';
+const SITES_STAGE = '[role="group"][aria-label^="Conservation programmes"]';
+
 /**
- * The six shots, in order.
+ * Waits for one of those stages to be built and visible.
+ *
+ * Two clocks are involved and neither can be hurried. The scene's first frame
+ * is drawn inside a `requestAnimationFrame` callback, which in a recording only
+ * runs when this script ticks the virtual clock — so the poll ticks as well as
+ * waits. The fade that follows is a CSS transition on the canvas, timed by the
+ * browser at 700 ms of real time rather than by the frame counter, so it is
+ * waited out here instead of being photographed half-done.
+ */
+async function waitForStage(rec, selector, tries = 60) {
+  const visible = () =>
+    rec.page.evaluate((sel) => {
+      const canvas = document.querySelector(sel)?.querySelector('canvas');
+      return Boolean(canvas) && canvas.style.opacity === '1';
+    }, selector);
+  for (let i = 0; i < tries; i++) {
+    await rec.settle(250);
+    if (await visible()) {
+      await rec.settle(1400);
+      return;
+    }
+  }
+  console.warn('  ! 3D stage never reported ready — recording anyway');
+}
+
+/** Viewport-space box of an element, without scrolling the page to it. */
+async function boxOf(rec, selector) {
+  const box = await rec.page.locator(selector).first().boundingBox();
+  if (!box) throw new Error(`no box for ${selector}`);
+  return box;
+}
+
+/**
+ * The eight shots, in order.
  *
  * `run` is handed the exact number of frames the shot must produce and splits
  * that budget across its own beats, so re-timing the video — by changing the
@@ -145,7 +187,7 @@ export const SHOTS = [
         x: map.box.x + map.box.width * 0.22,
         y: map.box.y + map.box.height * 0.74,
       };
-      await dragMap(rec, pan - 3, grip, dx, dy);
+      await drag(rec, pan - 3, grip, dx, dy);
 
       // Zoom about the centre, which is now the locality just panned to.
       await rec.page.mouse.move(map.x, map.y);
@@ -212,6 +254,131 @@ export const SHOTS = [
   },
 
   {
+    id: 'sites3d',
+    minSeconds: 9,
+    warm: true,
+    narration: [
+      'Conservation mode can raise the map — a step for every state a programme covers.',
+      'A marker stands at each programme site; the step marks whether, not how much.',
+    ],
+    captions: [{ text: 'Conservation mode, raised out of the map', at: 2.4, seconds: 4.4 }],
+    async run(rec, frames) {
+      // Straight into Conservation mode, which the page reads off the query
+      // string, so the shot opens on the flat map the toggle is an alternative
+      // to rather than on the Species mode two clicks away from it.
+      await rec.goto('/atlas?mode=conservation');
+      await waitForTiles(rec);
+      await rec.settle(500);
+
+      // Framed from the mode switch down, so the toggle being pressed and the
+      // mode it belongs to are both in shot.
+      const modeTop = await rec.page.evaluate(
+        () =>
+          document.querySelector('[role="tablist"][aria-label="Map mode"]').getBoundingClientRect()
+            .top + window.scrollY,
+      );
+      await rec.scrollTo(modeTop - 70);
+      await rec.tick(6);
+      await rec.settle(400);
+
+      const [flat, arrive, swingOut, swingBack, rest, pick] =
+        split(frames, [14, 16, 12, 22, 8, 28]);
+      await rec.hold(flat);
+
+      // The view is opt-in, so the toggle is pressed rather than deep-linked.
+      // What follows it — building the relief and fading the canvas up — is on
+      // the browser's clock, so it is waited out between frames instead of
+      // being photographed half-done.
+      await rec.page.locator('button:has-text("3D sites")').dispatchEvent('click');
+      await waitForStage(rec, SITES_STAGE);
+      await rec.hold(arrive);
+
+      // Turn the stage out to one limit and back. The scene holds the view
+      // within 32° of north-up, and 900 px of drag is a full turn, so 78 px is
+      // exactly the range; the upward component lowers the camera with it,
+      // which is what makes the raised states read as raised rather than as
+      // shaded. Coming back to where it started matters: the marker beat is
+      // the longest one in the shot and it should sit on the framing the view
+      // opens in, not on the edge of its own swing.
+      const stage = await boxOf(rec, SITES_STAGE);
+      const grip = { x: stage.x + stage.width / 2, y: stage.y + stage.height * 0.62 };
+      await drag(rec, swingOut - 3, grip, -78, -22);
+      await drag(rec, swingBack - 3, { x: grip.x - 78, y: grip.y - 22 }, 78, 22);
+      await rec.hold(rest);
+
+      // Select a marker the way the site's own screen-reader list does, which
+      // is the same selection a click on the marker makes. Naming the site
+      // keeps the shot on the same programme every run, and a capture never
+      // draws a cursor, so nothing is lost by not aiming at it.
+      await rec.page
+        .locator('ul.sr-only li button', { hasText: 'Project Elephant' })
+        .first()
+        .evaluate((el) => el.focus({ preventScroll: true }));
+      await rec.settle(250);
+      await rec.hold(pick);
+    },
+  },
+
+  {
+    id: 'gallery',
+    minSeconds: 9,
+    narration: [
+      'The species directory is a ring you turn, bringing any species to the front.',
+      'The cards are modelled; the photographs on them are real.',
+    ],
+    captions: [{ text: 'Turn the gallery to browse the species', at: 0.5, seconds: 4.6 }],
+    async run(rec, frames) {
+      await rec.goto('/species');
+      await rec.settle(400);
+
+      // The gallery builds nothing until its section is near the viewport, so
+      // the shot's opening position is also what starts it.
+      const stageTop = await rec.page.evaluate(
+        (sel) => document.querySelector(sel).getBoundingClientRect().top + window.scrollY,
+        GALLERY_STAGE,
+      );
+      await rec.scrollTo(stageTop - 150);
+      await rec.tick(6);
+      await waitForStage(rec, GALLERY_STAGE);
+
+      const [lead, turn, rest, stepOne, stepTwo, tail] = split(frames, [10, 30, 14, 16, 16, 14]);
+      await rec.hold(lead);
+
+      // 190 px of drag turns the ring by one card, so this sweep brings the
+      // third species round; the ring settles on a whole card when the button
+      // is released.
+      const stage = await boxOf(rec, GALLERY_STAGE);
+      const grip = { x: stage.x + stage.width * 0.78, y: stage.y + stage.height * 0.55 };
+      await drag(rec, turn - 3, grip, -380, 0);
+
+      // Then let the hand come back to the middle. The camera follows the
+      // pointer, so a pointer left parked at the edge of the stage holds the
+      // ring at a skew for the rest of the shot, with the card that ought to
+      // be centred pushed against one side.
+      const from = { x: grip.x - 380, y: grip.y };
+      const middle = { x: stage.x + stage.width / 2, y: stage.y + stage.height / 2 };
+      await rec.animate(rest, (t) => {
+        const e = smoother(t);
+        return rec.page.mouse.move(
+          lerp(from.x, middle.x, e),
+          lerp(from.y, middle.y, e),
+        );
+      });
+
+      // Then the same move on the control beside the caption, which is the
+      // other way the page offers. The event is sent to the button rather than
+      // clicked at, so the pointer stays over the stage and the camera holds
+      // the framing the drag left it in.
+      const next = rec.page.locator('button[aria-label="Next species"]');
+      await next.dispatchEvent('click');
+      await rec.hold(stepOne);
+      await next.dispatchEvent('click');
+      await rec.hold(stepTwo);
+      await rec.hold(tail);
+    },
+  },
+
+  {
     id: 'filters',
     minSeconds: 8,
     narration: [
@@ -226,6 +393,12 @@ export const SHOTS = [
         split(frames, [4, 19, 9, 13, 7, 7, 15, 26]);
 
       await rec.scrollTo(0);
+      // The directory opens on the gallery, which the shot before this one has
+      // just been through. Switching to the grid keeps the two shots from
+      // showing the same thing twice, and it is the view a filtered result set
+      // is easiest to read in: a filter change rebuilds the ring from scratch,
+      // and the fade that follows is the browser's rather than ours.
+      await rec.page.locator('[role="tablist"][aria-label="Directory view"] button:has-text("Grid")').dispatchEvent('click');
       await rec.hold(lead);
 
       await rec.page.evaluate(() =>
