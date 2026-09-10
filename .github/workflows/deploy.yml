@@ -23,7 +23,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # The promo pipeline's Playwright is a devDependency, so `npm ci` would
+      # otherwise download a browser set this build never uses.
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       # For a project site at https://<user>.github.io/<repo>/ the base path
       # must match the repository name. Change it if you rename the repo.
       - run: npm run build
