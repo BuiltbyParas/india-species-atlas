@@ -3,17 +3,22 @@ import type { Species } from '../../types';
 import { REGION_LABELS } from '../../data/regions';
 import { SpeciesImage } from '../ui/SpeciesImage';
 import { StatusBadge } from '../ui/StatusBadge';
+import { FavouriteButton } from './FavouriteButton';
 import { useSpeciesProfile } from './SpeciesProfileProvider';
 
+/**
+ * The card carries two actions — open the profile, and save the species — so
+ * it cannot be one big `<button>` any more: a button inside a button is
+ * invalid, and a screen reader would announce one control where there are
+ * two. Instead the common name is the button, and its `::after` is stretched
+ * over the whole card so the large click target survives. The save control
+ * sits above that layer.
+ */
 export function SpeciesCard({ species }: { species: Species }) {
   const { open } = useSpeciesProfile();
 
   return (
-    <button
-      type="button"
-      onClick={() => open(species.id)}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-400 motion-reduce:hover:translate-y-0"
-    >
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 has-[:focus-visible]:border-forest-500 has-[:focus-visible]:shadow-xl motion-reduce:hover:translate-y-0">
       <div className="relative overflow-hidden">
         <SpeciesImage
           species={species}
@@ -29,10 +34,21 @@ export function SpeciesCard({ species }: { species: Species }) {
         <div className="absolute left-3 top-3">
           <StatusBadge status={species.status} size="sm" className="bg-forest-950/70 backdrop-blur-sm" />
         </div>
+        <div className="absolute right-3 top-3 z-20">
+          <FavouriteButton species={species} size="sm" className="backdrop-blur-sm" />
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col p-4 pt-3.5">
-        <h3 className="font-serif text-lg font-semibold leading-tight text-canvas">{species.commonName}</h3>
+        <h3 className="font-serif text-lg font-semibold leading-tight text-canvas">
+          <button
+            type="button"
+            onClick={() => open(species.id)}
+            className="text-left after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-400"
+          >
+            {species.commonName}
+          </button>
+        </h3>
         <p className="mt-0.5 text-sm italic text-canvas/55">{species.scientificName}</p>
         <p className="mt-2.5 line-clamp-3 text-sm leading-relaxed text-canvas/70">{species.summary}</p>
         <div className="mt-3.5 flex flex-wrap gap-1.5">
@@ -45,7 +61,10 @@ export function SpeciesCard({ species }: { species: Species }) {
             </span>
           ))}
         </div>
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest-300 transition-colors group-hover:text-forest-200">
+        <span
+          aria-hidden="true"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest-300 transition-colors group-hover:text-forest-200"
+        >
           View profile
           <ArrowRight
             className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -53,6 +72,6 @@ export function SpeciesCard({ species }: { species: Species }) {
           />
         </span>
       </div>
-    </button>
+    </article>
   );
 }

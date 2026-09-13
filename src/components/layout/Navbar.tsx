@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/atlas', label: 'Explore Map' },
   { to: '/species', label: 'Species' },
+  { to: '/compare', label: 'Compare' },
   { to: '/conservation', label: 'Conservation' },
   { to: '/about', label: 'About' },
   { to: '/sources', label: 'Sources' },

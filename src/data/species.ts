@@ -57,6 +57,14 @@ export const SPECIES: Species[] = [
     status: 'CR',
     statusFullName: 'Critically Endangered',
     statusAssessedYear: 2021,
+    statusHistory: [
+      {
+        year: 2011,
+        status: 'CR',
+        note: 'Listed as Critically Endangered from this year onwards.',
+        source: { label: 'Great Indian Bustard — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/great-indian-bustard-ardeotis-nigriceps', publisher: 'BirdLife International Data Zone' },
+      },
+    ],
     endemicToIndia: true,
     regions: ['desert'],
     states: ['Rajasthan', 'Gujarat'],
@@ -385,6 +393,14 @@ export const SPECIES: Species[] = [
     status: 'CR',
     statusFullName: 'Critically Endangered',
     statusAssessedYear: 2021,
+    statusHistory: [
+      {
+        year: 2000,
+        status: 'CR',
+        note: 'Listed as Critically Endangered from this year, after the diclofenac-driven collapse.',
+        source: { label: 'White-rumped Vulture — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/white-rumped-vulture-gyps-bengalensis', publisher: 'BirdLife International Data Zone' },
+      },
+    ],
     endemicToIndia: false,
     regions: ['central-india', 'gangetic-plains', 'northeast'],
     states: ['Madhya Pradesh', 'Rajasthan', 'Assam', 'Haryana', 'Uttar Pradesh', 'Gujarat'],
@@ -440,6 +456,18 @@ export const SPECIES: Species[] = [
     status: 'VU',
     statusFullName: 'Vulnerable',
     statusAssessedYear: 2017,
+    statusHistory: [
+      {
+        year: 2017,
+        status: 'VU',
+        note: 'Moved from Endangered to Vulnerable on a revised population estimate, not on evidence of recovery.',
+        source: {
+          label: 'IUCN Red List update, 14 September 2017 — snow leopard moved from Endangered to Vulnerable',
+          url: 'https://iucn.org/news/secretariat/201709/once-abundant-ash-tree-and-antelope-species-face-extinction-%E2%80%93-iucn-red-list',
+          publisher: 'IUCN',
+        },
+      },
+    ],
     endemicToIndia: false,
     regions: ['himalayas'],
     states: ['Ladakh', 'Jammu and Kashmir', 'Himachal Pradesh', 'Uttarakhand', 'Sikkim', 'Arunachal Pradesh'],
@@ -657,6 +685,14 @@ export const SPECIES: Species[] = [
     status: 'EN',
     statusFullName: 'Endangered',
     statusAssessedYear: 2019,
+    statusHistory: [
+      {
+        year: 1986,
+        status: 'EN',
+        note: 'Listed as Endangered from this year onwards.',
+        source: iucnSearch('Elephas maximus'),
+      },
+    ],
     endemicToIndia: false,
     regions: ['western-ghats', 'northeast', 'central-india', 'gangetic-plains'],
     states: ['Karnataka', 'Kerala', 'Tamil Nadu', 'Assam', 'Odisha', 'Uttarakhand', 'West Bengal', 'Jharkhand'],

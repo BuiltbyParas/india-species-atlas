@@ -35,6 +35,26 @@ project.
   in real text below the stage. Without WebGL, on a low-end device, or where
   reduced motion is asked for, the flat map is shown instead with a note
   saying why, and no three.js is ever fetched.
+- **Species density shading** — an opt-in overlay on the flat map that shades
+  each state by how many of the *currently selected* species are recorded there.
+  It counts species, not pins: a species with four markers in Assam counts once,
+  because the markers are illustrative locations and counting them would shade a
+  state by how much attention this atlas paid to it. The count is always given as
+  a number in the state's tooltip as well as a shade, so colour is never the
+  value. The boundary file predates the 2019 reorganisation of Jammu & Kashmir,
+  so Ladakh records are drawn on the Jammu and Kashmir shape and the legend says
+  so.
+- **Compare** (`/compare`) — two or three species side by side on every attribute
+  the dataset holds, with the selection kept in the address bar so a comparison
+  can be linked to or handed in. A cell that has nothing to show says so in
+  words; it is never left blank, because a blank cell reads as "none" when it may
+  mean "not recorded".
+- **Saved species** — a heart on every card and profile keeps a list in this
+  browser's `localStorage`. There are no accounts and no server, so a list is
+  shared by link (`/species?list=id,id`): the recipient sees it, and chooses
+  whether to keep it. Every storage read and write is wrapped, so a private
+  window or blocked storage degrades to "no saved list" rather than a broken
+  page.
 - **Search** across common name, scientific name, state and region, updating
   instantly.
 - **Combinable filters** — conservation status, ecological region and habitat.
@@ -49,13 +69,25 @@ project.
   is a 3D model of an animal, and the stage says so. A *Grid* view sits beside
   it for scanning, and the search and filters drive both.
 - **Species profiles** — photograph, scientific name, IUCN status with a
-  plain-language definition, Indian distribution, habitat, major threats,
-  conservation measures, government programmes, protected areas, a "why it
-  matters" note, and per-species sources with a "last checked" date. Profiles are
-  deep-linkable via `?species=<id>`.
+  plain-language definition, and then five tabs: *Overview* (status, habitat, why
+  it matters, assessment history), *Distribution* (range in words, states, every
+  mapped location), *Threats*, *Conservation* (measures, programmes, protected
+  areas) and *Sources* (per-species references, "last checked" date and the
+  photograph's credit). Tabs rather than one long column, so the sources sit one
+  click from any claim instead of a scroll away; arrow keys move between them.
+  Profiles are deep-linkable via `?species=<id>`.
 - **Conservation & status page** — the IUCN category ladder explained, the
   "extinction risk ≠ population count" distinction, dependency-free charts
-  computed from the dataset, a threats overview and a programmes directory.
+  computed from the dataset, a threats overview, a **timeline** and a programmes
+  directory.
+- **Timeline** — a year slider over two kinds of dated fact: the year a species
+  was listed in the Red List category it still holds, and the year a conservation
+  programme began. Deliberately not a population graph — the atlas holds no
+  population series it could cite, and nothing between two events is
+  interpolated. A listing year is recorded only where a source states it
+  outright; the species for which none has been found and checked are **named
+  underneath the timeline** rather than quietly omitted, so the gaps in the
+  record are as visible as the record.
 - **"Discover a species"** — opens a random species profile.
 - **Presentation panel + QR code** — a screenshot-friendly summary card and a QR
   code generated at runtime from the live URL (no hard-coded address).
@@ -110,10 +142,12 @@ src/
   components/   ui, layout, map, species, conservation, charts
   data/         species.ts, regions.ts, threats.ts, programmes.ts,
                 sources.ts, statusInfo.ts
-  hooks/        useSpeciesFilters.ts
-  pages/        Home, Atlas, Species, Conservation, About, Sources, 404
+  hooks/        useSpeciesFilters.ts, useFavourites.ts (localStorage store)
+  pages/        Home, Atlas, Species, Compare, Conservation, About, Sources, 404
   types/        domain types
   utils/        stats (all headline numbers computed here), cn,
+                stateCounts (species-per-state for the density shading),
+                timeline (dated listings + programme starts),
                 geoExtrude (GeoJSON -> extruded geometry, shared by the hero
                 relief and the 3D Conservation view), canRender3D
   theme.ts      literal palette values for SVG / canvas / Leaflet
@@ -404,6 +438,12 @@ former parent states. Replace the file with any GeoJSON whose features expose a
   population boundaries or full ranges.
 - The atlas is a teaching tool, not a complete inventory or a substitute for
   official distribution datasets.
+- Assessment history is **partial by design**. The Red List's published
+  assessment history is not machine-readable, so a listing year is recorded only
+  where a cited source states it outright — at present for 4 of the 12 species.
+  The rest are shown as "not recorded" in the profile, the comparison and the
+  timeline. An unchecked year would be indistinguishable on screen from a checked
+  one, so none is guessed.
 - Wikipedia was used only for orientation during research, never as the authority
   for a conservation status.
 

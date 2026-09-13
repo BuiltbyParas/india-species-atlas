@@ -113,7 +113,7 @@ export function SpeciesProfileProvider({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div className="scroll-slim flex-1 overflow-y-auto">
-              <SpeciesProfile species={species} />
+              <SpeciesProfile key={species.id} species={species} />
             </div>
           </div>
         </div>

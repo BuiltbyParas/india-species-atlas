@@ -11,6 +11,7 @@ import {
 } from 'react-leaflet';
 import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
+import { countSpeciesByState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
@@ -45,11 +46,14 @@ export function AtlasMap({
   mode,
   selectedState,
   onSelectState,
+  shadeByCount = false,
 }: {
   results: Species[];
   mode: ConservationMode;
   selectedState: string | null;
   onSelectState: (state: string | null) => void;
+  /** Shade each state by how many of the selected species occur in it. */
+  shadeByCount?: boolean;
 }) {
   const { open } = useSpeciesProfile();
   const [statesGeo, setStatesGeo] = useState<GeoJsonObject | null>(null);
@@ -84,14 +88,28 @@ export function AtlasMap({
     return list;
   }, [results, selectedState]);
 
+  const counts = useMemo(() => countSpeciesByState(results), [results]);
+  const maxCount = useMemo(() => Math.max(0, ...counts.values()), [counts]);
+
   // Leaflet writes these onto SVG presentation attributes, which do not
   // resolve CSS custom properties — so use literal colours here.
-  const styleFor = (isSelected: boolean) => ({
-    color: isSelected ? '#8fc7aa' : 'rgba(143,199,170,0.35)',
-    weight: isSelected ? 2 : 0.8,
-    fillColor: isSelected ? '#347d59' : '#5aa47e',
-    fillOpacity: isSelected ? 0.28 : 0.06,
-  });
+  const styleFor = (isSelected: boolean, name?: string) => {
+    if (shadeByCount && !isSelected) {
+      const n = name ? (counts.get(name) ?? 0) : 0;
+      return {
+        color: 'rgba(143,199,170,0.35)',
+        weight: 0.8,
+        fillColor: '#5aa47e',
+        fillOpacity: densityOpacity(densityStep(n, maxCount)),
+      };
+    }
+    return {
+      color: isSelected ? '#8fc7aa' : 'rgba(143,199,170,0.35)',
+      weight: isSelected ? 2 : 0.8,
+      fillColor: isSelected ? '#347d59' : '#5aa47e',
+      fillOpacity: isSelected ? 0.28 : 0.06,
+    };
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -115,22 +133,38 @@ export function AtlasMap({
 
         {statesGeo && (
           <GeoJSON
-            key={selectedState ?? 'none'}
+            // Leaflet styles a layer once, on creation, so the boundary layer
+            // is remounted whenever anything it is styled or labelled by
+            // changes — the selection, the shading, or the species in view.
+            key={`${selectedState ?? 'none'}|${shadeByCount}|${results.map((r) => r.id).join(',')}`}
             ref={geoRef}
             data={statesGeo}
             style={(feature) =>
-              styleFor(!!feature && feature.properties?.state === selectedState)
+              styleFor(
+                !!feature && feature.properties?.state === selectedState,
+                feature?.properties?.state as string | undefined,
+              )
             }
             onEachFeature={(feature, layer) => {
               const name = feature.properties?.state as string | undefined;
               if (!name) return;
+              const n = counts.get(name) ?? 0;
               layer.on({
                 click: () => onSelectState(name === selectedState ? null : name),
-                mouseover: (e) => (e.target as L.Path).setStyle({ fillOpacity: 0.2, weight: 1.4 }),
-                mouseout: (e) =>
-                  (e.target as L.Path).setStyle(styleFor(name === selectedState)),
+                mouseover: (e) =>
+                  (e.target as L.Path).setStyle({
+                    fillOpacity: Math.max(0.2, densityOpacity(densityStep(n, maxCount))),
+                    weight: 1.4,
+                  }),
+                mouseout: (e) => (e.target as L.Path).setStyle(styleFor(name === selectedState, name)),
               });
-              layer.bindTooltip(name, { sticky: true, className: 'region-label', opacity: 1 });
+              // The count is given as a number as well as a shade: the shading
+              // is a summary, and colour alone is never the value.
+              layer.bindTooltip(shadeByCount ? `${name} — ${n} species` : name, {
+                sticky: true,
+                className: 'region-label',
+                opacity: 1,
+              });
             }}
           />
         )}

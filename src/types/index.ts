@@ -59,6 +59,24 @@ export interface DistributionPoint {
   note?: string;
 }
 
+/**
+ * One dated entry in a species' IUCN Red List record: the year from which a
+ * category applied, and the source that states it.
+ *
+ * The atlas records these only where a source could be found that states the
+ * year explicitly. A species with no entry here is shown as "not recorded"
+ * rather than being given an inferred date — the assessment history published
+ * by the Red List is not machine-readable, and a guessed year would be
+ * indistinguishable on screen from a checked one.
+ */
+export interface StatusAssessment {
+  year: number;
+  status: IucnStatus;
+  /** One line saying what the record states. */
+  note: string;
+  source: SourceRef;
+}
+
 export interface SpeciesImage {
   /** Optional raster image (e.g. a Wikimedia Commons file URL). */
   src?: string;
@@ -79,6 +97,8 @@ export interface Species {
   statusFullName: string;
   /** Year of the IUCN assessment this status is drawn from. */
   statusAssessedYear: number;
+  /** Dated Red List listings, oldest first. Absent where none is recorded. */
+  statusHistory?: StatusAssessment[];
   /** Whether the species is endemic to India / the Indian subcontinent. */
   endemicToIndia: boolean;
   regions: RegionId[];
