@@ -100,7 +100,7 @@ export function Navbar() {
                   end={l.end}
                   className={({ isActive }) =>
                     cn(
-                      'block rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                      'flex min-h-11 items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
                       isActive
                         ? 'bg-forest-800 text-canvas'
                         : 'text-canvas/70 hover:bg-forest-800/60 hover:text-canvas',

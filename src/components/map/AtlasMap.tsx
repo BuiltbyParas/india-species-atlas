@@ -25,16 +25,43 @@ interface MapPoint {
   note?: string;
 }
 
+const FIT_PADDING: L.PointExpression = [12, 12];
+
+/**
+ * Frames the whole country on first paint.
+ *
+ * A fixed `zoom={4}` suits a wide desktop map and crops India badly on a
+ * phone, where the container is both narrower and a different shape. The zoom
+ * that fits the country is a property of the container, so it is measured
+ * rather than assumed — and `minZoom` is lowered to match, since otherwise the
+ * fit would be clamped to a zoom at which the country does not fit.
+ *
+ * It runs once: re-fitting on every resize would throw away a pan the reader
+ * had made, and an on-screen keyboard opening counts as a resize.
+ */
+function FitIndia() {
+  const map = useMap();
+  useEffect(() => {
+    // The container may still be settling when the lazy chunk mounts, and a
+    // zoom measured against the wrong size is worse than none.
+    map.invalidateSize();
+    const zoom = map.getBoundsZoom(INDIA_BOUNDS, false, L.point(FIT_PADDING));
+    map.setMinZoom(Math.min(4, zoom));
+    map.fitBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
+  }, [map]);
+  return null;
+}
+
 function ResetView({ onReset }: { onReset: () => void }) {
   const map = useMap();
   return (
     <button
       type="button"
       onClick={() => {
-        map.flyToBounds(INDIA_BOUNDS, { padding: [20, 20] });
+        map.flyToBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
         onReset();
       }}
-      className="absolute right-3 top-3 z-[500] rounded-md border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800"
+      className="absolute right-3 top-3 z-[500] inline-flex min-h-11 items-center rounded-md border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800 sm:min-h-0"
     >
       Reset to India view
     </button>
@@ -118,6 +145,7 @@ export function AtlasMap({
         zoom={4}
         minZoom={4}
         maxZoom={9}
+        zoomSnap={0.25}
         maxBounds={INDIA_BOUNDS.pad(0.3)}
         className="h-full w-full"
         scrollWheelZoom
@@ -209,6 +237,7 @@ export function AtlasMap({
           </Marker>
         ))}
 
+        <FitIndia />
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>
 

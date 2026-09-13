@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Check, Heart, LayoutGrid, Link2, Share2 } from 'lucide-react';
+import { Boxes, Check, Heart, LayoutGrid, Link2, Share2, SlidersHorizontal } from 'lucide-react';
 import { useSpeciesFilters } from '../hooks/useSpeciesFilters';
 import { useFavourites } from '../hooks/useFavourites';
 import { SPECIES_BY_ID } from '../data/species';
@@ -23,6 +23,10 @@ export function SpeciesPage() {
   const filters = useSpeciesFilters();
   const [view, setView] = useState<View>('gallery');
   const [savedOnly, setSavedOnly] = useState(false);
+  // On a phone the unfiltered directory is what a reader wants first: with the
+  // panel open by default, seventeen checkboxes stand between the page heading
+  // and the first species. It stays open from `lg` up, where it costs nothing.
+  const [showFilters, setShowFilters] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const { ids: savedIds, count: savedCount, isFavourite, addMany } = useFavourites();
@@ -116,7 +120,24 @@ export function SpeciesPage() {
       <div className="mt-10 grid gap-8 lg:grid-cols-[264px_1fr] lg:gap-10">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <SearchBar value={filters.filters.query} onChange={filters.setQuery} />
-          <div className="mt-3 rounded-xl border border-forest-800 bg-forest-900/70 p-4">
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters}
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
+          >
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Filters &amp; saved list {filters.activeCount > 0 && `(${filters.activeCount})`}
+            </span>
+            <span>{showFilters ? 'Hide' : 'Show'}</span>
+          </button>
+          <div
+            className={cn(
+              'mt-3 rounded-xl border border-forest-800 bg-forest-900/70 p-4 lg:block',
+              showFilters ? 'block' : 'hidden',
+            )}
+          >
             <FilterPanel filters={filters} />
 
             <div className="mt-3 border-t border-forest-700/60 pt-3">
@@ -195,7 +216,7 @@ export function SpeciesPage() {
                     aria-selected={active}
                     onClick={() => setView(v.id)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200 sm:min-h-0',
                       active
                         ? 'bg-forest-600 text-white'
                         : 'text-canvas/60 hover:bg-forest-800/70 hover:text-canvas',

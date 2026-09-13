@@ -33,7 +33,7 @@ export function ModeSwitch({
               type="button"
               onClick={() => onChange(m.id)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition',
+                'inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition sm:min-h-0',
                 active ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
               )}
             >

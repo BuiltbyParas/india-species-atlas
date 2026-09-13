@@ -102,6 +102,15 @@ project.
   common name, scientific name and IUCN category beside it — which rises, holds
   and fades as the camera passes. Confined to the hero on purpose: the map,
   cards, filters and charts stay flat and data-first.
+- **On a phone** the layout is not merely narrower. The map measures its own
+  container and frames the whole country there, rather than trusting a zoom
+  level chosen for a wide desktop map, and it takes 70% of the viewport height
+  instead of 62%. The filter panels on both the map and the directory start
+  collapsed, so a reader meets the species rather than seventeen checkboxes;
+  they stay open from `lg` up, where they cost nothing. The comparison table
+  freezes its attribute column while the species columns scroll. Controls that a
+  finger has to hit — map zoom, mode switch, view tabs, menu rows — are at least
+  44px there and keep their compact size on a desktop pointer.
 - Responsive (desktop → phone), keyboard-navigable, with visible focus states and
   no reliance on colour alone for status. Every 3D element degrades to the flat
   layout under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end

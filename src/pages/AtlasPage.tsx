@@ -89,7 +89,7 @@ export function AtlasPage() {
             type="button"
             onClick={() => setShowFilters((v) => !v)}
             aria-expanded={showFilters}
-            className="mt-2 inline-flex w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
           >
             <span className="inline-flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -123,7 +123,7 @@ export function AtlasPage() {
                     aria-pressed={!show3D}
                     onClick={() => setWants3D(false)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'text-canvas/65 hover:text-canvas' : 'bg-forest-600 text-white',
                     )}
                   >
@@ -138,7 +138,7 @@ export function AtlasPage() {
                       setWants3D(true);
                     }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
                     )}
                   >
@@ -148,12 +148,12 @@ export function AtlasPage() {
                 </div>
               )}
               {!show3D && (
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas">
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas sm:min-h-0">
                   <input
                     type="checkbox"
                     checked={shadeByCount}
                     onChange={(e) => setShadeByCount(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-forest-600 bg-forest-900 accent-forest-500"
+                    className="h-4 w-4 rounded border-forest-600 bg-forest-900 accent-forest-500"
                   />
                   <Layers className="h-3.5 w-3.5" aria-hidden="true" />
                   Shade states by species count
@@ -166,7 +166,9 @@ export function AtlasPage() {
             </div>
           </div>
 
-          <div className="h-[62vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800">
+          {/* The map is the page on a phone, so it gets more of the screen
+              there than it needs on a desktop with a sidebar beside it. */}
+          <div className="h-[70vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800 sm:h-[62vh]">
             <Suspense
               fallback={
                 <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/50">

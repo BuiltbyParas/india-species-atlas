@@ -240,14 +240,21 @@ export function ComparePage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-8 overflow-x-auto rounded-xl border border-forest-800">
+        <div className="mt-8">
+          <p className="mb-2 text-xs text-canvas/55 sm:hidden">
+            Scroll the table sideways to reach the other species — the attribute column stays in place.
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-forest-800">
           <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <caption className="sr-only">
               Comparison of {selected.map((s) => s.commonName).join(', ')}
             </caption>
             <thead>
               <tr>
-                <th scope="col" className="w-40 bg-forest-900 p-3 align-bottom text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
+                <th
+                  scope="col"
+                  className="sticky left-0 z-10 w-32 bg-forest-900 p-3 align-bottom text-xs font-semibold uppercase tracking-[0.14em] text-forest-300 sm:w-40"
+                >
                   Attribute
                 </th>
                 {selected.map((s) => (
@@ -279,7 +286,7 @@ export function ComparePage() {
                 <tr key={row.label} className={i % 2 === 1 ? 'bg-forest-900/40' : undefined}>
                   <th
                     scope="row"
-                    className="border-t border-forest-800 p-3 align-top text-xs font-semibold uppercase tracking-[0.12em] text-forest-300"
+                    className="sticky left-0 z-10 border-t border-forest-800 bg-forest-900 p-3 align-top text-xs font-semibold uppercase tracking-[0.12em] text-forest-300"
                   >
                     {row.label}
                   </th>
@@ -292,6 +299,7 @@ export function ComparePage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

@@ -135,6 +135,31 @@ select,
   color: var(--color-canvas);
   border-color: var(--color-forest-700);
 }
+/*
+  Leaflet's disabled zoom button keeps its own light default, which reads as a
+  white tile on this dark basemap — and the map now sits at its minimum zoom
+  whenever it is showing the whole country, so that state is the common one.
+*/
+.leaflet-bar a.leaflet-disabled,
+.leaflet-bar a.leaflet-disabled:hover {
+  background: var(--color-forest-950);
+  color: color-mix(in srgb, var(--color-canvas) 35%, transparent);
+  cursor: default;
+}
+/*
+  Leaflet's own zoom buttons are 26px square, which is below the 44px a finger
+  needs. Widen them where the pointer is coarse — a touchscreen — and leave the
+  compact desktop control alone.
+*/
+@media (pointer: coarse) {
+  .leaflet-touch .leaflet-bar a,
+  .leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 20px;
+  }
+}
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   background: var(--color-forest-900);
