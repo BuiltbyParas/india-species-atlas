@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Map as MapIcon, SlidersHorizontal } from 'lucide-react';
+import { Boxes, Layers, Map as MapIcon, SlidersHorizontal } from 'lucide-react';
 import type { ConservationMode } from '../types';
 
 const MODES: ConservationMode[] = ['species', 'threats', 'conservation'];
@@ -11,6 +11,8 @@ import { ModeSwitch } from '../components/map/ModeSwitch';
 import { MapLegend } from '../components/map/MapLegend';
 import { ProgrammeLegend } from '../components/map/ProgrammeLegend';
 import { StatePanel } from '../components/map/StatePanel';
+import { StateDensityLegend } from '../components/map/StateDensityLegend';
+import { countSpeciesByState } from '../utils/stateCounts';
 import { cn } from '../utils/cn';
 
 const AtlasMap = lazy(() =>
@@ -42,6 +44,10 @@ export function AtlasPage() {
     );
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // Density shading is an overlay on the same map rather than a fourth mode:
+  // it answers "where are these species concentrated?" without taking away
+  // the pins that answer "which species, and where exactly?".
+  const [shadeByCount, setShadeByCount] = useState(false);
 
   // The 3D view is a companion to the Conservation mode, never the default:
   // the flat map is what the reader evaluates the data on, and it is what
@@ -53,6 +59,11 @@ export function AtlasPage() {
   const onUnavailable = useCallback((reason: 'unsupported' | 'slow') => {
     setUnavailable(reason);
   }, []);
+
+  const maxStateCount = useMemo(() => {
+    const counts = countSpeciesByState(filters.results);
+    return Math.max(0, ...counts.values());
+  }, [filters.results]);
 
   const pointCount = useMemo(() => {
     return filters.results
@@ -78,7 +89,7 @@ export function AtlasPage() {
             type="button"
             onClick={() => setShowFilters((v) => !v)}
             aria-expanded={showFilters}
-            className="mt-2 inline-flex w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
           >
             <span className="inline-flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -112,7 +123,7 @@ export function AtlasPage() {
                     aria-pressed={!show3D}
                     onClick={() => setWants3D(false)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'text-canvas/65 hover:text-canvas' : 'bg-forest-600 text-white',
                     )}
                   >
@@ -127,7 +138,7 @@ export function AtlasPage() {
                       setWants3D(true);
                     }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
                     )}
                   >
@@ -136,6 +147,18 @@ export function AtlasPage() {
                   </button>
                 </div>
               )}
+              {!show3D && (
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas sm:min-h-0">
+                  <input
+                    type="checkbox"
+                    checked={shadeByCount}
+                    onChange={(e) => setShadeByCount(e.target.checked)}
+                    className="h-4 w-4 rounded border-forest-600 bg-forest-900 accent-forest-500"
+                  />
+                  <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                  Shade states by species count
+                </label>
+              )}
               <p className="text-sm text-canvas/60" aria-live="polite">
                 {filters.results.length} species · {pointCount} mapped location{pointCount === 1 ? '' : 's'}
                 {selectedState ? ` in ${selectedState}` : ''}
@@ -143,7 +166,9 @@ export function AtlasPage() {
             </div>
           </div>
 
-          <div className="h-[62vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800">
+          {/* The map is the page on a phone, so it gets more of the screen
+              there than it needs on a desktop with a sidebar beside it. */}
+          <div className="h-[70vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800 sm:h-[62vh]">
             <Suspense
               fallback={
                 <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/50">
@@ -159,6 +184,7 @@ export function AtlasPage() {
                   mode={mode}
                   selectedState={selectedState}
                   onSelectState={setSelectedState}
+                  shadeByCount={shadeByCount}
                 />
               )}
             </Suspense>
@@ -173,7 +199,13 @@ export function AtlasPage() {
           )}
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {show3D ? <ProgrammeLegend results={filters.results} /> : <MapLegend mode={mode} />}
+            {show3D ? (
+              <ProgrammeLegend results={filters.results} />
+            ) : shadeByCount ? (
+              <StateDensityLegend max={maxStateCount} />
+            ) : (
+              <MapLegend mode={mode} />
+            )}
             {selectedState ? (
               <StatePanel state={selectedState} onClear={() => setSelectedState(null)} />
             ) : (

@@ -11,6 +11,7 @@ import {
 } from 'react-leaflet';
 import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
+import { countSpeciesByState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
@@ -24,16 +25,43 @@ interface MapPoint {
   note?: string;
 }
 
+const FIT_PADDING: L.PointExpression = [12, 12];
+
+/**
+ * Frames the whole country on first paint.
+ *
+ * A fixed `zoom={4}` suits a wide desktop map and crops India badly on a
+ * phone, where the container is both narrower and a different shape. The zoom
+ * that fits the country is a property of the container, so it is measured
+ * rather than assumed — and `minZoom` is lowered to match, since otherwise the
+ * fit would be clamped to a zoom at which the country does not fit.
+ *
+ * It runs once: re-fitting on every resize would throw away a pan the reader
+ * had made, and an on-screen keyboard opening counts as a resize.
+ */
+function FitIndia() {
+  const map = useMap();
+  useEffect(() => {
+    // The container may still be settling when the lazy chunk mounts, and a
+    // zoom measured against the wrong size is worse than none.
+    map.invalidateSize();
+    const zoom = map.getBoundsZoom(INDIA_BOUNDS, false, L.point(FIT_PADDING));
+    map.setMinZoom(Math.min(4, zoom));
+    map.fitBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
+  }, [map]);
+  return null;
+}
+
 function ResetView({ onReset }: { onReset: () => void }) {
   const map = useMap();
   return (
     <button
       type="button"
       onClick={() => {
-        map.flyToBounds(INDIA_BOUNDS, { padding: [20, 20] });
+        map.flyToBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
         onReset();
       }}
-      className="absolute right-3 top-3 z-[500] rounded-md border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800"
+      className="absolute right-3 top-3 z-[500] inline-flex min-h-11 items-center rounded-md border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800 sm:min-h-0"
     >
       Reset to India view
     </button>
@@ -45,11 +73,14 @@ export function AtlasMap({
   mode,
   selectedState,
   onSelectState,
+  shadeByCount = false,
 }: {
   results: Species[];
   mode: ConservationMode;
   selectedState: string | null;
   onSelectState: (state: string | null) => void;
+  /** Shade each state by how many of the selected species occur in it. */
+  shadeByCount?: boolean;
 }) {
   const { open } = useSpeciesProfile();
   const [statesGeo, setStatesGeo] = useState<GeoJsonObject | null>(null);
@@ -84,14 +115,28 @@ export function AtlasMap({
     return list;
   }, [results, selectedState]);
 
+  const counts = useMemo(() => countSpeciesByState(results), [results]);
+  const maxCount = useMemo(() => Math.max(0, ...counts.values()), [counts]);
+
   // Leaflet writes these onto SVG presentation attributes, which do not
   // resolve CSS custom properties — so use literal colours here.
-  const styleFor = (isSelected: boolean) => ({
-    color: isSelected ? '#8fc7aa' : 'rgba(143,199,170,0.35)',
-    weight: isSelected ? 2 : 0.8,
-    fillColor: isSelected ? '#347d59' : '#5aa47e',
-    fillOpacity: isSelected ? 0.28 : 0.06,
-  });
+  const styleFor = (isSelected: boolean, name?: string) => {
+    if (shadeByCount && !isSelected) {
+      const n = name ? (counts.get(name) ?? 0) : 0;
+      return {
+        color: 'rgba(143,199,170,0.35)',
+        weight: 0.8,
+        fillColor: '#5aa47e',
+        fillOpacity: densityOpacity(densityStep(n, maxCount)),
+      };
+    }
+    return {
+      color: isSelected ? '#8fc7aa' : 'rgba(143,199,170,0.35)',
+      weight: isSelected ? 2 : 0.8,
+      fillColor: isSelected ? '#347d59' : '#5aa47e',
+      fillOpacity: isSelected ? 0.28 : 0.06,
+    };
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -100,6 +145,7 @@ export function AtlasMap({
         zoom={4}
         minZoom={4}
         maxZoom={9}
+        zoomSnap={0.25}
         maxBounds={INDIA_BOUNDS.pad(0.3)}
         className="h-full w-full"
         scrollWheelZoom
@@ -115,22 +161,38 @@ export function AtlasMap({
 
         {statesGeo && (
           <GeoJSON
-            key={selectedState ?? 'none'}
+            // Leaflet styles a layer once, on creation, so the boundary layer
+            // is remounted whenever anything it is styled or labelled by
+            // changes — the selection, the shading, or the species in view.
+            key={`${selectedState ?? 'none'}|${shadeByCount}|${results.map((r) => r.id).join(',')}`}
             ref={geoRef}
             data={statesGeo}
             style={(feature) =>
-              styleFor(!!feature && feature.properties?.state === selectedState)
+              styleFor(
+                !!feature && feature.properties?.state === selectedState,
+                feature?.properties?.state as string | undefined,
+              )
             }
             onEachFeature={(feature, layer) => {
               const name = feature.properties?.state as string | undefined;
               if (!name) return;
+              const n = counts.get(name) ?? 0;
               layer.on({
                 click: () => onSelectState(name === selectedState ? null : name),
-                mouseover: (e) => (e.target as L.Path).setStyle({ fillOpacity: 0.2, weight: 1.4 }),
-                mouseout: (e) =>
-                  (e.target as L.Path).setStyle(styleFor(name === selectedState)),
+                mouseover: (e) =>
+                  (e.target as L.Path).setStyle({
+                    fillOpacity: Math.max(0.2, densityOpacity(densityStep(n, maxCount))),
+                    weight: 1.4,
+                  }),
+                mouseout: (e) => (e.target as L.Path).setStyle(styleFor(name === selectedState, name)),
               });
-              layer.bindTooltip(name, { sticky: true, className: 'region-label', opacity: 1 });
+              // The count is given as a number as well as a shade: the shading
+              // is a summary, and colour alone is never the value.
+              layer.bindTooltip(shadeByCount ? `${name} — ${n} species` : name, {
+                sticky: true,
+                className: 'region-label',
+                opacity: 1,
+              });
             }}
           />
         )}
@@ -175,6 +237,7 @@ export function AtlasMap({
           </Marker>
         ))}
 
+        <FitIndia />
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>
 

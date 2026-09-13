@@ -1,6 +1,7 @@
 import { StatusExplainer } from '../components/conservation/StatusExplainer';
 import { ProgrammesList } from '../components/conservation/ProgrammesList';
 import { ThreatsOverview } from '../components/conservation/ThreatsOverview';
+import { ConservationTimeline } from '../components/conservation/ConservationTimeline';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import ChartsPanel from '../components/charts/DataCharts';
 
@@ -21,6 +22,7 @@ export function ConservationPage() {
       </section>
 
       <ThreatsOverview />
+      <ConservationTimeline />
       <ProgrammesList />
     </div>
   );

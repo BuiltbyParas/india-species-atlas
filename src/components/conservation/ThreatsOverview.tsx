@@ -32,7 +32,7 @@ export function ThreatsOverview() {
                       <button
                         type="button"
                         onClick={() => open(s.id)}
-                        className="rounded-full bg-forest-800 px-2 py-0.5 text-xs text-canvas/80 hover:bg-forest-700"
+                        className="rounded-full bg-forest-800 px-2.5 py-1.5 text-xs text-canvas/80 hover:bg-forest-700"
                       >
                         {s.commonName}
                       </button>

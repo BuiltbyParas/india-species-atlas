@@ -6,6 +6,7 @@ import { SpeciesProfileProvider } from './components/species/SpeciesProfileProvi
 import { HomePage } from './pages/HomePage';
 import { AtlasPage } from './pages/AtlasPage';
 import { SpeciesPage } from './pages/SpeciesPage';
+import { ComparePage } from './pages/ComparePage';
 import { ConservationPage } from './pages/ConservationPage';
 import { AboutPage } from './pages/AboutPage';
 import { SourcesPage } from './pages/SourcesPage';
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/atlas" element={<AtlasPage />} />
               <Route path="/species" element={<SpeciesPage />} />
+              <Route path="/compare" element={<ComparePage />} />
               <Route path="/conservation" element={<ConservationPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/sources" element={<SourcesPage />} />
