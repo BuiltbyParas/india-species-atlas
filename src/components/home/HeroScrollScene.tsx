@@ -4,6 +4,7 @@ import { STATUS_HEX } from '../../theme';
 import { StatusBadge } from '../ui/StatusBadge';
 import { HeroArt } from './HeroArt';
 import { canRender3D } from '../../utils/canRender3D';
+import { loadIndiaGeoJson } from '../../geo/india';
 import type { GeoCollection, HeroPlate, HeroPoint, HeroScene } from './heroScene';
 
 /**
@@ -86,7 +87,20 @@ const COPY_FADE_TO = 0.22;
  * degraded path instead gets the original hero: normal height, copy left, flat
  * SVG artwork right. Nothing below the hero changes in either case.
  */
-export function HeroStage({ children }: { children: ReactNode }) {
+export function HeroStage({
+  children,
+  withPlates = true,
+  overlay,
+  flatArt,
+}: {
+  children: ReactNode;
+  /** The silhouette plates. The documentary page introduces species itself, so it turns them off. */
+  withPlates?: boolean;
+  /** Extra layers inside the sticky stage, driven by the `--p` progress variable. */
+  overlay?: ReactNode;
+  /** Artwork for the flat fallback, in place of the default illustration. */
+  flatArt?: ReactNode;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -138,6 +152,7 @@ export function HeroStage({ children }: { children: ReactNode }) {
     const update = () => {
       const p = Math.min(1, Math.max(0, (window.scrollY - sectionTop) / runway));
       scene?.setProgress(p);
+      stage.style.setProperty('--p', p.toFixed(4));
       const copy = copyRef.current;
       if (copy) {
         const fade = 1 - Math.min(1, Math.max(0, (p - COPY_FADE_FROM) / (COPY_FADE_TO - COPY_FADE_FROM)));
@@ -155,9 +170,7 @@ export function HeroStage({ children }: { children: ReactNode }) {
 
     Promise.all([
       import('./heroScene'),
-      fetch(`${import.meta.env.BASE_URL}india-states.geojson`).then((r) =>
-        r.ok ? (r.json() as Promise<GeoCollection>) : Promise.reject(new Error('geojson unavailable')),
-      ),
+      loadIndiaGeoJson() as Promise<GeoCollection>,
     ])
       .then(([module, geojson]) => {
         if (cancelled) return;
@@ -169,7 +182,7 @@ export function HeroStage({ children }: { children: ReactNode }) {
           onFirstFrame: () => {
             if (!cancelled) setVisible(true);
           },
-          plates: PLATES,
+          plates: withPlates ? PLATES : [],
           // Captions are moved by writing transforms straight onto the nodes,
           // for the same reason the scroll handler avoids React: twelve state
           // updates per animation frame would cost more than the scene does.
@@ -268,17 +281,26 @@ export function HeroStage({ children }: { children: ReactNode }) {
       for (const cleanup of cleanups) cleanup();
       scene?.dispose();
     };
-  }, []);
+  }, [withPlates]);
 
   if (mode === 'flat') {
     return (
-      <section className="relative overflow-hidden border-b border-forest-800 bg-forest-950">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
-          <div>{children}</div>
-          <div className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-2xl border border-forest-800 bg-forest-900/40 p-2">
-            <HeroArt />
+      <section className="relative overflow-hidden bg-forest-950">
+        {flatArt ? (
+          <div className="relative min-h-[100svh]">
+            {flatArt}
+            <div className="relative mx-auto flex min-h-[100svh] max-w-[1600px] items-end px-4 pb-16 pt-28 sm:px-8 lg:px-12">
+              <div className="max-w-3xl">{children}</div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
+            <div>{children}</div>
+            <div className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-2xl border border-forest-800 bg-forest-900/40 p-2">
+              <HeroArt />
+            </div>
+          </div>
+        )}
       </section>
     );
   }
@@ -286,9 +308,9 @@ export function HeroStage({ children }: { children: ReactNode }) {
   return (
     <section
       ref={sectionRef}
-      className="relative border-b border-forest-800 bg-forest-950 h-[250vh] lg:h-[310vh]"
+      className={withPlates ? 'relative border-b border-forest-800 bg-forest-950 h-[250vh] lg:h-[310vh]' : 'relative bg-forest-950 h-[300vh] lg:h-[380vh]'}
     >
-      <div ref={stageRef} className="sticky top-0 h-screen h-[100svh] overflow-hidden">
+      <div ref={stageRef} className="sticky top-0 h-screen h-[100svh] overflow-hidden" style={{ ['--p' as string]: 0 }}>
         <canvas
           ref={canvasRef}
           aria-hidden="true"
@@ -311,7 +333,7 @@ export function HeroStage({ children }: { children: ReactNode }) {
             assistive technology because the summary below reads the same list
             in one pass instead of twelve. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-          {PLATES.map((plate, index) => {
+          {withPlates && PLATES.map((plate, index) => {
             const entry = JOURNEY[index];
             return (
               <div
@@ -335,12 +357,21 @@ export function HeroStage({ children }: { children: ReactNode }) {
             );
           })}
         </div>
-        <div className="relative mx-auto flex h-full max-w-7xl items-start pt-24 sm:pt-28 lg:items-center lg:pt-0 px-4 sm:px-6">
-          <div ref={copyRef} className="max-w-xl lg:max-w-2xl will-change-[opacity,transform]">
-            {children}
+        {withPlates ? (
+          <div className="relative mx-auto flex h-full max-w-7xl items-start pt-24 sm:pt-28 lg:items-center lg:pt-0 px-4 sm:px-6">
+            <div ref={copyRef} className="max-w-xl lg:max-w-2xl will-change-[opacity,transform]">
+              {children}
+            </div>
           </div>
-        </div>
-        {mode === 'live' && (
+        ) : (
+          <div className="relative mx-auto flex h-full max-w-[1600px] items-end px-4 pb-14 pt-24 sm:px-8 lg:px-12 lg:pb-16">
+            <div ref={copyRef} className="w-full will-change-[opacity,transform]">
+              {children}
+            </div>
+          </div>
+        )}
+        {overlay}
+        {mode === 'live' && withPlates && (
           <p
             aria-hidden="true"
             className="pointer-events-none absolute bottom-3 right-4 max-w-[13rem] text-right text-[10px] leading-snug text-forest-300/50"
@@ -349,7 +380,14 @@ export function HeroStage({ children }: { children: ReactNode }) {
           </p>
         )}
       </div>
-      {mode === 'live' && (
+      {mode === 'live' && !withPlates && (
+        <span className="sr-only">
+          A three-dimensional relief of India, drawn from the same state boundaries as the atlas&rsquo;s maps. As
+          the page scrolls the view descends towards the terrain and lights the indicative localities recorded for
+          each species, coloured by IUCN Red List category. The same localities are listed on the interactive map.
+        </span>
+      )}
+      {mode === 'live' && withPlates && (
         <span className="sr-only">
           A three-dimensional relief of India showing indicative occurrence points for the species in this
           atlas, coloured by IUCN Red List category. The view descends towards the terrain as the page

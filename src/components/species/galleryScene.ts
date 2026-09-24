@@ -196,7 +196,7 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // Status chip, top left. Never colour alone: the code is always written out.
   const chipX = 26;
   const chipY = 26;
-  ctx.font = '600 25px Inter, system-ui, sans-serif';
+  ctx.font = '600 25px Geist, system-ui, sans-serif';
   const codeWidth = ctx.measureText(card.statusCode).width;
   const chipW = codeWidth + 62;
   const chipH = 44;
@@ -218,7 +218,7 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // under it in italic, exactly as it is set everywhere else on the site.
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#f6f4ec';
-  ctx.font = '600 42px Inter, system-ui, sans-serif';
+  ctx.font = '600 42px Geist, system-ui, sans-serif';
   const lines = wrap(ctx, card.commonName, FACE_W - 68);
   let baseline = FACE_H - 66 - (lines.length - 1) * 50;
   for (const line of lines) {
@@ -226,7 +226,7 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
     baseline += 50;
   }
   ctx.fillStyle = 'rgba(195,226,211,0.82)';
-  ctx.font = 'italic 400 27px Spectral, Georgia, serif';
+  ctx.font = 'italic 400 27px Newsreader, Georgia, serif';
   ctx.fillText(card.scientificName, 34, FACE_H - 28);
   ctx.restore();
 
