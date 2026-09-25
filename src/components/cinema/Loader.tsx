@@ -24,7 +24,9 @@ import { canRender3D } from '../../utils/canRender3D';
  * it entirely.
  */
 const STEPS = ['Typefaces', 'State boundaries', 'Species records', 'Relief', 'Sheet ready'] as const;
-const MIN_MS = 2900;
+const MIN_MS = 1500;
+/** The sheet never holds the reader longer than this; slow fonts or relief swap in behind it. */
+const MAX_MS = 2400;
 const SEEN_KEY = 'isa-intro-seen';
 
 function alreadySeen(): boolean {
@@ -62,13 +64,12 @@ export function Loader({ onDone }: { onDone: () => void }) {
       canRender3D() ? import('../home/heroScene').then(() => tick(4)) : tick(4),
     );
 
-    relief
-      .catch(() => undefined)
+    Promise.race([relief.catch(() => undefined), new Promise((r) => setTimeout(r, MAX_MS))])
       .then(() => new Promise((r) => setTimeout(r, Math.max(0, MIN_MS - (performance.now() - started)))))
       .then(() => {
         if (!live) return;
         tick(5);
-        setTimeout(() => live && setLeaving(true), 450);
+        setTimeout(() => live && setLeaving(true), 250);
       });
 
     return () => {
@@ -89,7 +90,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
       lockScroll(false);
       markIntroDone();
     }, 350);
-    const unmount = setTimeout(onDone, 1300);
+    const unmount = setTimeout(onDone, 1000);
     return () => {
       clearTimeout(handOff);
       clearTimeout(unmount);
