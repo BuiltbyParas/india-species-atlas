@@ -56,7 +56,9 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
     const update = () => {
       raf = 0;
       const y = window.scrollY + window.innerHeight * 0.5;
-      setShown(tops.length > 0 && y > tops[0] - window.innerHeight * 0.4);
+      // Step aside once the footer arrives, so the map never sits over its links.
+      const footerTop = document.querySelector('footer')?.getBoundingClientRect().top ?? Infinity;
+      setShown(tops.length > 0 && y > tops[0] - window.innerHeight * 0.4 && footerTop > window.innerHeight);
       legRefs.current.forEach((leg, i) => {
         if (!leg) return;
         const a = tops[i];

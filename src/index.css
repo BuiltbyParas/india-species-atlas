@@ -439,7 +439,7 @@ body {
   background: var(--color-forest-950);
   color: var(--color-canvas);
   clip-path: inset(0 0 0 0);
-  transition: clip-path 1.15s var(--ease-cinema);
+  transition: clip-path 0.9s var(--ease-cinema);
 }
 .loader.is-leaving {
   clip-path: inset(0 0 100% 0);
@@ -453,8 +453,8 @@ body {
   background: color-mix(in srgb, var(--color-canvas) 35%, transparent);
   transform-origin: 0 50%;
   animation:
-    loader-rule 1.3s var(--ease-cinema) both,
-    loader-fade 0.9s ease 1.9s forwards;
+    loader-rule 0.7s var(--ease-cinema) both,
+    loader-fade 0.6s ease 1s forwards;
 }
 @keyframes loader-rule {
   from {
@@ -472,7 +472,7 @@ body {
   font-size: 12px;
   color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
   font-variant-numeric: tabular-nums;
-  animation: loader-in 0.8s ease 0.9s both;
+  animation: loader-in 0.6s ease 0.4s both;
 }
 .loader-coord {
   position: absolute;
@@ -516,8 +516,8 @@ body {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   opacity: 0.8;
-  animation: draw 1.7s var(--ease-cinema) forwards;
-  animation-delay: calc(1s + var(--i) * 0.03s);
+  animation: draw 1s var(--ease-cinema) forwards;
+  animation-delay: calc(0.35s + var(--i) * 0.012s);
 }
 @keyframes draw {
   to {
@@ -528,7 +528,7 @@ body {
   position: absolute;
   left: 1.5rem;
   bottom: 1.75rem;
-  animation: loader-in 1s ease 0.3s both;
+  animation: loader-in 0.7s ease 0.15s both;
 }
 .loader-steps {
   position: absolute;
@@ -576,8 +576,15 @@ body {
 .site-header.is-scrolled::before {
   content: '';
   position: absolute;
-  inset: 0 0 -40px 0;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-forest-950) 85%, transparent), transparent);
+  inset: 0 0 -48px 0;
+  /* Solid behind the wordmark and menu, then a short fade, so a headline
+     scrolling up passes under the header rather than through it. */
+  background: linear-gradient(
+    to bottom,
+    var(--color-forest-950) 0%,
+    color-mix(in srgb, var(--color-forest-950) 92%, transparent) 55%,
+    transparent 100%
+  );
   pointer-events: none;
   z-index: -1;
 }
