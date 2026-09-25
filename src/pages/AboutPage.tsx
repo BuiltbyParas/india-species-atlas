@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SectionHeading } from '../components/ui/SectionHeading';
+import { PresentationSection } from '../components/home/PresentationSection';
 import { totalSpecies, conservationRegionCount, statesCovered } from '../utils/stats';
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -13,6 +14,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export function AboutPage() {
   return (
+    <>
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:py-16">
       <SectionHeading
         as="h1"
@@ -91,5 +93,8 @@ export function AboutPage() {
         </Link>
       </div>
     </div>
+    {/* The screenshot panel and QR code, for presentations of the project. */}
+    <PresentationSection />
+    </>
   );
 }

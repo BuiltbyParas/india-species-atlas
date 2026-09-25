@@ -84,10 +84,10 @@ export interface HeroScene {
 }
 
 /* --- palette (kept in sync with src/theme.ts) --- */
-const LAND_TOP_HEX = '#26543e';
-const LAND_SIDE_HEX = '#0d1f15';
-const BORDER_HEX = '#a9dcc2';
-const GRID_HEX = '#1c3a2b';
+const LAND_TOP_HEX = '#2a3a30';
+const LAND_SIDE_HEX = '#0c120f';
+const BORDER_HEX = '#e8e1cf';
+const GRID_HEX = '#3a4640';
 
 /** Height the occurrence markers stand above the surface. */
 const STEM = 0.115;
@@ -424,7 +424,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   /* ----------------------------------------------------------- stars & motes */
 
   const random = makeRandom(20260906);
-  const STAR_COUNT = 2600;
+  const STAR_COUNT = 1400;
   const starPositions = new Float32Array(STAR_COUNT * 3);
   const starSizes = new Float32Array(STAR_COUNT);
   const starAlphas = new Float32Array(STAR_COUNT);
@@ -474,7 +474,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     toneMapped: false,
     fog: false,
     transparent: true,
-    opacity: 0.15,
+    opacity: 0.07,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
@@ -617,10 +617,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   /* --------------------------------------------------------------- lighting */
 
-  const hemi = new THREE.HemisphereLight(new THREE.Color('#bcd9cb'), new THREE.Color('#050c08'), 1.9);
+  const hemi = new THREE.HemisphereLight(new THREE.Color('#d9d3c3'), new THREE.Color('#06090a'), 1.7);
   const key = new THREE.DirectionalLight(new THREE.Color('#fff2dc'), 2.6);
   key.position.set(-3, 2.5, 5);
-  const rim = new THREE.DirectionalLight(new THREE.Color('#5fb389'), 0.9);
+  const rim = new THREE.DirectionalLight(new THREE.Color('#7ea3b5'), 0.8);
   rim.position.set(3.5, -3, 1.6);
   scene.add(hemi, key, rim);
 
@@ -642,7 +642,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const screenUp = new THREE.Vector3();
   const tintColor = new THREE.Color();
   const instanceColor = new THREE.Color();
-  const TINT_SPACE = new THREE.Color(0.72, 0.84, 1.06);
+  const TINT_SPACE = new THREE.Color(0.86, 0.9, 0.98);
   const TINT_GROUND = new THREE.Color(1.045, 0.995, 0.925);
 
   let viewWidth = 1;
@@ -786,7 +786,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     rightVector.crossVectors(forward, camera.up).normalize();
     if (aspect > 1.15) {
       // Wide screens put the copy beside the relief, so slide it right.
-      const shift = lerp(0.32, 0.2, j) * halfHeightAtTarget * aspect;
+      const shift = lerp(0.4, 0.2, j) * halfHeightAtTarget * aspect;
       camera.position.addScaledVector(rightVector, -shift);
       lookTarget.addScaledVector(rightVector, -shift);
     } else {
@@ -832,10 +832,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
         // the far country; wide open at the start so the whole map reads sharp.
         focusRange: lerp(90, 6, j),
         maxCoc: lerp(0.0015, 0.006, j),
-        bloom: lerp(0.95, 1.2, j),
+        bloom: lerp(0.45, 0.5, j),
         vignette: lerp(0.32, 0.5, j),
         tint: tintColor,
-        saturation: lerp(0.72, 1.06, j),
+        saturation: lerp(0.6, 0.86, j),
         contrast: lerp(1.02, 1.12, j),
         lift: lerp(0.004, 0, j),
       });

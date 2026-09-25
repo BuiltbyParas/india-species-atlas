@@ -13,6 +13,40 @@ project.
 
 ## What it does
 
+- **The documentary (home page)** — the landing page is a scroll-driven film
+  about one idea: *lines on the map*. It opens on a title sequence (a survey
+  line is ruled across the sheet, the country's extent is written at its ends,
+  and the state boundaries draw in until they resolve into India; the 01–05
+  counter ticks only when real loading work finishes), then runs five
+  chapters:
+  1. **The map** — the 3D relief, with captions counted from the dataset.
+  2. **The species** — the Great Indian Bustard, Bengal Tiger, Ganges River
+     Dolphin, Snow Leopard and Greater One-horned Rhinoceros, one pinned scene
+     each: name, photograph, then a map that plays three layers as you scroll —
+     *where it lives* (states of record, indicative localities, and a thread
+     joining nearby localities), *what cuts through it* (one hatch per recorded
+     threat) and *what protects it* (programme sites).
+  3. **The selection** — all twelve species on a draggable CSS-3D dome, with
+     bands of the dataset's own localities above and below.
+  4. **Fragmentation to protection** — every species' thread on one map,
+     broken into dashes and then rejoined; point at a threat to light the
+     species it is recorded against, or at a programme to find its sites.
+  5. **What remains** — the lines converge on India.
+
+  A route line across a small map of India (bottom right) is the scroll
+  progress: it starts at the bustard's anchor in the Thar, visits each
+  featured species' anchor as its scene plays, and closes the loop at the end.
+  The header carries the running chapter title and a flowing, fold-out menu.
+
+  **What the drawings claim is kept to what the data holds.** Shaded states
+  are states of record, never a range polygon. Threads join indicative
+  localities in the same landscape (never more than 5° apart) and are labelled
+  as a reading device, not a corridor. Threats are recorded per species, not
+  per place, so a threat's hatch covers the species' states evenly and says
+  so. No figure on the page is typed by hand.
+- **Documentary mode** (`/documentary`) — a deterministic five-minute
+  presentation built from the same maps, photographs, type and data, and a
+  script that renders it to video. See *Documentary mode* below.
 - **Interactive map of India** (Leaflet + OpenStreetMap) with pan/zoom, a
   status-coded marker for every mapped location, click-to-open species profiles,
   and a "reset to India view" control.
@@ -91,17 +125,12 @@ project.
 - **"Discover a species"** — opens a random species profile.
 - **Presentation panel + QR code** — a screenshot-friendly summary card and a QR
   code generated at runtime from the live URL (no hard-coded address).
-- **Scroll-linked 3D hero** — the landing page opens on a camera journey over a
-  relief of India, built at runtime from the same state boundaries the map uses,
-  with a marker for every occurrence point in the dataset. Scrolling flies the
-  camera from an orbital view against a starfield down to a low pass over the
-  country, revealing markers in a north-to-south sweep, with selective bloom on
-  the markers, depth of field, vignette and a colour grade that warms as the
-  camera descends. Each of the twelve species is then introduced in turn over
-  its anchor locality on a silhouette plate — a drawn profile outline with the
-  common name, scientific name and IUCN category beside it — which rises, holds
-  and fades as the camera passes. Confined to the hero on purpose: the map,
-  cards, filters and charts stay flat and data-first.
+- **Scroll-linked 3D relief** — chapter one of the documentary is a camera
+  journey over a relief of India, built at runtime from the same state
+  boundaries the map uses, with a marker for every occurrence point in the
+  dataset. The documentary turns the relief's silhouette plates off (the
+  species get scenes of their own), and the captions laid over the descent are
+  driven by a CSS variable rather than per-frame React updates.
 - **On a phone** the layout is not merely narrower. The map measures its own
   container and frames the whole country there, rather than trusting a zoom
   level chosen for a wide desktop map, and it takes 70% of the viewport height
@@ -133,11 +162,15 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Area | Choice |
 | --- | --- |
 | Framework | React 19 + TypeScript |
+| Typography | Newsreader (serif, display and text) and Geist (sans), via Google Fonts |
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
 | Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
 | Species gallery | three.js — photographic cards on a ring of extruded rounded slabs, card faces composited on a 2D canvas at runtime (photo, scrim, status chip, caption) and uploaded as textures. Lazy-loaded, and only once the section is scrolled near, so it never competes with the hero for the GPU |
 | Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Species plates are drawn into a single canvas atlas at runtime and billboarded as one instanced draw call; their captions are DOM text positioned per frame. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
+| Scroll & motion | GSAP + ScrollTrigger for the pinned, scrubbed scenes; Lenis for inertial scrolling on the documentary page only (the map, directory and tables keep native scrolling) |
+| Drawn maps | Plain SVG from the project's GeoJSON through a fixed equirectangular projection (`src/geo/india.ts`) — no mapping or projection library |
+| Dome gallery | CSS 3D transforms, not WebGL, so the photographs stay real `<img>` elements with alt text and credits |
 | Icons | lucide-react |
 | QR code | `qrcode` (offline, no external service) |
 | Charts | small custom component — no charting library |
@@ -160,6 +193,23 @@ src/
                 geoExtrude (GeoJSON -> extruded geometry, shared by the hero
                 relief and the 3D Conservation view), canRender3D
   theme.ts      literal palette values for SVG / canvas / Leaflet
+  geo/india.ts  GeoJSON -> SVG paths, fixed projection, route curves
+  motion/       gsap registration, Lenis, chapter store, intro store,
+                reduced-motion / pointer / layout preferences
+  components/cinema/
+    Loader.tsx           title sequence (honest 01–05 progress)
+    CinematicHero.tsx    headline + captions over the 3D relief
+    SpeciesScene.tsx     pinned scene per species; stacked on phones
+    SpeciesMap.tsx       range / threats / conservation layers in SVG
+    DomeGallery.tsx      CSS-3D sphere of species and localities
+    ConservationMap.tsx  fragmentation -> protection chapter
+    FinalChapter.tsx     the lines converge
+    CurvedLoop.tsx       type running along a curve, between chapters
+    GeoProgress.tsx      scroll progress as a route across India
+    CustomCursor.tsx     survey-mark cursor with contour-ring splash
+    RevealText.tsx, Magnetic.tsx, InteractiveStat.tsx, StatusIndicator.tsx
+  components/layout/FlowingMenu.tsx  the fold-out menu
+  components/documentary/            timeline + 1920×1080 stage
   components/home/
     HeroScrollScene.tsx  capability checks, scroll wiring, SVG fallback
     heroScene.ts         camera journey + frame loop (lazy chunk; no React)
@@ -260,6 +310,37 @@ npx qrcode "https://your-deployed-url/" -o atlas-qr.png
 ```
 
 ---
+
+## Documentary mode
+
+`/documentary` plays the atlas as a five-minute presentation: title → the
+map → five species (name, photograph, where it lives, what cuts through it,
+what protects it) → fragmentation to protection → the closing card. It uses
+the site's own SVG maps, photographs (credited on screen), type and data.
+
+Every frame is a pure function of the clock `t`: nothing in it runs on CSS
+transitions or timers. So it can be played (space to pause, ←/→ to skip,
+chapter list and scrubber at the bottom), linked to a moment (`?t=123`), or
+captured frame by frame:
+
+```bash
+npm run documentary                           # build, serve, render 1920×1080 at 30 fps
+npm run documentary -- --from 40 --to 82      # one species segment
+npm run documentary -- --fps 24 --out promo/doc.mp4
+npm run documentary -- --url http://localhost:5173 --no-build
+```
+
+With `?capture=1` the page hides its controls, stops its clock and exposes
+`window.__documentary.seek(t)`, which draws the frame at `t` and resolves once
+it is painted; `scripts/documentary/render.mjs` screenshots each frame and
+pipes it into ffmpeg (same encoder detection as the promo pipeline). The cue
+list — every cut and beat, with its time — is written next to the video as
+`.cues.json`, so narration or music can be laid against it. No audio ships
+with the repository and none is added.
+
+The documentary's maps are the flat SVG ones; the 3D relief is not used
+there, because its render loop keeps its own time and would not be
+frame-exact.
 
 ## Promotional video
 

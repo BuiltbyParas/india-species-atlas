@@ -83,7 +83,7 @@ export function SpeciesProfileProvider({ children }: { children: ReactNode }) {
       {children}
 
       {species && (
-        <div className="fixed inset-0 z-[1200] flex justify-end" role="dialog" aria-modal="true" aria-label={`${species.commonName} profile`}>
+        <div className="fixed inset-0 z-[1600] flex justify-end" role="dialog" aria-modal="true" aria-label={`${species.commonName} profile`}>
           <button
             type="button"
             aria-label="Close species profile"

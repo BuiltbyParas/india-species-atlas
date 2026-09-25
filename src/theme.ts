@@ -7,19 +7,21 @@
  * in `src/index.css`.
  */
 export const PALETTE = {
-  forest950: '#0a1710',
-  forest900: '#0f1f17',
-  forest800: '#14261c',
-  forest700: '#1c3a2b',
-  forest600: '#285a41',
-  forest500: '#347d59',
-  forest400: '#5aa47e',
-  forest300: '#8fc7aa',
-  forest200: '#c3e2d3',
-  canvas: '#f6f4ec',
-  ink: '#14201b',
+  forest950: '#0e1411',
+  forest900: '#131a16',
+  forest800: '#1a231e',
+  forest700: '#27332c',
+  forest600: '#3a4a40',
+  forest500: '#50705e',
+  forest400: '#86a593',
+  forest300: '#afc5b7',
+  forest200: '#d6e1d9',
+  canvas: '#e8e1cf',
+  ink: '#121814',
   inkSoft: '#3d4a44',
-  clay: '#b9764a',
+  clay: '#b07a52',
+  contour: '#b07a52',
+  river: '#7ea3b5',
 } as const;
 
 export const STATUS_HEX = {
