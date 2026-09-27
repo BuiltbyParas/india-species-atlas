@@ -56,6 +56,16 @@ export function partial(pts: Pt[], k: number): Pt[] {
   return out;
 }
 
+/** The part of a polyline between fractions a and b of its length. */
+export function sub(pts: Pt[], a: number, b: number): Pt[] {
+  if (b <= a || pts.length < 2) return [];
+  const upto = partial(pts, b);
+  const before = a > 0 ? partial(pts, a) : [pts[0]];
+  if (!upto.length || !before.length) return [];
+  // `partial` returns the original vertices plus one interpolated end point.
+  return [before[before.length - 1], ...upto.slice(before.length)];
+}
+
 /** The point `k` of the way along a polyline. */
 export function pointAlong(pts: Pt[], k: number): Pt {
   const p = partial(pts, clamp01(k));

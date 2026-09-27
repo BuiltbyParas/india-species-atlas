@@ -153,7 +153,7 @@ export const SHOTS = [
     transitionIn: { type: 'dissolve', duration: 0.8 }, grade: 'cold',
   },
   {
-    id: 'S13', seq: 'snow-leopard', start: 39.5, end: 42, scene: 'map:snow-leopard', title: 'Contours become the map',
+    id: 'S13', seq: 'snow-leopard', start: 39.5, end: 42, scene: 'himalaya', title: 'Contours become the map',
     camera: 'Rises to top-down; contours resolve into the map',
     assets: [...ETOPO_HIMALAYA, ...ETOPO, STATES, ...FONTS],
     layers: [L.reliefHimalaya, L.statesOfRecord, L.localities], sound: ['mountain', 'tone'],
@@ -281,6 +281,28 @@ export const CUES = {
   cta: 61.1,
   fadeOut: 63.2,
   credits: 64,
+};
+
+/**
+ * How the film was made, for the credits. The voice and music lines must
+ * match what the audio build actually used; QC compares them with the
+ * audio report and fails the final render if they disagree.
+ */
+export const CREDITS = {
+  voiceSource: 'tts',
+  musicSource: 'synthesised',
+  voice: 'Synthetic voice: Microsoft Edge neural text-to-speech (en-IN-PrabhatNeural), via edge-tts.',
+  music: 'Original score and sound design, synthesised in code for this film. No samples or library music.',
+  geography: [
+    'Relief: NOAA ETOPO1 1 Arc-Minute Global Relief Model.',
+    'Rivers and roads: Natural Earth 1:10m (public domain).',
+    'State boundaries: the atlas’s own boundary file, which predates the 2019 reorganisation of Jammu and Kashmir.',
+  ],
+  illustration: [
+    'The power line close-up, the pylons, the road and the river surface are computer-generated illustrations, as is the falling snow.',
+    'Lines marked “illustrative” on the maps are drawing devices, not data.',
+  ],
+  software: 'three.js · Vite · TypeScript · Playwright · FFmpeg · edge-tts',
 };
 
 /** The five featured species, in running order. */

@@ -56,6 +56,14 @@ export interface Look {
   warmth: number;
   himalaya: boolean;
   india: boolean;
+  /** Width of the fade at the grid's edge, as a fraction of the grid. */
+  edge: number;
+  /** Fine surface texture seen close up, below the data's resolution. */
+  detail: number;
+  /** Cinematic light: warm sun against cool sky shadow (0 = neutral map light). */
+  cine: number;
+  /** Crag detail in the shading only (never the height) where the camera is close. */
+  crag: number;
 }
 
 export const DEFAULT_LOOK: Look = {
@@ -76,6 +84,10 @@ export const DEFAULT_LOOK: Look = {
   warmth: 0,
   himalaya: false,
   india: true,
+  edge: 0.1,
+  detail: 0.5,
+  cine: 0,
+  crag: 0,
 };
 
 const vertex = /* glsl */ `
@@ -121,6 +133,9 @@ const fragment = /* glsl */ `
   uniform float uExposure;
   uniform float uWarmth;
   uniform float uEdge;
+  uniform float uDetail;
+  uniform float uCine;
+  uniform float uCrag;
   varying vec2 vUv;
   varying vec3 vWorld;
   varying float vH;
@@ -163,6 +178,17 @@ const fragment = /* glsl */ `
     float dhdx = (hr - hl) / (2.0 * uCellM.x);
     float dhdz = -(hu - hd) / (2.0 * uCellM.y);
     vec3 n = normalize(vec3(-dhdx * uShade, 1.0, -dhdz * uShade));
+    float slope0 = 1.0 - n.y;
+    // Crags: a noise gradient bent into the normal on steep ground, close up.
+    if (uCrag > 0.0) {
+      float dc = length(vWorld - cameraPosition);
+      float amt = uCrag * smoothstep(0.02, 0.2, slope0) * (1.0 - smoothstep(0.3, 1.25, dc));
+      vec2 q = vWorld.xz * 140.0;
+      float e = 0.35;
+      float gx = (vnoise(q + vec2(e, 0.0)) - vnoise(q - vec2(e, 0.0))) + 0.5 * (vnoise(q * 2.7 + vec2(e, 0.0)) - vnoise(q * 2.7 - vec2(e, 0.0)));
+      float gz = (vnoise(q + vec2(0.0, e)) - vnoise(q - vec2(0.0, e))) + 0.5 * (vnoise(q * 2.7 + vec2(0.0, e)) - vnoise(q * 2.7 - vec2(0.0, e)));
+      n = normalize(n + vec3(-gx, 0.0, -gz) * amt * 1.6);
+    }
     float slope = 1.0 - n.y;
 
     float lambert = max(dot(n, uSun), 0.0);
@@ -172,16 +198,29 @@ const fragment = /* glsl */ `
     vec3 col;
     if (land) {
       col = ramp(h) * light;
+      // Warm where the sun lands, cool sky in the shadows.
+      vec3 cineLight = vec3(1.16, 1.0, 0.8) * (1.35 * lambert) + vec3(0.42, 0.5, 0.64) * (0.4 + 0.25 * n.y);
+      col = mix(col, ramp(h) * cineLight, uCine);
     } else {
       float depth = clamp(-h / 4000.0, 0.0, 1.0);
       col = mix(vec3(0.060, 0.090, 0.098), vec3(0.030, 0.045, 0.052), depth);
     }
 
+    // Close up, ETOPO's 2 km cells read as a flat plane; a faint grain of
+    // surface texture (colour only, never height) keeps the ground physical.
+    float dCam = length(vWorld - cameraPosition);
+    float near = uDetail * (1.0 - smoothstep(0.6, 6.0, dCam));
+    if (near > 0.0 && land) {
+      float g = vnoise(vWorld.xz * 900.0) * 0.5 + vnoise(vWorld.xz * 260.0) * 0.35 + vnoise(vWorld.xz * 70.0) * 0.15;
+      col *= 1.0 + (g - 0.5) * 0.22 * near;
+    }
+
     // Snow: an atmosphere layer on high, gentle ground; broken up by noise so
     // it reads as snow cover rather than a painted band.
-    float sn = smoothstep(uSnowLine - 400.0, uSnowLine + 350.0, h + (vnoise(vWorld.xz * 60.0) - 0.5) * 700.0);
-    sn *= 1.0 - smoothstep(0.35, 0.75, slope * 2.2);
-    col = mix(col, vec3(0.86, 0.88, 0.90) * (0.45 + 0.65 * lambert), sn * uSnow);
+    float sn = smoothstep(uSnowLine - 250.0, uSnowLine + 250.0, h + (vnoise(vWorld.xz * 220.0) - 0.5) * 500.0 + (vnoise(vWorld.xz * 40.0) - 0.5) * 300.0);
+    sn *= 1.0 - smoothstep(0.25, 0.6, slope * 2.0);
+    vec3 snowLit = mix(vec3(0.86, 0.88, 0.90) * (0.45 + 0.65 * lambert), vec3(0.98, 0.95, 0.9) * (1.2 * lambert) + vec3(0.42, 0.5, 0.62) * 0.55, uCine);
+    col = mix(col, snowLit, sn * uSnow);
 
     // The atlas's map palette, for the morph from terrain to map.
     vec3 mapLand = vec3(0.102, 0.137, 0.118) * (0.82 + 0.36 * lambert);
@@ -191,6 +230,7 @@ const fragment = /* glsl */ `
     // Neighbouring countries sit back so India reads first.
     float mask = texture(uMask, stOf(vUv)).r;
     col *= mix(uOutside, 1.0, mask);
+    float contourMask = mix(0.18, 1.0, mask);
 
     // Contours at a real elevation interval, every fifth one heavier.
     if (uContour > 0.0 && land) {
@@ -200,7 +240,7 @@ const fragment = /* glsl */ `
       float line = 1.0 - smoothstep(0.0, fw * 1.25, d);
       float index = mod(floor(ch + 0.5), 5.0) < 0.5 ? 1.0 : 0.5;
       line *= 1.0 - smoothstep(0.25, 0.7, fw);
-      col = mix(col, vec3(0.690, 0.478, 0.322) * 1.15, line * index * uContour);
+      col = mix(col, vec3(0.690, 0.478, 0.322) * 1.15, line * index * uContour * contourMask);
     }
 
     // Distance fog and low-lying haze.
@@ -284,7 +324,10 @@ function meshFor(g: Grid, mask: THREE.Texture, segments: number): THREE.Mesh<THR
       uSun: { value: new THREE.Vector3(0, 1, 0) },
       uExposure: { value: 1 },
       uWarmth: { value: 0 },
-      uEdge: { value: 0.04 },
+      uEdge: { value: 0.1 },
+      uDetail: { value: 0.5 },
+      uCine: { value: 0 },
+      uCrag: { value: 0 },
     },
   });
   const mesh = new THREE.Mesh(geo, mat);
@@ -379,6 +422,22 @@ export class Terrain {
     return [((this.v.x + 1) / 2) * this.width, ((1 - this.v.y) / 2) * this.height];
   }
 
+  private quad: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> | null = null;
+  private quadScene = new THREE.Scene();
+  private quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  /** Renders a full-frame shader (the water) on the same GPU context. */
+  renderQuad(material: THREE.ShaderMaterial): HTMLCanvasElement {
+    if (!this.quad) {
+      this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+      this.quad.frustumCulled = false;
+      this.quadScene.add(this.quad);
+    }
+    this.quad.material = material;
+    this.renderer.render(this.quadScene, this.quadCamera);
+    return this.canvas;
+  }
+
   render(): HTMLCanvasElement {
     const l = this.look;
     const az = (l.sunAzimuth * Math.PI) / 180;
@@ -401,6 +460,10 @@ export class Terrain {
       u.uSun.value.copy(sun);
       u.uExposure.value = l.exposure;
       u.uWarmth.value = l.warmth;
+      u.uEdge.value = l.edge;
+      u.uDetail.value = l.detail;
+      u.uCine.value = l.cine;
+      u.uCrag.value = l.crag;
     }
     if (this.india) this.india.visible = l.india;
     if (this.himalaya) this.himalaya.visible = l.himalaya;

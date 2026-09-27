@@ -25,6 +25,9 @@ async function engineFiles() {
   return files;
 }
 
+/** Scenes that reuse another scene's drawing, and so depend on its file too. */
+const SCENE_DEPS = { title: ['converge'] };
+
 /** The scene file a shot's scene name lives in. */
 export function sceneFile(scene) {
   const family = scene.split(':')[0];
@@ -51,7 +54,8 @@ export async function shotHash(shot, opts) {
   const i = SHOTS.indexOf(shot);
   const prev = i > 0 ? SHOTS[i - 1] : null;
   const overlaps = shot.transitionIn.type === 'dissolve' && prev;
-  const files = [...(await engineFiles()), sceneFile(shot.scene), ...(overlaps ? [sceneFile(prev.scene)] : [])];
+  const deps = (scene) => [sceneFile(scene), ...(SCENE_DEPS[scene] ?? []).map(sceneFile)];
+  const files = [...(await engineFiles()), ...deps(shot.scene), ...(overlaps ? deps(prev.scene) : [])];
   const assetStamps = [];
   for (const a of shot.assets) {
     const p = a.startsWith('../') ? join(ROOT, 'video', a) : join(ROOT, 'video/public', a);
