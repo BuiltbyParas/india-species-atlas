@@ -409,6 +409,25 @@ own narration, captions and choreography, and is handed the exact number of
 frames it must produce, so re-timing the narration re-times the choreography
 with it.
 
+## Promotional film: *Lines on the Map*
+
+A second, separate piece: a 69-second, 1920×1080, 60 fps cinematic trailer
+built on the home page's idea. A physical line becomes a line on the map, and
+each of the five featured species meets the kind of line that cuts through
+its ground. It is drawn by its own stage in `video/` from the atlas's data,
+ETOPO1 relief and Natural Earth rivers and roads, with a synthesised score and
+sound design. It never touches the site build.
+
+```bash
+npm run video:data            # once: geography, fonts, full-size photographs
+npm run video:preview         # whole film at half size, about 2 min
+npm run video:render:final    # QC, audio, master, web versions, subtitles, reports → exports/
+```
+
+See [`video/README.md`](video/README.md) for single-shot and sequence
+renders, the honesty rules the film keeps, and how to drop in real footage,
+a recorded voiceover or a licensed music track.
+
 ---
 
 ## Maintaining the data

@@ -63,13 +63,13 @@ const bustardMap: Scene = (f) => {
     [20.4, { lng: 71.0, lat: 25.6, dist: 8.6, heading: 4, pitch: 62 }],
   ], easeInOutSine);
   const proj = terrainPlate(f, view, {
-    exag: 22, shade: 5, warmth: 0.45, outside: 0.22, map: 0.2, fog: 0.035, detail: 0.2, exposure: 1.12,
+    exag: 22, shade: 5, warmth: 0.2, outside: 0.22, map: 0.2, fog: 0.035, detail: 0.2, exposure: 1.15,
     sunAzimuth: 300, sunElevation: 24, fogColor: [0.09, 0.09, 0.075],
   });
   const cr = STATUS.CR.hex;
   const recorded = species(f, 'great-indian-bustard').states;
   stateLines(f, proj, { color: 'rgba(232,225,207,0.22)', width: 1 });
-  stateFill(f, proj, recorded, cr, 0.1 * clamp01((t - 16.3) / 0.7));
+  stateFill(f, proj, recorded, cr, 0.07 * clamp01((t - 16.3) / 0.7));
   stateLines(f, proj, { color: 'rgba(232,225,207,0.75)', width: 1.4 }, seg(t, 16.3, 17.3), recorded);
 
   // The illustrative power line, ruled in with its pylons.

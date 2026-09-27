@@ -16,9 +16,9 @@ import { sourceNote } from './common';
 
 export const CONVERGE_VIEW: Array<[number, View]> = [
   [50.0, { lng: 83.3, lat: 22.3, dist: 40, heading: -12, pitch: 55 }],
-  [CUES.settle, { lng: 82.7, lat: 22.8, dist: 46, heading: -1, pitch: 83 }],
-  [56.0, { lng: 82.6, lat: 22.4, dist: 47, heading: 0, pitch: 90 }],
-  [64.0, { lng: 82.6, lat: 22.4, dist: 44, heading: 0, pitch: 90 }],
+  [CUES.settle, { lng: 82.7, lat: 21.9, dist: 50, heading: -1, pitch: 83 }],
+  [56.0, { lng: 82.6, lat: 21.5, dist: 51, heading: 0, pitch: 90 }],
+  [64.0, { lng: 82.6, lat: 21.5, dist: 48.5, heading: 0, pitch: 90 }],
 ];
 
 export function convergeMap(f: Frame, quiet: number) {

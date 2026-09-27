@@ -72,7 +72,7 @@ export class Film {
       return c.getContext('2d', { alpha: false })!;
     };
     this.layers = [layer(), layer()];
-    this.terrain = new Terrain(assets, canvas.width, canvas.height);
+    this.terrain = new Terrain(assets, canvas.width, canvas.height, WIDTH, HEIGHT);
   }
 
   /** The scene function for a shot, honouring `photo:<id>` and `map:<name>` families. */

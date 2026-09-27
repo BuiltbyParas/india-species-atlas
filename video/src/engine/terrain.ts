@@ -349,10 +349,15 @@ export class Terrain {
   private height: number;
   private v = new THREE.Vector3();
 
-  constructor(assets: Assets, width: number, height: number) {
+  /**
+   * `width`×`height` is the render size (smaller for previews); projection
+   * always answers in the film's own `filmW`×`filmH` space, so overlays land
+   * in the same place at any render size.
+   */
+  constructor(assets: Assets, width: number, height: number, filmW = width, filmH = height) {
     this.assets = assets;
-    this.width = width;
-    this.height = height;
+    this.width = filmW;
+    this.height = filmH;
     this.canvas = document.createElement('canvas');
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,

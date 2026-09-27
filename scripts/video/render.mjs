@@ -170,9 +170,9 @@ export async function pickH264() {
 export function finishing({ grain = 5, total }) {
   return [
     // Lift nothing, hold the blacks: a gentle S and a touch less chroma.
-    "curves=master='0/0 0.12/0.105 0.5/0.5 0.88/0.9 1/0.985'",
+    "curves=master='0/0 0.1/0.095 0.5/0.505 0.9/0.915 1/0.985'",
     'eq=saturation=0.97',
-    'vignette=angle=PI/5.5',
+    'vignette=angle=PI/7',
     // Temporal luma grain, so flat map fields and gradients do not band.
     `noise=c0s=${grain}:c0f=t+u`,
     `fade=t=out:st=${(total - 0.4).toFixed(3)}:d=0.4`,
