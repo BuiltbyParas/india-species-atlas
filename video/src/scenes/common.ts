@@ -24,7 +24,8 @@ export function species(f: Frame, id: string): Species {
  * rule, and the IUCN category with its colour. Everything in it is read
  * from the atlas's data at render time.
  */
-export function titleBlock(f: Frame, id: string, at: number, until?: number) {
+/** `maxWidth`: a name wider than this is set on two lines, and the block lifts to make room. */
+export function titleBlock(f: Frame, id: string, at: number, until?: number, maxWidth?: number) {
   const { ctx, t, H } = f;
   const s = species(f, id);
   const n = FEATURED.indexOf(id) + 1;
@@ -34,14 +35,28 @@ export function titleBlock(f: Frame, id: string, at: number, until?: number) {
   const base = H - 170;
   const out = until === undefined ? {} : { until, out: 0.45 };
 
+  const name = { text: s.commonName, size: 96, family: SERIF, weight: 330, tracking: -0.012 };
+  let names = [s.commonName];
+  if (maxWidth && measure(ctx, name) > maxWidth) {
+    // Break at the space nearest the middle.
+    const words = s.commonName.split(' ');
+    let best = 1;
+    for (let i = 1; i < words.length; i++) {
+      const d = Math.abs(words.slice(0, i).join(' ').length - s.commonName.length / 2);
+      if (d < Math.abs(words.slice(0, best).join(' ').length - s.commonName.length / 2)) best = i;
+    }
+    names = [words.slice(0, best).join(' '), words.slice(best).join(' ')];
+  }
+  const lift = (names.length - 1) * 98;
+
   drawText(ctx, {
-    text: `${String(n).padStart(2, '0')} / 05   ${region}`, x, y: base - 150, size: 15, family: SANS, weight: 500,
+    text: `${String(n).padStart(2, '0')} / 05   ${region}`, x, y: base - 150 - lift, size: 15, family: SANS, weight: 500,
     tracking: 0.28, upper: true, color: INK.canvasDim, preset: 'tracking', at, dur: 0.9, ...out,
   }, t);
-  drawText(ctx, {
-    text: s.commonName, x, y: base - 52, size: 96, family: SERIF, weight: 330, tracking: -0.012,
-    preset: 'mask', at: at + 0.12, dur: 1.0, ...out,
-  }, t);
+  names.forEach((line, i) => drawText(ctx, {
+    ...name, text: line, x, y: base - 52 - lift + i * 98,
+    preset: 'mask', at: at + 0.12 + i * 0.12, dur: 1.0, ...out,
+  }, t));
   drawText(ctx, {
     text: s.scientificName, x, y: base, size: 29, family: SERIF, weight: 300, italic: true,
     color: INK.canvasDim, preset: 'fade', at: at + 0.45, dur: 0.8, ...out,

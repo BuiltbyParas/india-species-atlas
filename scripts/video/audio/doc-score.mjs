@@ -158,5 +158,7 @@ export function docScore() {
     out.L[i] *= g;
     out.R[i] *= g;
   }
-  return out;
+  // The automation has faded to silence by DURATION; cut the reverb headroom off.
+  const n = Math.ceil(DURATION * SR);
+  return { L: out.L.subarray(0, n), R: out.R.subarray(0, n), n };
 }

@@ -552,7 +552,8 @@ export const docTranslocation: Scene = (f) => {
     strokeLine(ctx, arc, { color: INK.canvas, width: 2, glow: 8, alpha: 0.9 * (1 - 0.5 * clamp01((t - roadsAt) / 0.8)), dash: [8, 6] }, k);
   }
   for (const q of pts) if (['Kaziranga National Park', 'Pobitora Wildlife Sanctuary', 'Manas National Park'].includes(q.label)) placeLabel(ctx, q.label, q.p, clamp01((t - t0 - 0.4) / 0.5), q.label.startsWith('Manas') ? -30 : 30, -28);
-  programmeCard(f, 'indian-rhino-vision', f.W - 680, 330, t0 + 1.0);
+  // Top right: clear of Kaziranga's label on the river below.
+  programmeCard(f, 'indian-rhino-vision', f.W - 680, 96, t0 + 1.0);
   // Then the roads along the floodplain edge.
   ctx.save();
   clipIndia(f, proj);

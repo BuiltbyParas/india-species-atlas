@@ -93,7 +93,7 @@ export function runChecks(film: Film): StageReport {
     add(`claim ${v.id}`, Boolean(record) && absent.length === 0, absent.length ? `not in ${label}: ${absent.join(' | ')}` : label);
   }
 
-  for (const s of SHOTS) film.sceneFor(s);
+  for (const s of SHOTS) film.resolve(s as any);
   const unresolvedScenes = [...film.unresolved];
 
   return {

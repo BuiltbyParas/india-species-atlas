@@ -110,7 +110,8 @@ export const docPhoto: Scene = (f) => {
   };
   if (fr.scrim) scrim(360, fr.scrim);
   if (p.counter || p.status) scrim(W - 360, 0.45 * clamp01((t - (p.counter?.at ?? p.status!.at) + 0.3) / 0.6));
-  titleBlock(f, p.species, p.name);
+  // Leave the lower right to the counter or category change.
+  titleBlock(f, p.species, p.name, undefined, p.counter || p.status ? W - 1060 : undefined);
   if (p.counter) counter(f, p.counter);
   if (p.status) statusChange(f, p.status);
   photoCredit(f, p.species, clamp01((t - p.name - 0.6) / 0.6));

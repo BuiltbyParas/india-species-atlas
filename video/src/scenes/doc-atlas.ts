@@ -94,7 +94,8 @@ export const docAtlasPanel: Scene = (f) => {
     const m = f.film.assets.site.get('atlas.png');
     const k = cinema(clamp01((t - t0 - 0.2) / 1.0));
     const out = cinema(clamp01((t - t0 - 3.6) / 0.8));
-    plate(ctx, m, 700, 90, 1220, 700, lerp(W, 240, k) - out * 900, 200, 1220 * 0.9, 700 * 0.9, k * (1 - out));
+    // Framed on the map's view tabs, the map and its attribution.
+    plate(ctx, m, 470, 216, 1300, 746, lerp(W, 240, k) - out * 900, 200, 1220 * 0.9, 700 * 0.9, k * (1 - out));
     enterAt = t0 + 4.0;
   }
 

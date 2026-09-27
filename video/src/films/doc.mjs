@@ -397,13 +397,13 @@ shot({
   layers: [L.site],
 });
 shot({
-  id: 'S039', seq: 'atlas', end: fr(E('N66') + 6.2), scene: 'doc-endcard',
+  id: 'S039', seq: 'atlas', end: fr(E('N66') + 5.0), scene: 'doc-endcard',
   title: 'Explore the full Atlas', visual: 'INDIA SPECIES ATLAS; the three invitations; “Explore the full Atlas” with the real URL; then the film title.',
   camera: 'Locked off', typography: 'Wordmark, invitations, URL', sound: ['tone'], music: 'Resolve, and hold',
   website: 'URL from the repository (scripts/promo/config.mjs)', assets: ['site/home.png'], layers: [L.site],
 });
 shot({
-  id: 'S040', seq: 'credits', end: fr(E('N66') + 6.2 + 13), scene: 'doc-credits',
+  id: 'S040', seq: 'credits', end: fr(E('N66') + 5.0 + 10), scene: 'doc-credits',
   title: 'Credits', visual: 'Credits on black, read from the data the film used.', camera: 'Locked off', sound: ['room'], music: 'Reverb tail',
   dataSource: 'species.ts sources, photos.json, programmes.ts', layers: [],
 });

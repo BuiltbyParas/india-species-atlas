@@ -107,6 +107,18 @@ export class Film {
     return this.fallback;
   }
 
+  /** Resolves every scene a shot draws — its own, or the promo's it remaps — and its overlays. */
+  resolve(shot: Shot) {
+    if (shot.remap) {
+      const lo = Math.min(shot.remap.from, shot.remap.to);
+      const hi = Math.max(shot.remap.from, shot.remap.to);
+      for (const s of PROMO_SHOTS) if ((s.end > lo && s.start < hi) || s === promoShotAt(lo)) this.sceneFor(s as Shot);
+    } else {
+      this.sceneFor(shot);
+    }
+    for (const name of shot.overlay ?? []) if (!this.scenes.has(name)) this.unresolved.add(name);
+  }
+
   private draw(ctx: CanvasRenderingContext2D, shot: Shot, t: number) {
     ctx.save();
     ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
