@@ -1,0 +1,52 @@
+[
+  {
+    "id": "great-indian-bustard",
+    "file": "species/great-indian-bustard.jpg",
+    "width": 2560,
+    "height": 1920,
+    "artist": "Dr. Raju Kasambe",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Great_Indian_Bustard_Ardeotis_nigriceps_by_Raju_Kasambe_DSCN9716_09.jpg"
+  },
+  {
+    "id": "bengal-tiger",
+    "file": "species/bengal-tiger.jpg",
+    "width": 2560,
+    "height": 1706,
+    "artist": "Tisha Mukherjee",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bengal_tiger_in_Sanjay_Dubri_Tiger_Reserve_December_2024_by_Tisha_Mukherjee_11.jpg"
+  },
+  {
+    "id": "ganges-river-dolphin",
+    "file": "species/ganges-river-dolphin.jpg",
+    "width": 2441,
+    "height": 2011,
+    "artist": "Anant.wildlife",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ganges_River_Dolphin_sighted_in_Koshi_Barrage_(cropped).jpg"
+  },
+  {
+    "id": "snow-leopard",
+    "file": "species/snow-leopard.jpg",
+    "width": 1575,
+    "height": 1181,
+    "artist": "Irbis1983",
+    "licence": "Public domain",
+    "licenceUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Irbis4.JPG"
+  },
+  {
+    "id": "indian-rhinoceros",
+    "file": "species/indian-rhinoceros.jpg",
+    "width": 2560,
+    "height": 1708,
+    "artist": "Payamfarahani",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Payamfarahani_-_Rhinoceros_unicornis_(26).jpg"
+  }
+]

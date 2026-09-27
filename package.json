@@ -10,7 +10,18 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "promo": "node scripts/promo/index.mjs",
-    "documentary": "node scripts/documentary/render.mjs"
+    "documentary": "node scripts/documentary/render.mjs",
+    "video:dev": "vite --config video/vite.config.ts",
+    "video:data": "node scripts/video/fetch-data.mjs",
+    "video:typecheck": "tsc -p video/tsconfig.json",
+    "video:still": "node scripts/video/cli.mjs still",
+    "video:shot": "node scripts/video/cli.mjs shot",
+    "video:sequence": "node scripts/video/cli.mjs sequence",
+    "video:preview": "node scripts/video/cli.mjs preview",
+    "video:render": "node scripts/video/cli.mjs render",
+    "video:render:final": "node scripts/video/cli.mjs final",
+    "video:qc": "node scripts/video/cli.mjs qc",
+    "video:audio": "node scripts/video/cli.mjs audio"
   },
   "engines": {
     "node": ">=20.19"

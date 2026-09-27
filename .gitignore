@@ -25,3 +25,10 @@ dist-ssr
 
 # Promo video pipeline output (frames, audio, renders)
 /promo/
+
+# Promotional film renders and caches (npm run video:*)
+/exports/
+
+# Full-size species photographs for the film: fetched from Wikimedia Commons by
+# `npm run video:data` (credits in video/public/species/photos.json)
+/video/public/species/*.jpg
