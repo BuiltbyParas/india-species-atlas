@@ -1,0 +1,41 @@
+{
+  "captured": "2026-09-27T07:38:14.859Z",
+  "shots": [
+    {
+      "file": "site/home.png",
+      "url": "/"
+    },
+    {
+      "file": "site/atlas.png",
+      "url": "/atlas"
+    },
+    {
+      "file": "site/conservation.png",
+      "url": "/conservation"
+    },
+    {
+      "file": "site/species.png",
+      "url": "/species"
+    },
+    {
+      "file": "site/profile-great-indian-bustard.png",
+      "url": "/species?species=great-indian-bustard"
+    },
+    {
+      "file": "site/profile-bengal-tiger.png",
+      "url": "/species?species=bengal-tiger"
+    },
+    {
+      "file": "site/profile-ganges-river-dolphin.png",
+      "url": "/species?species=ganges-river-dolphin"
+    },
+    {
+      "file": "site/profile-snow-leopard.png",
+      "url": "/species?species=snow-leopard"
+    },
+    {
+      "file": "site/profile-indian-rhinoceros.png",
+      "url": "/species?species=indian-rhinoceros"
+    }
+  ]
+}

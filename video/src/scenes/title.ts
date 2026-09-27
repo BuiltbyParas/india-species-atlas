@@ -1,4 +1,4 @@
-import { CUES, SITE_URL, SUBTITLE, TITLE } from '../timeline.mjs';
+import { CUES, SITE_URL, SUBTITLE, TITLE } from '../films/promo.mjs';
 import type { Scene } from '../engine/film';
 import { clamp01, easeInOutCubic, seg } from '../engine/ease';
 import { INK, SANS, SERIF, drawRule, drawText } from '../engine/type';

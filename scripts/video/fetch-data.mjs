@@ -248,6 +248,17 @@ async function main() {
     await writeFile(join(PUB, 'data', 'roads.geojson'), JSON.stringify(roads));
     console.log('roads', roads.features.length);
   }
+  if (want('world')) {
+    // For the opening globe: coastlines and land borders of the whole world,
+    // at 1:50m, rounded to 0.01°. Public domain, like the rest of Natural Earth.
+    for (const [name, out] of [['ne_50m_coastline', 'world-coast'], ['ne_50m_admin_0_boundary_lines_land', 'world-borders']]) {
+      const src = await get(`https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/${name}.geojson`);
+      const lines = src.features.flatMap((f) => (f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates));
+      const packed = lines.map((l) => l.map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100]));
+      await writeFile(join(PUB, 'data', `${out}.json`), JSON.stringify(packed));
+      console.log(out, packed.length, 'lines');
+    }
+  }
   if (want('etopo')) {
     // Two arc-minutes (~3.7 km) for the whole country; the full one arc-minute
     // for the western Himalaya, where the camera comes down to the ridges.

@@ -4,7 +4,8 @@
  * manifest, credits and the production report, all into exports/.
  */
 import { execFile } from 'node:child_process';
-import { copyFile, readFile, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { toYaml } from './storyboard.mjs';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -12,20 +13,22 @@ import { grabFrame, openStage, startServer } from './stage.mjs';
 import { CACHE, EXPORTS, assemble, partsFor, pickH264, renderShots, run as sh, writeLog } from './render.mjs';
 import { qc } from './qc.mjs';
 import { buildAudio } from './audio/index.mjs';
-import { CREDITS, CUES, DURATION, FEATURED, FPS, HEIGHT, SHOTS, SITE_URL, SUBTITLE, TITLE, VOICE, WIDTH } from '../../video/src/timeline.mjs';
+import { CREDITS, CUES, DURATION, EXPORT, FEATURED, FILM, FPS, HEIGHT, SHOTS, SITE_URL, SUBTITLE, TITLE, VOICE, WIDTH } from '../../video/src/timeline.mjs';
 
 const run = promisify(execFile);
-const NAME = 'Lines_on_the_Map_PROMO';
+const NAME = EXPORT.name;
+const DIR = join(EXPORTS, '..', EXPORT.dir);
 const OUT = {
-  master: join(EXPORTS, `${NAME}_MASTER.mp4`),
-  web: join(EXPORTS, `${NAME}_WEB.mp4`),
-  av1: join(EXPORTS, `${NAME}_WEB_AV1.mp4`),
-  srt: join(EXPORTS, `${NAME}_SUBTITLES.srt`),
-  thumb: join(EXPORTS, `${NAME}_THUMBNAIL.png`),
-  manifest: join(EXPORTS, 'SHOT_MANIFEST.md'),
-  manifestJson: join(EXPORTS, 'SHOT_MANIFEST.json'),
-  credits: join(EXPORTS, 'CREDITS.md'),
-  report: join(EXPORTS, 'PRODUCTION_REPORT.md'),
+  master: join(DIR, `${NAME}_MASTER.mp4`),
+  web: join(DIR, `${NAME}_WEB.mp4`),
+  av1: join(DIR, `${NAME}_WEB_AV1.mp4`),
+  srt: join(DIR, `${NAME}_SUBTITLES.srt`),
+  thumb: join(DIR, `${NAME}_THUMBNAIL.png`),
+  manifest: join(DIR, 'SHOT_MANIFEST.md'),
+  manifestJson: join(DIR, 'SHOT_MANIFEST.json'),
+  manifestYaml: join(DIR, 'SHOT_MANIFEST.yaml'),
+  credits: join(DIR, 'CREDITS.md'),
+  report: join(DIR, 'PRODUCTION_REPORT.md'),
 };
 
 const tc = (t) => {
@@ -46,6 +49,8 @@ function mdTable(rows) {
 
 export async function final({ flags, url }) {
   const started = Date.now();
+  await mkdir(DIR, { recursive: true });
+  console.log(`› film: ${FILM}`);
   console.log('› QC');
   const check = await qc({ url });
   if (!check.ok && !flags.has('--force-qc')) throw new Error('QC failed — fix the errors above (or pass --force-qc to render anyway)');
@@ -64,7 +69,7 @@ export async function final({ flags, url }) {
     records = await renderShots(stage.page, SHOTS, { ...settings, force: flags.has('--force') });
     stageInfo = { renderer: stage.renderer, gpu: stage.gpu, pageErrors: stage.errors };
     // Thumbnail: the title, fully resolved, straight from the stage (no grain).
-    await writeFile(OUT.thumb, await grabFrame(stage.page, CUES.cta + 1.6, 'png'));
+    await writeFile(OUT.thumb, await grabFrame(stage.page, FILM === 'doc' ? CUES.endcard + 6.0 : CUES.cta + 1.6, 'png'));
   } finally {
     await stage?.browser.close();
     server.stop();
@@ -98,13 +103,18 @@ async function writeManifest(records) {
   const json = SHOTS.map((s) => {
     const lines = VOICE.filter((v) => v.at >= s.start && v.at < s.end).map((v) => ({ id: v.id, at: v.at, text: v.text }));
     const slot = s.slot ? { path: s.slot, status: existsSync(join(EXPORTS, '..', 'video/public', s.slot)) ? 'footage' : 'illustration (slot empty)' } : null;
+    const x = /** @type {any} */ (s);
     return {
-      id: s.id, sequence: s.seq, start: s.start, end: s.end, timecode: `${tc(s.start)}–${tc(s.end)}`, frames: Math.round((s.end - s.start) * FPS),
-      scene: s.scene, title: s.title, camera: s.camera, transitionIn: s.transitionIn, layers: s.layers, assets: s.assets, sound: s.sound,
-      narration: lines, footageSlot: slot, render: { hash: byId.get(s.id)?.hash, cached: byId.get(s.id)?.cached },
+      id: s.id, sequence: s.seq, start: s.start, end: s.end, duration: Number((s.end - s.start).toFixed(3)), timecode: `${tc(s.start)}–${tc(s.end)}`, frames: Math.round((s.end - s.start) * FPS),
+      scene: s.scene, ...(x.remap ? { footage: `promo ${x.remap.from}–${x.remap.to} s${x.remap.ease ? `, ramp ${x.remap.ease}` : ''}` } : {}), overlay: x.overlay ?? [],
+      title: s.title, visual: x.visual, camera: s.camera, threeD: x.threeD, motionGraphics: x.motionGraphics, typography: x.typography, vfx: x.vfx,
+      sound: s.sound, music: x.music, transitionIn: s.transitionIn, dataSource: x.dataSource, website: x.website,
+      layers: s.layers, assets: s.assets, narration: lines, footageSlot: slot, render: { hash: byId.get(s.id)?.hash, cached: byId.get(s.id)?.cached },
     };
   });
-  await writeFile(OUT.manifestJson, JSON.stringify({ title: TITLE, fps: FPS, width: WIDTH, height: HEIGHT, duration: DURATION, shots: json }, null, 2));
+  const manifest = { title: TITLE, film: FILM, fps: FPS, width: WIDTH, height: HEIGHT, duration: DURATION, shots: json };
+  await writeFile(OUT.manifestJson, JSON.stringify(manifest, null, 2));
+  await writeFile(OUT.manifestYaml, toYaml(manifest));
   const md = [
     `# ${TITLE} — shot manifest`,
     '',
@@ -152,6 +162,7 @@ async function writeCredits() {
     '',
     ...CREDITS.illustration.map((g) => `- ${g}`),
     '- No AI-generated video or imagery is used. No footage has been added to the slots yet.',
+    ...(CREDITS.site ? ['', '## The website', '', `- ${CREDITS.site}`] : []),
     '',
     '## Narration',
     '',
@@ -210,7 +221,7 @@ async function writeReport({ check, audio, records, stageInfo, seconds, enc }) {
     '',
     mdTable([['', 'File', 'Video', 'Audio', 'Duration', 'Size', 'Bitrate'], ...files]),
     '',
-    `Also: \`${OUT.srt.split('/').pop()}\` (captions), \`${OUT.thumb.split('/').pop()}\` (${(thumb.size / 1024).toFixed(0)} KB, 1920×1080), \`SHOT_MANIFEST.md/json\`, \`CREDITS.md\`.`,
+    `Also: \`${OUT.srt.split('/').pop()}\` (captions), \`${OUT.thumb.split('/').pop()}\` (${(thumb.size / 1024).toFixed(0)} KB, 1920×1080), \`SHOT_MANIFEST.yaml/md/json\`, \`CREDITS.md\`.`,
     '',
     '## Audio',
     '',
@@ -236,6 +247,12 @@ async function writeReport({ check, audio, records, stageInfo, seconds, enc }) {
     ]),
     '',
     `Rendered this run: ${renderedNow.length} shots; reused from cache: ${records.length - renderedNow.length}.`,
+    '',
+    '## Data sources',
+    '',
+    mdTable([['Layer', 'Provenance', 'Source'], ...[...new Map(SHOTS.flatMap((s) => s.layers).map((l) => [l.name, l])).values()].map((l) => [l.name, l.provenance, l.source])]),
+    '',
+    `Narration: ${VOICE.filter((v) => v.claim).length} factual lines, each checked against its dataset field before the render (see QC: Stage).`,
     '',
     '## Assets used',
     '',

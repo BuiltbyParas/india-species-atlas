@@ -1,4 +1,4 @@
-import { CUES } from '../timeline.mjs';
+import { CUES } from '../films/promo.mjs';
 import type { Scene } from '../engine/film';
 import { clamp01, easeInOutCubic, hash1, seg } from '../engine/ease';
 import { localities, lookAt, stateFill, stateLines, viewAt } from '../engine/layers';

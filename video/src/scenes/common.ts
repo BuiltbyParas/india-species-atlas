@@ -1,6 +1,6 @@
 import { REGIONS } from '../../../src/data/regions';
 import type { Species } from '../../../src/types';
-import { FEATURED } from '../timeline.mjs';
+import { FEATURED } from '../films/promo.mjs';
 import type { Frame } from '../engine/film';
 import { clamp01, easeOutCubic, hash1, seg, window01 } from '../engine/ease';
 import { INK, SANS, SERIF, STATUS, drawRule, drawText, measure } from '../engine/type';

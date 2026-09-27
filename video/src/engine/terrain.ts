@@ -367,6 +367,8 @@ export class Terrain {
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(1);
+    this.renderW = width;
+    this.renderH = height;
     this.renderer.setSize(width, height, false);
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
     this.renderer.setClearColor(0x000000, 0);
@@ -431,6 +433,31 @@ export class Terrain {
   private quadScene = new THREE.Scene();
   private quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+  private renderW = 0;
+  private renderH = 0;
+
+  /**
+   * Every render starts from a known state: the drawing buffer at its render
+   * size and a live context. A frame drawn into a shrunken buffer, or into a
+   * lost context, must fail the capture rather than slip into the film.
+   */
+  private guard() {
+    const gl = this.renderer.getContext();
+    if (gl.isContextLost()) throw new Error('WebGL context lost');
+    const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    if (size.x !== this.renderW || size.y !== this.renderH || this.canvas.width !== this.renderW) {
+      this.renderer.setSize(this.renderW, this.renderH, false);
+    }
+    this.renderer.setViewport(0, 0, this.renderW, this.renderH);
+  }
+
+  /** Renders any three.js scene (the Atlas reveal's planes) on the same GPU context. */
+  renderScene(scene: THREE.Scene, camera: THREE.Camera): HTMLCanvasElement {
+    this.guard();
+    this.renderer.render(scene, camera);
+    return this.canvas;
+  }
+
   /** Renders a full-frame shader (the water) on the same GPU context. */
   renderQuad(material: THREE.ShaderMaterial): HTMLCanvasElement {
     if (!this.quad) {
@@ -439,6 +466,7 @@ export class Terrain {
       this.quadScene.add(this.quad);
     }
     this.quad.material = material;
+    this.guard();
     this.renderer.render(this.quadScene, this.quadCamera);
     return this.canvas;
   }
@@ -474,6 +502,7 @@ export class Terrain {
     if (this.himalaya) this.himalaya.visible = l.himalaya;
     // The patch sits a hair above the country mesh so it wins where both draw.
     if (this.himalaya) this.himalaya.position.y = l.india ? 0.0005 : 0;
+    this.guard();
     this.renderer.render(this.scene, this.camera);
     return this.canvas;
   }

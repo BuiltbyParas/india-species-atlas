@@ -1,0 +1,1428 @@
+# Lines on the Map — storyboard
+title: Lines on the Map
+film: doc
+format: "1920x1080 @ 60 fps"
+duration: 329.75
+website: builtbyparas.github.io/india-species-atlas
+note: "Generated from video/src/films/doc.mjs by npm run video:storyboard. Edit the timeline, not this file."
+shots:
+  - id: S001
+    sequence: hook
+    start: 0
+    duration: 5.6
+    title: A line is drawn
+    narration:
+      - id: N01
+        at: 2.3
+        text: A line is the simplest thing we draw.
+    visual: "Black; a night Earth turns out of darkness; graticule lines rule themselves across it."
+    camera: Locked off, the globe turning slowly
+    threeD: Orthographic globe, coastlines, graticule
+    motionGraphics: Graticule draw-on
+    typography: —
+    vfx: Starfield, atmosphere rim glow
+    soundEffects:
+      - room
+      - air
+      - tone
+    music: Silence, then a low drone
+    transition: fade-from-black 2s
+    dataSource: Natural Earth coastlines
+    assetRequirements:
+      - data/world-coast.json
+      - data/world-borders.json
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-globe
+    layers:
+      - "real: World coastlines and borders (Natural Earth 1:50m)"
+      - "illustrative: Atmosphere (haze, snow, particles) (Drawn for the film)"
+  - id: S002
+    sequence: hook
+    start: 5.6
+    duration: 1.683
+    title: A stroke of ink
+    narration:
+      - id: N02
+        at: 5.83
+        text: A stroke of ink.
+    visual: A single ink line drawn across paper, macro, the nib out of frame.
+    camera: Macro, slight drift
+    threeD: —
+    motionGraphics: The stroke is drawn on by length
+    typography: —
+    vfx: Paper grain, depth-of-field falloff
+    soundEffects:
+      - ink
+    music: Drone
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-ink
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+  - id: S003
+    sequence: hook
+    start: 7.283
+    duration: 2.333
+    title: A wire between two towers
+    narration:
+      - id: N03
+        at: 7.43
+        text: A wire between two towers.
+    visual: "A power-line conductor in macro against dusk; a glint runs along it."
+    camera: Macro drift
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: Rim light, dust motes
+    soundEffects:
+      - hum
+    music: Drone
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 0.4–3 s
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+    footageSlot: video/public/footage/doc/S003.mp4
+  - id: S004
+    sequence: hook
+    start: 9.617
+    duration: 2.6
+    title: A road through a forest
+    narration:
+      - id: N04
+        at: 9.77
+        text: A road through a forest.
+    visual: A road through tall forest at dusk, centre line rushing toward camera.
+    camera: Vehicle height, forward
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: Speed vignette
+    soundEffects:
+      - road
+    music: Drone
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 20.05–20.9 s
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+    footageSlot: video/public/footage/doc/S004.mp4
+  - id: S005
+    sequence: hook
+    start: 12.217
+    duration: 9.75
+    title: "Lines across the land → title"
+    narration:
+      - id: N05
+        at: 12.41
+        text: But every line we draw on a map is also drawn across the land.
+      - id: N06
+        at: 17.82
+        text: And someone already lives there.
+      - id: N07
+        at: 21.77
+        text: India is not just a country on a map.
+    visual: "The globe turns to Asia; borders and coastlines light; the camera falls toward India. Title card: Lines on the Map."
+    camera: Slow orbit becoming a dive
+    threeD: Globe rotation and zoom
+    motionGraphics: Borders drawn on, India outlined
+    typography: Title — character reveal, Newsreader Light
+    vfx: Atmosphere glow
+    soundEffects:
+      - tone
+      - air
+    music: First pad swell under the title
+    transition: cut
+    dataSource: "Natural Earth; India Species Atlas boundaries"
+    assetRequirements:
+      - data/world-coast.json
+      - data/world-borders.json
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "scene doc-globe + doc-title"
+    layers:
+      - "real: World coastlines and borders (Natural Earth 1:50m)"
+      - "real: State boundaries (India Species Atlas india-states.geojson)"
+  - id: S006
+    sequence: india
+    start: 21.967
+    duration: 5.467
+    title: India
+    narration:
+      - id: N08
+        at: 24.89
+        text: It is a network of habitats.
+    visual: "Top-down over the Thar, pulling out to the whole relief of India; boundaries rule in; “India” with its extent."
+    camera: Fast pull-out, easing
+    threeD: ETOPO1 relief
+    motionGraphics: Boundary draw-on
+    typography: "“India” — tracking reveal; coordinates — line reveal"
+    vfx: —
+    soundEffects:
+      - air
+      - tone
+    music: "Discovery: pad opens"
+    transition: dissolve 0.6s
+    dataSource: "ETOPO1; boundary extent"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "promo footage 9.3–12.4 s + doc-title"
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: State boundaries (India Species Atlas india-states.geojson)"
+  - id: S007
+    sequence: india
+    start: 27.433
+    duration: 7.75
+    title: A network of habitats
+    narration:
+      - id: N09
+        at: 27.53
+        text: Desert and grassland. Forest. River. Mountain. Floodplain.
+    visual: "Five cuts, one per habitat word, each a flight over its real relief: Thar, central Indian forest, Gangetic plain, Himalaya, Brahmaputra floodplain."
+    camera: Five short FPV-style glides
+    threeD: ETOPO1 relief at five locations
+    motionGraphics: —
+    typography: One word per cut — mask reveal
+    vfx: Haze per landscape
+    soundEffects:
+      - air
+      - ticks
+    music: A beat per word
+    transition: cut
+    dataSource: ETOPO1
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-habitats
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "illustrative: Atmosphere (haze, snow, particles) (Drawn for the film)"
+  - id: S008
+    sequence: india
+    start: 35.183
+    duration: 14.733
+    title: "The Atlas: twelve species, three layers"
+    narration:
+      - id: N10
+        at: 35.7
+        text: "The India Species Atlas maps twelve threatened species across it:"
+        source: "dataset · SPECIES.length"
+      - id: N11
+        at: 40.96
+        text: where each one is recorded, what presses on it, and what protects it.
+      - id: N12
+        at: 46.77
+        text: Five of them tell this story.
+    visual: "India as the Atlas draws it: all twelve species’ localities appear, counted; then the three layers — where recorded, what presses, what protects; then five anchors are joined by one route: this film."
+    camera: Slow push, top-down
+    threeD: Relief in map mode
+    motionGraphics: "Locality markers by IUCN colour; counter 12; the route line"
+    typography: "Counter; the three layer names"
+    vfx: —
+    soundEffects:
+      - tone
+      - ticks
+    music: Pulse enters softly
+    transition: dissolve 0.5s
+    dataSource: "species.ts (all 12): distributionPoints, status; count computed"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - site/atlas.png
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: "The Atlas named; its map legend drawn in the site’s style"
+    render: scene doc-atlas-layers
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S009
+    sequence: bustard
+    start: 49.917
+    duration: 4.417
+    title: The Thar at dawn
+    narration:
+      - id: N13
+        at: 50.72
+        text: In the Thar, the land runs open to the horizon.
+    visual: "Transmission towers across open grassland at dawn; grass moving in the foreground."
+    camera: Slow lateral track (slowed)
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: Low sun, motes
+    soundEffects:
+      - wind
+      - grass
+      - hum
+    music: Observational
+    transition: dissolve 0.8s
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 5–7.45 s
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+    footageSlot: video/public/footage/doc/S009.mp4
+  - id: S010
+    sequence: bustard
+    start: 54.333
+    duration: 8.75
+    title: Great Indian Bustard
+    narration:
+      - id: N14
+        at: 54.44
+        text: The Great Indian Bustard needs it that way.
+        source: "great-indian-bustard · habitatNote"
+      - id: N15
+        at: 57.65
+        text: One of the heaviest flying birds in the world, it needs to see a long way.
+        source: "great-indian-bustard · summary"
+    visual: "The photograph: two bustards at the scrub edge. Slow push; rack focus in."
+    camera: Push-in, rack focus
+    threeD: —
+    motionGraphics: —
+    typography: "Species block: chapter, name (mask), scientific name, IUCN category and year"
+    vfx: —
+    soundEffects:
+      - wind
+      - grass
+    music: A held chord
+    transition: cut
+    dataSource: "species.ts: name, status CR, statusAssessedYear"
+    assetRequirements:
+      - species/great-indian-bustard.jpg
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-photo
+    layers:
+      - "real: Photograph (Wikimedia Commons, credited on screen)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+  - id: S011
+    sequence: bustard
+    start: 63.083
+    duration: 8.65
+    title: Once across the subcontinent
+    narration:
+      - id: N16
+        at: 63.38
+        text: Once found across much of the subcontinent,
+        source: "great-indian-bustard · description"
+      - id: N17
+        at: 66.5
+        text: it now survives in the low hundreds, most of them in Rajasthan.
+        source: "great-indian-bustard · description"
+    visual: "India; the states where historic populations are now effectively lost light and fade; Rajasthan and Gujarat remain."
+    camera: Slow push toward the Thar
+    threeD: Relief in map mode
+    motionGraphics: "State highlights fading out; the remaining range"
+    typography: "“Low hundreds” — kinetic, quoted from the record"
+    vfx: —
+    soundEffects:
+      - air
+    music: Minor turn
+    transition: dissolve 0.5s
+    dataSource: "species.ts indianDistribution, states, description (“low hundreds”)"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-bustard-range
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: States of record (species.ts states)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S012
+    sequence: bustard
+    start: 71.733
+    duration: 9.167
+    title: The wire on the map
+    narration:
+      - id: N18
+        at: 72.03
+        text: Across its last grasslands run high-tension power lines.
+        source: "great-indian-bustard · threatNote"
+      - id: N19
+        at: 76.53
+        text: Collision with them is now the single largest cause of death.
+        source: "great-indian-bustard · threatNote"
+    visual: "The bustard’s range in 3D; an illustrative power line is ruled across it; localities pulse."
+    camera: Slow orbit (slowed)
+    threeD: Relief
+    motionGraphics: Power line draw-on with pylons, tagged illustrative
+    typography: Kinetic statement, then its source
+    vfx: —
+    soundEffects:
+      - hum
+      - impact-soft
+    music: Tension
+    transition: cut
+    dataSource: species.ts threatNote
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "promo footage 16.1–19.95 s + doc-kinetic"
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: States of record (species.ts states)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "illustrative: Drawing device on a map (Labelled “illustrative” on screen)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S013
+    sequence: bustard
+    start: 80.9
+    duration: 9.533
+    title: Buried lines, hatched eggs
+    narration:
+      - id: N20
+        at: 81.19
+        text: Some lines are being buried, or moved.
+        source: "great-indian-bustard · conservationActions"
+      - id: N21
+        at: 84.54
+        text: Eggs from the wild are hatched at breeding centres near Sam and at Sorsan.
+        source: "gib-conservation-breeding · description"
+    visual: "The illustrative line sinks from solid to buried (dotted); the breeding programme appears as a record, not a map point."
+    camera: Held
+    threeD: —
+    motionGraphics: "Line changes state; programme card"
+    typography: Programme name, start year, places as written
+    vfx: —
+    soundEffects:
+      - tone
+    music: Restrained hope
+    transition: cut
+    dataSource: "species.ts conservationActions; programmes.ts gib-conservation-breeding (2016)"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-bustard-response
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "illustrative: Drawing device on a map (Labelled “illustrative” on screen)"
+      - "real: Programmes and start years (programmes.ts)"
+  - id: S014
+    sequence: bustard
+    start: 90.433
+    duration: 6.55
+    title: In the Atlas
+    narration:
+      - id: N22
+        at: 90.74
+        text: Follow its last localities, and every threat against it, in the Atlas.
+    visual: "The map softens; the real Atlas profile for the bustard slides in beside it."
+    camera: Slow push on the panel
+    threeD: —
+    motionGraphics: Screenshot plate with depth
+    typography: "Small “India Species Atlas · Species profile” label and URL"
+    vfx: —
+    soundEffects:
+      - ui
+    music: Resolve
+    transition: cut
+    dataSource: The live site
+    assetRequirements:
+      - site/profile-great-indian-bustard.png
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: "Real species-profile screenshot; URL shown small"
+    render: scene doc-atlas-panel
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S015
+    sequence: tiger
+    start: 96.983
+    duration: 3.633
+    title: The road
+    narration:
+      - id: N23
+        at: 97.58
+        text: Further east, the lines are roads.
+    visual: "Hard cut to the forest road at speed; the camera tilts down until the centre line is a single vertical line."
+    camera: Vehicle height, then tilt to top-down (speed ramp)
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: Speed vignette
+    soundEffects:
+      - impact
+      - road
+    music: Pulse
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 20–21.72 s
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+    footageSlot: video/public/footage/doc/S015.mp4
+  - id: S016
+    sequence: tiger
+    start: 100.617
+    duration: 3.05
+    title: The road becomes the map
+    narration:
+      - id: N24
+        at: 100.82
+        text: India is the tiger’s global stronghold.
+        source: "bengal-tiger · description"
+    visual: The line becomes the real road network of central India, drawing outward.
+    camera: Top-down rising
+    threeD: Relief
+    motionGraphics: Roads draw-on
+    typography: —
+    vfx: —
+    soundEffects:
+      - road
+      - tone
+    music: Pulse
+    transition: cut
+    dataSource: Natural Earth roads
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 22.35–24.2 s
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Roads (Natural Earth 1:10m)"
+  - id: S017
+    sequence: tiger
+    start: 103.667
+    duration: 10.567
+    title: Bengal Tiger
+    narration:
+      - id: N25
+        at: 103.87
+        text: The 2022 estimate placed the country’s tigers at roughly three thousand seven hundred,
+        source: "bengal-tiger · description"
+      - id: N26
+        at: 110.6
+        text: spread across more than fifty tiger reserves.
+        source: "bengal-tiger · description"
+    visual: "The photograph: a tiger turning toward camera in dry grass."
+    camera: Slow lateral drift
+    threeD: —
+    motionGraphics: "Counter rising to ~3,700; second line"
+    typography: "Species block; counter in Geist tabular figures"
+    vfx: —
+    soundEffects:
+      - forest
+    music: Observational
+    transition: cut
+    dataSource: "species.ts description (2022 estimate; reserves)"
+    assetRequirements:
+      - species/bengal-tiger.jpg
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-photo
+    layers:
+      - "real: Photograph (Wikimedia Commons, credited on screen)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S018
+    sequence: tiger
+    start: 114.233
+    duration: 10.783
+    title: Islands
+    narration:
+      - id: N27
+        at: 114.58
+        text: But a reserve is an island, unless it connects.
+      - id: N28
+        at: 118.37
+        text: Roads, railways, mines and settlements cut through the forest, and the corridors between.
+        source: "bengal-tiger · threatNote"
+    visual: "Reserves as islands of forest; the illustrative links between them; real roads, railways-in-kind, cut through; the links break."
+    camera: Oblique orbit over the central highlands
+    threeD: Relief
+    motionGraphics: Reserve islands, links breaking
+    typography: "HABITAT → FRAGMENTATION → CONNECTIVITY (the last breaks)"
+    vfx: —
+    soundEffects:
+      - road
+      - impact-soft
+    music: Tension
+    transition: dissolve 0.4s
+    dataSource: "species.ts localities and threatNote; Natural Earth roads"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-fragment
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Roads (Natural Earth 1:10m)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "illustrative: Drawing device on a map (Labelled “illustrative” on screen)"
+  - id: S019
+    sequence: tiger
+    start: 125.017
+    duration: 7.9
+    title: In the Atlas
+    narration:
+      - id: N29
+        at: 125.37
+        text: "The Atlas maps the landscapes behind that number: the reserves, and the lines between them."
+    visual: The Atlas’s interactive map, then the tiger’s profile.
+    camera: Push
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: —
+    soundEffects:
+      - ui
+    music: Resolve
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - site/atlas.png
+      - site/profile-bengal-tiger.png
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: Real map and profile screenshots
+    render: scene doc-atlas-panel
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S020
+    sequence: dolphin
+    start: 132.917
+    duration: 2.8
+    title: Rivers are lines too
+    narration:
+      - id: N30
+        at: 133.61
+        text: Rivers are lines too.
+    visual: A silt-laden river surface flowing toward camera.
+    camera: Low, following the current
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: Glints, streaks
+    soundEffects:
+      - water
+    music: Fluid arpeggio
+    transition: dissolve 0.7s
+    dataSource: —
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 27.5–28.75 s
+    layers:
+      - "illustrative: Drawn landscape (Drawn for the film)"
+    footageSlot: video/public/footage/doc/S020.mp4
+  - id: S021
+    sequence: dolphin
+    start: 135.717
+    duration: 7.467
+    title: Ganges River Dolphin
+    narration:
+      - id: N31
+        at: 135.82
+        text: The Ganges river dolphin is almost blind.
+        source: "ganges-river-dolphin · description"
+      - id: N32
+        at: 139.23
+        text: It finds its way through silt-laden water by sound.
+        source: "ganges-river-dolphin · description"
+    visual: "The photograph: a dolphin surfacing, beak clear, at the Koshi barrage."
+    camera: Push-in
+    threeD: —
+    motionGraphics: —
+    typography: Species block
+    vfx: —
+    soundEffects:
+      - water
+    music: Observational
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - species/ganges-river-dolphin.jpg
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-photo
+    layers:
+      - "real: Photograph (Wikimedia Commons, credited on screen)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+  - id: S022
+    sequence: dolphin
+    start: 143.183
+    duration: 11.367
+    title: The network divides
+    narration:
+      - id: N33
+        at: 143.38
+        text: Dams and barrages divide its rivers, and thin them in the dry season.
+        source: "ganges-river-dolphin · threatNote"
+      - id: N34
+        at: 148.81
+        text: It survives in the low thousands, across India, Nepal and Bangladesh.
+        source: "ganges-river-dolphin · description"
+    visual: The Ganga network drawn downstream, then broken into reaches (illustrative breaks).
+    camera: Follows the river east (slowed)
+    threeD: Relief
+    motionGraphics: "River draw-on; breaks with bars"
+    typography: Kinetic figure
+    vfx: —
+    soundEffects:
+      - water
+      - tone
+    music: Tension
+    transition: dissolve 0.5s
+    dataSource: "Natural Earth rivers; species.ts threatNote, description"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "promo footage 29.3–32.5 s + doc-kinetic"
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Rivers (Natural Earth 1:10m)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "illustrative: Drawing device on a map (Labelled “illustrative” on screen)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S023
+    sequence: dolphin
+    start: 154.55
+    duration: 5.083
+    title: Six hundred million
+    narration:
+      - id: N35
+        at: 154.86
+        text: Some six hundred million people depend on the same two river basins.
+        source: "ganges-river-dolphin · whyItMatters"
+    visual: "Pull back: the Ganga and Brahmaputra systems glow across the north and east."
+    camera: Pull-out
+    threeD: Relief
+    motionGraphics: Two river systems highlighted by name
+    typography: "~600 million people — quoted with its field"
+    vfx: —
+    soundEffects:
+      - water
+      - air
+    music: Scale
+    transition: cut
+    dataSource: "species.ts whyItMatters; Natural Earth rivers"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-basins
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Rivers (Natural Earth 1:10m)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S024
+    sequence: dolphin
+    start: 159.633
+    duration: 6.133
+    title: Project Dolphin
+    narration:
+      - id: N36
+        at: 159.93
+        text: Project Dolphin, announced in 2020, now surveys and protects it.
+        source: "project-dolphin · description"
+    visual: "The dolphin’s localities, Vikramshila named; the programme appears as a record with its date."
+    camera: Held, slow push
+    threeD: —
+    motionGraphics: "Programme card; localities pulse"
+    typography: Programme name and announcement date
+    vfx: —
+    soundEffects:
+      - tone
+    music: Restrained hope
+    transition: cut
+    dataSource: "programmes.ts project-dolphin; species.ts protectedAreas"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-programme
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: Programmes and start years (programmes.ts)"
+  - id: S025
+    sequence: dolphin
+    start: 165.767
+    duration: 5.733
+    title: In the Atlas
+    narration:
+      - id: N37
+        at: 166.06
+        text: Trace its river network, reach by reach, in the Atlas.
+    visual: The dolphin’s real Atlas profile.
+    camera: ""
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: —
+    soundEffects:
+      - ui
+    music: Resolve
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - site/profile-ganges-river-dolphin.png
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: Real species-profile screenshot
+    render: scene doc-atlas-panel
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S026
+    sequence: snow-leopard
+    start: 171.5
+    duration: 11.567
+    title: Higher still
+    narration:
+      - id: N38
+        at: 172.5
+        text: Higher still, the lines are contours.
+      - id: N39
+        at: 175.91
+        text: Above the treeline, between three and five thousand metres, the snow leopard hunts on broken rock.
+        source: "snow-leopard · habitatNote"
+    visual: "Low over the ridges of Spiti in cold haze, snow falling; contours rise out of the rock."
+    camera: Slow push along the ridges (slowed)
+    threeD: "ETOPO1 1′ relief, snow, haze"
+    motionGraphics: Contours at a real 250 m interval
+    typography: —
+    vfx: Haze, falling snow, crag shading
+    soundEffects:
+      - mountain
+    music: "The pulse drops out; high cold air"
+    transition: dissolve 1.2s
+    dataSource: ETOPO1
+    assetRequirements:
+      - data/etopo-himalaya.bin
+      - data/etopo-himalaya.json
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 35–39.3 s
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "illustrative: Atmosphere (haze, snow, particles) (Drawn for the film)"
+  - id: S027
+    sequence: snow-leopard
+    start: 183.067
+    duration: 6.35
+    title: Contours become the map
+    narration:
+      - id: N40
+        at: 183.47
+        text: India’s first nationwide assessment put the count at about seven hundred and eighteen.
+        source: "snow-leopard · description"
+    visual: "The camera lifts; the contours become the map; states of record and localities."
+    camera: Crane up to top-down
+    threeD: —
+    motionGraphics: States of record, localities
+    typography: Kinetic figure
+    vfx: —
+    soundEffects:
+      - mountain
+      - tone
+    music: Held
+    transition: cut
+    dataSource: species.ts
+    assetRequirements:
+      - data/etopo-himalaya.bin
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "promo footage 39.3–42.3 s + doc-kinetic"
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: States of record (species.ts states)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S028
+    sequence: snow-leopard
+    start: 189.417
+    duration: 12.783
+    title: Snow Leopard
+    narration:
+      - id: N41
+        at: 189.72
+        text: In 2017 it moved from Endangered to Vulnerable.
+        source: "snow-leopard · description"
+      - id: N42
+        at: 194.68
+        text: "Not because it recovered, but because the estimate was revised. It is still thought to be declining."
+        source: "snow-leopard · description"
+    visual: "The photograph: the cat on snow-covered rock. Almost still."
+    camera: Very slow push
+    threeD: —
+    motionGraphics: —
+    typography: "Species block; the category change Endangered → Vulnerable, 2017, with its caveat"
+    vfx: —
+    soundEffects:
+      - mountain
+    music: Emotional, sparse piano
+    transition: cut
+    dataSource: species.ts statusHistory, description
+    assetRequirements:
+      - species/snow-leopard.jpg
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-photo
+    layers:
+      - "real: Photograph (Wikimedia Commons, credited on screen)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S029
+    sequence: snow-leopard
+    start: 202.2
+    duration: 4.15
+    title: A shrinking alpine world
+    narration:
+      - id: N43
+        at: 202.5
+        text: Its alpine world is shrinking as the climate changes.
+        source: "snow-leopard · threatNote"
+    visual: "The high relief with its snow line drawn; the line climbs, the alpine band narrows (illustrative)."
+    camera: Held oblique
+    threeD: Relief
+    motionGraphics: Alpine band, tagged illustrative
+    typography: —
+    vfx: —
+    soundEffects:
+      - mountain
+    music: Held
+    transition: cut
+    dataSource: species.ts threatNote (qualitative only)
+    assetRequirements:
+      - data/etopo-himalaya.bin
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-alpine
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "illustrative: Drawing device on a map (Labelled “illustrative” on screen)"
+  - id: S030
+    sequence: snow-leopard
+    start: 206.35
+    duration: 10.15
+    title: People and the Atlas
+    narration:
+      - id: N44
+        at: 206.66
+        text: "Here, conservation runs through the herders who share its valleys: livestock insurance, predator-proof corrals, community reserves."
+        source: "snow-leopard · conservationActions"
+    visual: "The three community measures from the record appear as a list; then the snow leopard’s Atlas profile."
+    camera: Slow push
+    threeD: —
+    motionGraphics: —
+    typography: Conservation actions, as written in the record
+    vfx: —
+    soundEffects:
+      - ui
+      - mountain
+    music: Warmth returns
+    transition: cut
+    dataSource: species.ts conservationActions
+    assetRequirements:
+      - site/profile-snow-leopard.png
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: Real species-profile screenshot
+    render: scene doc-atlas-panel
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+      - "real: Programmes and start years (programmes.ts)"
+  - id: S031
+    sequence: rhino
+    start: 216.5
+    duration: 5.133
+    title: The floodplain
+    narration:
+      - id: N45
+        at: 217.7
+        text: On the floodplain of the Brahmaputra, the story turns.
+    visual: "The Brahmaputra and its floodplain in relief; Kaziranga named."
+    camera: Slow drift (slowed)
+    threeD: Relief
+    motionGraphics: —
+    typography: —
+    vfx: —
+    soundEffects:
+      - air
+      - water
+    music: "The story turns: major colour"
+    transition: dissolve 1s
+    dataSource: "Natural Earth rivers; species.ts"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: promo footage 47.5–48.38 s
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Rivers (Natural Earth 1:10m)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+  - id: S032
+    sequence: rhino
+    start: 221.633
+    duration: 10.5
+    title: Greater One-horned Rhinoceros
+    narration:
+      - id: N46
+        at: 221.73
+        text: A century ago, fewer than two hundred greater one-horned rhinos were left.
+        source: "indian-rhinoceros · summary"
+      - id: N47
+        at: 227.52
+        text: Today, around four thousand live across India and Nepal.
+        source: "indian-rhinoceros · description"
+    visual: "The photograph: a rhino standing in shallow water."
+    camera: Push-in
+    threeD: —
+    motionGraphics: "Counter: fewer than 200 → around 4,000"
+    typography: "Species block; counter"
+    vfx: —
+    soundEffects:
+      - water
+    music: Hope
+    transition: cut
+    dataSource: species.ts summary, description
+    assetRequirements:
+      - species/indian-rhinoceros.jpg
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-photo
+    layers:
+      - "real: Photograph (Wikimedia Commons, credited on screen)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S033
+    sequence: rhino
+    start: 232.133
+    duration: 11.6
+    title: One park
+    narration:
+      - id: N49
+        at: 232.43
+        text: But more than two-thirds of them live in one park, Kaziranga.
+        source: "indian-rhinoceros · description"
+      - id: N50
+        at: 237.01
+        text: One flood, one disease, one poaching surge, and much of the species is at risk.
+        source: "indian-rhinoceros · threatNote"
+    visual: "The rhino’s localities; Kaziranga swells; then three risks strike the one place."
+    camera: Push into Kaziranga
+    threeD: —
+    motionGraphics: Locality emphasis
+    typography: "More than two-thirds · FLOOD · DISEASE · POACHING"
+    vfx: —
+    soundEffects:
+      - impact-soft
+      - ticks
+    music: Tension
+    transition: dissolve 0.4s
+    dataSource: species.ts description, threatNote
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-kaziranga
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: Figures quoted on screen (species.ts / programmes.ts (quoted as written))"
+  - id: S034
+    sequence: rhino
+    start: 243.733
+    duration: 12.9
+    title: New populations
+    narration:
+      - id: N51
+        at: 244.04
+        text: So rhinos are being moved, to build new populations in Manas and beyond.
+        source: "indian-rhino-vision · description"
+      - id: N52
+        at: 249.86
+        text: Highways and embankments still stand between them and higher ground when the river rises.
+        source: "indian-rhinoceros · threatNote"
+    visual: "Arcs from Kaziranga and Pobitora to Manas (Indian Rhino Vision 2020); then real highways along the floodplain edge; then the rhino’s Atlas profile."
+    camera: Slow orbit
+    threeD: Relief
+    motionGraphics: "Translocation arcs between real localities; roads highlighted"
+    typography: Programme name and start year
+    vfx: —
+    soundEffects:
+      - tone
+      - road
+    music: Hope with weight
+    transition: cut
+    dataSource: "programmes.ts indian-rhino-vision (2005); species.ts localities, threatNote; Natural Earth roads"
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/roads.geojson
+      - data/rivers.geojson
+      - site/profile-indian-rhinoceros.png
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: Rhino profile screenshot
+    render: scene doc-translocation
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: Roads (Natural Earth 1:10m)"
+      - "real: Programmes and start years (programmes.ts)"
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S035
+    sequence: connect
+    start: 256.633
+    duration: 14.567
+    title: Every line on one map
+    narration:
+      - id: N53
+        at: 257.53
+        text: Put the lines together, and a pattern appears.
+      - id: N55
+        at: 261.56
+        text: What these animals share is not one threat.
+      - id: N56
+        at: 265.27
+        text: "It is geography: where they live, and whether those places still connect."
+    visual: Rivers, roads, boundaries and every species’ localities draw together on one India, brighten, and settle.
+    camera: Oblique settling to top-down (slowed)
+    threeD: Relief
+    motionGraphics: "All layers; legend"
+    typography: Two kinetic statements
+    vfx: —
+    soundEffects:
+      - impact
+      - tone
+    music: "Geographic revelation: the fullest passage"
+    transition: dissolve 0.6s
+    dataSource: All real layers
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - data/rivers.geojson
+      - data/roads.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: "promo footage 50–55.9 s + doc-kinetic"
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Rivers (Natural Earth 1:10m)"
+      - "real: Roads (Natural Earth 1:10m)"
+      - "real: State boundaries (India Species Atlas india-states.geojson)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+      - "real: IUCN category and year (species.ts status, statusAssessedYear)"
+  - id: S036
+    sequence: response
+    start: 271.2
+    duration: 16.167
+    title: Lines drawn to protect
+    narration:
+      - id: N57
+        at: 271.51
+        text: The response is geographic too.
+      - id: N58
+        at: 274
+        text: Tiger reserves since 1973.
+        source: "project-tiger · startedYear"
+      - id: N59
+        at: 277.21
+        text: Snow leopard landscapes since 2009.
+        source: "project-snow-leopard · startedYear"
+      - id: N60
+        at: 280.95
+        text: New homes for rhinos. New lines drawn to protect, rather than divide.
+        source: "indian-rhino-vision · description"
+    visual: "A timeline ruled across the frame: Project Tiger 1973, Indian Rhino Vision 2005, Project Snow Leopard 2009, species recovery 2009, bustard breeding 2016, Project Dolphin 2020; protected localities glow on the map beneath."
+    camera: Slow lateral track along the timeline
+    threeD: —
+    motionGraphics: Timeline line, year ticks, programme labels
+    typography: "Years in tabular figures; programme names"
+    vfx: —
+    soundEffects:
+      - tone
+      - ticks
+    music: Restrained hope
+    transition: cut
+    dataSource: programmes.ts startedYear, name
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-response
+    layers:
+      - "real: Programmes and start years (programmes.ts)"
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: Indicative localities (species.ts distributionPoints)"
+  - id: S037
+    sequence: atlas
+    start: 287.367
+    duration: 7.433
+    title: Where we choose to protect them
+    narration:
+      - id: N61
+        at: 287.76
+        text: Mapping is not just about where species are.
+      - id: N62
+        at: 291.33
+        text: It is about where we choose to protect them.
+    visual: "The quiet map; the Atlas’s own closing line, set in its type."
+    camera: Locked off
+    threeD: —
+    motionGraphics: —
+    typography: The site’s closing line, verbatim — line reveal
+    vfx: —
+    soundEffects:
+      - air
+    music: Reflective
+    transition: cut
+    dataSource: src/pages/HomePage (closing line)
+    assetRequirements:
+      - data/etopo-india.bin
+      - data/etopo-india.json
+      - ../public/india-states.geojson
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: The Atlas’s words
+    render: scene doc-closing-line
+    layers:
+      - "real: Relief (NOAA ETOPO1)"
+      - "real: State boundaries (India Species Atlas india-states.geojson)"
+  - id: S038
+    sequence: atlas
+    start: 294.8
+    duration: 11.333
+    title: The Atlas
+    narration:
+      - id: N63
+        at: 295.09
+        text: "The India Species Atlas brings this story together:"
+      - id: N64
+        at: 299.17
+        text: every species, locality, threat and programme in this film, with the sources behind them.
+    visual: "The map lifts into the real site: home, map, species, profile, conservation — pages floating in depth; the camera passes through them."
+    camera: Dolly through planes in 3D
+    threeD: Screenshot planes in a three.js scene
+    motionGraphics: Planes, depth of field
+    typography: "Explore the species · the maps · the conservation story"
+    vfx: Depth of field, soft light
+    soundEffects:
+      - ui
+      - air
+    music: Warm swell
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - site/home.png
+      - site/atlas.png
+      - site/species.png
+      - site/conservation.png
+      - site/profile-great-indian-bustard.png
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: Real screenshots of every section
+    render: scene doc-atlas-reveal
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S039
+    sequence: atlas
+    start: 306.133
+    duration: 10.617
+    title: Explore the full Atlas
+    narration:
+      - id: N65
+        at: 306.39
+        text: The film shows you the lines.
+      - id: N66
+        at: 308.4
+        text: The Atlas lets you follow them.
+    visual: "INDIA SPECIES ATLAS; the three invitations; “Explore the full Atlas” with the real URL; then the film title."
+    camera: Locked off
+    threeD: —
+    motionGraphics: —
+    typography: Wordmark, invitations, URL
+    vfx: —
+    soundEffects:
+      - tone
+    music: Resolve, and hold
+    transition: cut
+    dataSource: —
+    assetRequirements:
+      - site/home.png
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: URL from the repository (scripts/promo/config.mjs)
+    render: scene doc-endcard
+    layers:
+      - "real: India Species Atlas screenshots (The live site, captured by scripts/video/capture-site.mjs)"
+  - id: S040
+    sequence: credits
+    start: 316.75
+    duration: 13
+    title: Credits
+    narration: []
+    visual: Credits on black, read from the data the film used.
+    camera: Locked off
+    threeD: —
+    motionGraphics: —
+    typography: —
+    vfx: —
+    soundEffects:
+      - room
+    music: Reverb tail
+    transition: cut
+    dataSource: species.ts sources, photos.json, programmes.ts
+    assetRequirements:
+      - fonts/newsreader.woff2
+      - fonts/newsreader-italic.woff2
+      - fonts/geist.woff2
+    websiteIntegration: —
+    render: scene doc-credits
+    layers: []

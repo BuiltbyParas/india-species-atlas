@@ -49,7 +49,7 @@ export async function openStage(url, { scale = 1 } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  await page.goto(`${url}/?capture=1&scale=${scale}`, { waitUntil: 'load' });
+  await page.goto(`${url}/?capture=1&scale=${scale}&film=${process.env.VIDEO_FILM ?? 'doc'}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__film, null, { timeout: 60_000 });
   await page.evaluate(() => window.__film.ready);
   const renderer = await page.evaluate(() => {

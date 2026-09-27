@@ -1,4 +1,4 @@
-import { CUES, FEATURED } from '../timeline.mjs';
+import { CUES, FEATURED } from '../films/promo.mjs';
 import type { Frame, Scene } from '../engine/film';
 import { clamp01, easeInOutCubic, easeOutCubic, seg } from '../engine/ease';
 import { projectRun, strokeLine } from '../engine/draw';

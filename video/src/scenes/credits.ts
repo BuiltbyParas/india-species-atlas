@@ -1,4 +1,4 @@
-import { CREDITS, FEATURED, SITE_URL, TITLE } from '../timeline.mjs';
+import { CREDITS, FEATURED, SITE_URL, TITLE } from '../films/promo.mjs';
 import type { Scene } from '../engine/film';
 import { clamp01, easeInOutCubic } from '../engine/ease';
 import { INK, SANS, SERIF } from '../engine/type';

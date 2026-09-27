@@ -1,6 +1,7 @@
 import { HEIGHT, SHOTS, WIDTH, shotAt } from '../timeline.mjs';
+import { SHOTS as PROMO_SHOTS } from '../films/promo.mjs';
 import type { Assets } from './data';
-import { clamp01, easeInOutCubic, easeInOutSine } from './ease';
+import { clamp01, easeInCubic, easeInOutCubic, easeInOutSine, easeOutCubic } from './ease';
 import { Terrain } from './terrain';
 import { SANS } from './type';
 
@@ -15,7 +16,25 @@ import { SANS } from './type';
  * their lines land in the same place.
  */
 
-type Shot = (typeof SHOTS)[number];
+type Shot = (typeof SHOTS)[number] & {
+  /**
+   * Plays another film's footage: the promo's scene covering source times
+   * [from, to] is drawn across this shot, at whatever speed that implies,
+   * optionally eased (a speed ramp).
+   */
+  remap?: { from: number; to: number; ease?: 'in' | 'out' | 'inOut' };
+  /** Layers drawn over the shot's own scene (or its remapped footage). */
+  overlay?: string[];
+  /** Free-form parameters for the shot's scene. */
+  params?: Record<string, unknown>;
+};
+
+const RAMPS = { in: easeInCubic, out: easeOutCubic, inOut: easeInOutCubic };
+
+function promoShotAt(t: number) {
+  for (const s of PROMO_SHOTS) if (t >= s.start && t < s.end) return s;
+  return PROMO_SHOTS[PROMO_SHOTS.length - 1];
+}
 
 export interface Frame {
   ctx: CanvasRenderingContext2D;
@@ -39,6 +58,9 @@ const GRADES: Record<string, string> = {
   map: 'none',
   photo: 'contrast(1.05) saturate(0.88) brightness(0.96)',
   night: 'contrast(1.05)',
+  threat: 'contrast(1.07) saturate(0.82)',
+  warm: 'contrast(1.03) saturate(0.96) sepia(0.06)',
+  ui: 'none',
   river: 'saturate(0.9)',
   cold: 'saturate(0.85) brightness(1.02)',
   'cold-photo': 'contrast(1.04) saturate(0.78) brightness(0.98)',
@@ -92,7 +114,22 @@ export class Film {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     const d = shot.end - shot.start;
     const u = t - shot.start;
-    this.sceneFor(shot)({ ctx, t, u, d, p: clamp01(u / d), shot, film: this, W: WIDTH, H: HEIGHT });
+    const frame: Frame = { ctx, t, u, d, p: clamp01(u / d), shot, film: this, W: WIDTH, H: HEIGHT };
+    if (shot.remap) {
+      const r = shot.remap;
+      const k = clamp01(u / d);
+      const st = r.from + (r.to - r.from) * (r.ease ? RAMPS[r.ease](k) : k);
+      const src = promoShotAt(st);
+      const sd = src.end - src.start;
+      this.sceneFor(src as Shot)({ ...frame, t: st, u: st - src.start, d: sd, p: clamp01((st - src.start) / sd), shot: src as Shot });
+    } else {
+      this.sceneFor(shot)(frame);
+    }
+    for (const name of shot.overlay ?? []) {
+      const layer = this.scenes.get(name);
+      if (layer) layer(frame);
+      else this.unresolved.add(name);
+    }
     ctx.restore();
   }
 

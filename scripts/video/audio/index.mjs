@@ -22,10 +22,17 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { CACHE } from '../render.mjs';
 import { ROOT } from '../stage.mjs';
-import { DURATION, VOICE } from '../../../video/src/timeline.mjs';
+import { DURATION, FILM, VOICE } from '../../../video/src/timeline.mjs';
 import { peak, writeWav } from './dsp.mjs';
-import { ambience, sfx } from './design.mjs';
-import { score } from './score.mjs';
+import { ambience as promoAmbience, sfx as promoSfx } from './design.mjs';
+import { score as promoScore } from './score.mjs';
+import { docAmbience, docSfx } from './doc-design.mjs';
+import { docScore } from './doc-score.mjs';
+
+/** Each film has its own arrangement and sound design over the same kit. */
+const score = FILM === 'doc' ? docScore : promoScore;
+const ambience = FILM === 'doc' ? docAmbience : promoAmbience;
+const sfx = FILM === 'doc' ? docSfx : promoSfx;
 import { buildVoice, TTS_VOICE } from './voice.mjs';
 
 const run = promisify(execFile);
@@ -142,7 +149,7 @@ export async function buildAudio({ force = false } = {}) {
   const voice = await buildVoice(AUDIO, { force });
   await voiceTrack(voice, f('voice'));
 
-  const licensed = ['wav', 'mp3'].map((e) => join(ROOT, 'video/public/audio', `music.${e}`)).find(existsSync);
+  const licensed = ['wav', 'mp3'].map((e) => join(ROOT, 'video/public/audio', FILM === 'promo' ? '' : FILM, `music.${e}`)).find(existsSync);
   if (licensed) {
     console.log(`› music: using ${licensed}`);
     await ff(['-i', licensed, '-af', `apad,atrim=0:${DURATION},afade=t=out:st=${DURATION - 3}:d=3`, '-ar', '48000', '-ac', '2', '-c:a', 'pcm_s24le', f('music')]);

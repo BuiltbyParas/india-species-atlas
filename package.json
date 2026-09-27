@@ -21,7 +21,10 @@
     "video:render": "node scripts/video/cli.mjs render",
     "video:render:final": "node scripts/video/cli.mjs final",
     "video:qc": "node scripts/video/cli.mjs qc",
-    "video:audio": "node scripts/video/cli.mjs audio"
+    "video:audio": "node scripts/video/cli.mjs audio",
+    "video:timing": "node scripts/video/voice-timing.mjs",
+    "video:site": "node scripts/video/capture-site.mjs",
+    "video:storyboard": "node scripts/video/cli.mjs storyboard"
   },
   "engines": {
     "node": ">=20.19"

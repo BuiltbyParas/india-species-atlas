@@ -1,4 +1,4 @@
-import { CUES } from '../timeline.mjs';
+import { CUES } from '../films/promo.mjs';
 import type { Scene } from '../engine/film';
 import { drawPlate, plateShade } from '../engine/photo';
 import { photoCredit, titleBlock } from './common';

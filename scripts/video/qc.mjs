@@ -13,7 +13,12 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { ROOT, openStage, startServer } from './stage.mjs';
 import { CACHE } from './render.mjs';
-import { BAR, CREDITS, CUES, DURATION, FPS, HEIGHT, SHOTS, VOICE, WIDTH } from '../../video/src/timeline.mjs';
+import { BAR, CREDITS, CUES, DURATION, FILM, FPS, HEIGHT, SHOTS, VOICE, WIDTH } from '../../video/src/timeline.mjs';
+
+/** Each film declares its own acceptable length and narration length. */
+const FILM_MODULE = await import(`../../video/src/films/${FILM}.mjs`);
+const [MIN_DUR, MAX_DUR] = FILM_MODULE.DURATION_RANGE ?? [55, 70];
+const [MIN_WORDS, MAX_WORDS] = FILM_MODULE.WORD_RANGE ?? [0, 130];
 
 const run = promisify(execFile);
 const EPS = 1e-6;
@@ -60,20 +65,24 @@ export function timelineChecks() {
     if (i === 0) s.check(tr.type !== 'dissolve', `${shot.id} does not dissolve from nothing`);
     s.check(Array.isArray(shot.layers) && shot.layers.every((l) => l.provenance === 'real' || l.provenance === 'illustrative'), `${shot.id} layer provenance declared`);
   }
-  s.check(DURATION >= 55 && DURATION <= 70, 'total duration within 55–70 s', `${DURATION} s`);
+  s.check(DURATION >= MIN_DUR && DURATION <= MAX_DUR, `total duration within ${MIN_DUR}–${MAX_DUR} s`, `${DURATION} s`);
   s.check(WIDTH === 1920 && HEIGHT === 1080 && FPS === 60, 'master format', `${WIDTH}×${HEIGHT} @ ${FPS}`);
-  const offGrid = SHOTS.filter((x) => Math.abs(x.start / BAR - Math.round(x.start / BAR)) > 0.02);
-  if (offGrid.length) s.warn('shots off the bar grid', offGrid.map((x) => `${x.id}@${x.start}`).join(', '));
+  // The promo is cut to the bar; the documentary is cut to the narration.
+  if (FILM === 'promo') {
+    const offGrid = SHOTS.filter((x) => Math.abs(x.start / BAR - Math.round(x.start / BAR)) > 0.02);
+    if (offGrid.length) s.warn('shots off the bar grid', offGrid.map((x) => `${x.id}@${x.start}`).join(', '));
+  }
+  for (const x of SHOTS) s.check(x.end - x.start >= 1.0, `${x.id} long enough to read`, `${(x.end - x.start).toFixed(2)} s`, 'warn');
   const cueTimes = Object.entries(CUES).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x) => [k, x]) : [[k, v]]));
   for (const [k, v] of cueTimes) s.check(v >= 0 && v <= DURATION, `cue ${k} inside film`, `${v} s`);
-  s.check(CUES.montage.every((v, i, a) => i === 0 || v > a[i - 1]), 'montage cuts ascending');
+  if (Array.isArray(CUES.montage)) s.check(CUES.montage.every((v, i, a) => i === 0 || v > a[i - 1]), 'montage cuts ascending');
   return s;
 }
 
 export async function narrationChecks() {
   const s = section('Narration');
   const words = VOICE.reduce((n, v) => n + v.text.split(/\s+/).length, 0);
-  s.check(words <= 130, 'word count ≤ 130', `${words} words`);
+  s.check(words >= MIN_WORDS && words <= MAX_WORDS, `word count ${MIN_WORDS}–${MAX_WORDS}`, `${words} words`);
   s.check(VOICE.every((v, i) => i === 0 || v.at > VOICE[i - 1].at), 'lines in order');
   for (const v of VOICE) s.check(v.at >= 0 && v.at < DURATION, `${v.id} inside film`, `${v.at} s`);
   const report = join(CACHE, 'audio', 'audio.json');
@@ -86,7 +95,8 @@ export async function narrationChecks() {
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (l.end == null) continue;
-    s.check(l.end <= DURATION - 4, `${l.id} ends before the credits`, `${l.end.toFixed(2)} s`);
+    const credits = SHOTS.find((x) => x.seq === 'credits');
+    s.check(l.end <= (credits ? credits.start : DURATION - 4), `${l.id} ends before the credits`, `${l.end.toFixed(2)} s`);
     if (i + 1 < lines.length) {
       const room = lines[i + 1].at - l.end;
       s.check(room >= 0.15, `${l.id} clears ${lines[i + 1].id}`, `${room.toFixed(2)} s between`);
@@ -104,6 +114,11 @@ export async function assetChecks() {
     const p = assetPath(a);
     if (!existsSync(p)) s.err(`missing ${a}`, 'run npm run video:data');
     else s.ok(a, `${((await stat(p)).size / 1024).toFixed(0)} KB`);
+  }
+  // The documentary shows the real website; its screenshots must exist.
+  if (FILM === 'doc') {
+    const site = join(ROOT, 'video/public/site/site.json');
+    s.check(existsSync(site), 'site screenshots captured', existsSync(site) ? JSON.parse(await readFile(site, 'utf8')).captured : 'run npm run video:site');
   }
   for (const f of ['newsreader', 'geist']) s.check(existsSync(join(ROOT, 'video/public/fonts', `${f}-OFL.txt`)), `${f} licence present`);
   const photos = join(ROOT, 'video/public/species/photos.json');
@@ -174,7 +189,7 @@ export async function audioChecks() {
 
 export async function footageChecks() {
   const s = section('Footage slots');
-  const rejectFile = join(ROOT, 'video/public/footage/REJECTED.json');
+  const rejectFile = join(ROOT, 'video/public/footage', FILM === 'promo' ? '' : FILM, 'REJECTED.json');
   const rejected = existsSync(rejectFile) ? JSON.parse(await readFile(rejectFile, 'utf8')) : {};
   for (const shot of SHOTS.filter((x) => x.slot)) {
     const p = join(ROOT, 'video/public', shot.slot);

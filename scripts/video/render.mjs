@@ -12,27 +12,55 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ROOT, grabFrame } from './stage.mjs';
-import { DURATION, FPS, SHOTS, frameRange } from '../../video/src/timeline.mjs';
+import { DURATION, FILM, FPS, SHOTS, frameRange } from '../../video/src/timeline.mjs';
 
 export const EXPORTS = join(ROOT, 'exports');
-export const CACHE = join(EXPORTS, '.cache');
+/** Each film keeps its own shot and audio cache. */
+export const CACHE = join(EXPORTS, '.cache', FILM);
 const SRC = join(ROOT, 'video/src');
 
 /** The source files every shot depends on: the engine, the stage and the shared scene code. */
 async function engineFiles() {
-  const files = [join(SRC, 'main.ts'), join(SRC, 'timeline.mjs'), join(SRC, 'scenes/index.ts'), join(SRC, 'scenes/common.ts')];
+  const files = [join(SRC, 'main.ts'), join(SRC, 'timeline.mjs'), join(SRC, `films/${FILM}.mjs`), join(SRC, 'scenes/index.ts'), join(SRC, 'scenes/common.ts')];
   for (const f of await readdir(join(SRC, 'engine'))) files.push(join(SRC, 'engine', f));
   return files;
 }
 
 /** Scenes that reuse another scene's drawing, and so depend on its file too. */
-const SCENE_DEPS = { title: ['converge'] };
+const SCENE_DEPS = { title: ['converge'], 'doc-bustard-response': ['maps'], 'doc-maps': ['maps'] };
+
+/** Documentary scenes live several to a file. */
+const DOC_FILES = {
+  'doc-globe': 'doc-globe', 'doc-title': 'doc-globe', 'doc-ink': 'doc-globe',
+  'doc-photo': 'doc-photo', 'doc-kinetic': 'doc-photo',
+  'doc-atlas-panel': 'doc-atlas', 'doc-atlas-reveal': 'doc-atlas', 'doc-endcard': 'doc-atlas', 'doc-credits': 'doc-atlas',
+};
 
 /** The scene file a shot's scene name lives in. */
 export function sceneFile(scene) {
+  if (scene.startsWith('doc-')) return join(SRC, 'scenes', `${DOC_FILES[scene] ?? 'doc-maps'}.ts`);
   const family = scene.split(':')[0];
   const name = scene.includes(':') ? (family === 'photo' ? 'photo' : 'maps') : family;
   return join(SRC, 'scenes', `${name}.ts`);
+}
+
+/** Every scene file a shot's pixels come from: its scene, remapped footage and overlays. */
+async function shotSceneFiles(shot) {
+  const files = new Set([sceneFile(shot.scene)]);
+  if (shot.scene.startsWith('doc-') && !DOC_FILES[shot.scene]) files.add(sceneFile('maps'));
+  for (const o of shot.overlay ?? []) files.add(sceneFile(o));
+  if (shot.remap) {
+    const { SHOTS: PROMO } = await import('../../video/src/films/promo.mjs');
+    const lo = Math.min(shot.remap.from, shot.remap.to);
+    const hi = Math.max(shot.remap.from, shot.remap.to);
+    for (const p of PROMO) if (p.end > lo && p.start < hi) {
+      files.add(sceneFile(p.scene));
+      for (const d of SCENE_DEPS[p.scene] ?? []) files.add(sceneFile(d));
+    }
+    files.add(join(SRC, 'films/promo.mjs'));
+  }
+  for (const d of SCENE_DEPS[shot.scene] ?? []) files.add(sceneFile(d));
+  return [...files];
 }
 
 async function digest(files, extra) {
@@ -54,14 +82,15 @@ export async function shotHash(shot, opts) {
   const i = SHOTS.indexOf(shot);
   const prev = i > 0 ? SHOTS[i - 1] : null;
   const overlaps = shot.transitionIn.type === 'dissolve' && prev;
-  const deps = (scene) => [sceneFile(scene), ...(SCENE_DEPS[scene] ?? []).map(sceneFile)];
-  const files = [...(await engineFiles()), ...deps(shot.scene), ...(overlaps ? deps(prev.scene) : [])];
+  const files = [...(await engineFiles()), ...(await shotSceneFiles(shot)), ...(overlaps ? await shotSceneFiles(prev) : [])];
+  // Assets are fingerprinted by content, not size: a re-graded photo of the
+  // same byte count must still invalidate the shots that use it.
   const assetStamps = [];
   for (const a of shot.assets) {
     const p = a.startsWith('../') ? join(ROOT, 'video', a) : join(ROOT, 'video/public', a);
-    assetStamps.push(existsSync(p) ? `${a}:${(await stat(p)).size}` : `${a}:missing`);
+    assetStamps.push(existsSync(p) ? `${a}:${createHash('sha1').update(await readFile(p)).digest('hex').slice(0, 12)}` : `${a}:missing`);
   }
-  return digest(files, { shot, prev: overlaps ? prev : null, assetStamps, fps: opts.fps, scale: opts.scale, format: opts.format });
+  return digest(files, { film: FILM, shot, prev: overlaps ? prev : null, assetStamps, fps: opts.fps, scale: opts.scale, format: opts.format });
 }
 
 export function run(cmd, args, { quiet = true, input } = {}) {

@@ -1,5 +1,6 @@
-import { SPECIES_BY_ID } from '../../../src/data/species';
-import type { Species } from '../../../src/types';
+import { SPECIES, SPECIES_BY_ID } from '../../../src/data/species';
+import { PROGRAMMES } from '../../../src/data/programmes';
+import type { ConservationProgramme, Species } from '../../../src/types';
 import statesUrl from '../../../public/india-states.geojson?url';
 import { FEATURED } from '../timeline.mjs';
 
@@ -61,6 +62,14 @@ export interface Assets {
   photoMeta: Map<string, PhotoMeta>;
   species: Map<string, Species>;
   extent: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+  /** Every species in the atlas (the film features five). */
+  allSpecies: Species[];
+  programmes: ConservationProgramme[];
+  /** World coastlines and land borders, for the opening globe. */
+  worldCoast: LngLat[][];
+  worldBorders: LngLat[][];
+  /** Screenshots of the real site, by file name (see scripts/video/capture-site.mjs). */
+  site: Map<string, HTMLImageElement>;
   missing: string[];
 }
 
@@ -161,6 +170,20 @@ export async function loadAssets(): Promise<Assets> {
     }),
   );
 
+  // Optional for the promo; the documentary's QC requires them.
+  const [worldCoast, worldBorders, siteList] = await Promise.all([
+    json<LngLat[][]>('/data/world-coast.json', []),
+    json<LngLat[][]>('/data/world-borders.json', []),
+    json<{ shots: Array<{ file: string }> }>('/site/site.json', []),
+  ]);
+  const site = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    (siteList?.shots ?? []).map(async (s) => {
+      const img = await image(`/${s.file}`, missing);
+      if (img) site.set(s.file.replace(/^site\//, ''), img);
+    }),
+  );
+
   const species = new Map<string, Species>();
   for (const id of FEATURED) {
     const s = SPECIES_BY_ID[id];
@@ -179,6 +202,11 @@ export async function loadAssets(): Promise<Assets> {
     photoMeta,
     species,
     extent,
+    allSpecies: SPECIES,
+    programmes: PROGRAMMES,
+    worldCoast: worldCoast ?? [],
+    worldBorders: worldBorders ?? [],
+    site,
     missing,
   };
 }

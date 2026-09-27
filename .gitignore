@@ -32,3 +32,6 @@ dist-ssr
 # Full-size species photographs for the film: fetched from Wikimedia Commons by
 # `npm run video:data` (credits in video/public/species/photos.json)
 /video/public/species/*.jpg
+
+# /ai-team coordination and background-agent runs
+/.ai-team/

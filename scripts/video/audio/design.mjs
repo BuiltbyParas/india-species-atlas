@@ -5,7 +5,7 @@
  * Restraint is the point. Four low impacts in sixty-nine seconds, no stock
  * "boom", and every bed fades in and out with the picture it belongs to.
  */
-import { CUES, DURATION } from '../../../video/src/timeline.mjs';
+import { CUES, DURATION } from '../../../video/src/films/promo.mjs';
 import { Reverb, SR, SVF, addInto, brownNoise, clamp01, pan, pinkNoise, rng, stereo } from './dsp.mjs';
 
 /** A gain envelope from keyframes [[t, gain], ...], linear between keys. */
@@ -277,3 +277,6 @@ export function sfx() {
 }
 
 export { clamp01 };
+
+/** The sound kit, for the documentary's sound design (audio/doc-design.mjs). */
+export { env, bed, hum, wind, grass, roadBed, passBy, water, impact, whoosh, tone, tick };

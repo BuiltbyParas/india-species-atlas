@@ -1,4 +1,4 @@
-import { CUES } from '../timeline.mjs';
+import { CUES } from '../films/promo.mjs';
 import type { Frame, Scene } from '../engine/film';
 import type { LngLat } from '../engine/data';
 import { clamp01, easeInOutSine, seg } from '../engine/ease';
@@ -54,7 +54,7 @@ function ticks(ctx: CanvasRenderingContext2D, pts: Pt[], every: number, len: num
 /* --- S05: the bustard --- */
 
 /** An illustrative power line across the Thar. No power-line dataset is used; it says so on screen. */
-const POWER_LINE: LngLat[] = densify([[72.4, 28.15], [71.6, 27.2], [70.95, 26.55], [70.05, 25.6], [69.2, 24.85]], 0.03);
+export const POWER_LINE: LngLat[] = densify([[72.4, 28.15], [71.6, 27.2], [70.95, 26.55], [70.05, 25.6], [69.2, 24.85]], 0.03);
 
 const bustardMap: Scene = (f) => {
   const { ctx, t } = f;

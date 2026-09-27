@@ -12,7 +12,7 @@
  *   56–64   everything stops on the title hit, then resolves
  *   64–69   reverb tail under the credits
  */
-import { BAR, CUES, DURATION } from '../../../video/src/timeline.mjs';
+import { BAR, CUES, DURATION } from '../../../video/src/films/promo.mjs';
 import { Reverb, SR, SVF, Saw, adsr, addInto, clamp01, db, mtof, pan, pingPong, pinkNoise, rng, stereo } from './dsp.mjs';
 
 const BEAT = BAR / 4;
@@ -324,3 +324,6 @@ function arc(buf) {
   }
   return buf;
 }
+
+/** The instruments, for the documentary's arrangement (audio/doc-score.mjs). */
+export { padChord, piano, pluck, kick, tom, strings, shimmer, drone, riser, CH };
