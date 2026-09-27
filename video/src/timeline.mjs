@@ -212,7 +212,7 @@ export const SEQUENCES = [...new Set(SHOTS.map((s) => s.seq))];
  */
 
 /**
- * The narration: 86 words. Every factual line names the dataset field it is
+ * The narration: 79 words. Every factual line names the dataset field it is
  * taken from and phrases that field must contain; QC checks them against the
  * live data, so if the dataset changes the film fails its check rather than
  * saying something the atlas no longer says.
@@ -238,15 +238,50 @@ export const VOICE = [
     claim: { species: 'snow-leopard', field: 'threatNote', must: ['shrinking alpine zone'] },
   },
   {
-    id: 'V6', at: 45.2, text: 'More than two-thirds of the world’s one-horned rhinos live in a single park.',
+    id: 'V6', at: 45.15, text: 'More than two-thirds of all one-horned rhinos live in one park.',
     claim: { species: 'indian-rhinoceros', field: 'description', must: ['more than two-thirds of the world population is in a single park'] },
   },
   {
     id: 'V7', at: 50.35, text: 'Mapping is not just about where species are. It is about where we choose to protect them.',
     claim: null, note: 'The atlas home page’s closing line, verbatim',
   },
-  { id: 'V8', at: 57.2, text: 'Lines on the Map.', claim: null, note: 'Title' },
+  { id: 'V8', at: 58.45, text: 'Lines on the Map.', claim: null, note: 'Title' },
 ];
+
+/**
+ * Beats that picture and sound both hit. Scenes animate to these and the
+ * score and sound design are synthesised against them, so a change here
+ * moves both together.
+ */
+export const CUES = {
+  cableLight: 0.5,
+  lineFlatten: 3.6,
+  indiaReveal: 10.1,
+  bustardName: 13.2,
+  bustardMap: 16.3,
+  roadCut: 20,
+  roadTilt: 20.95,
+  roadsDraw: 21.9,
+  tigerName: 25.35,
+  riversDraw: 29.7,
+  riverBreak: 31.1,
+  dolphinName: 32.85,
+  contours: 38.4,
+  contourMap: 39.5,
+  snowName: 42.5,
+  rhinoName: 45.4,
+  kaziranga: 47.5,
+  /** Match cuts of the five-species montage; each flash holds until the next. */
+  montage: [48.4, 48.82, 49.18, 49.48, 49.72],
+  converge: 50,
+  settle: 54.2,
+  titleHit: 56,
+  title: 58.2,
+  subtitle: 59.7,
+  cta: 61.1,
+  fadeOut: 63.2,
+  credits: 64,
+};
 
 /** The five featured species, in running order. */
 export const FEATURED = ['great-indian-bustard', 'bengal-tiger', 'ganges-river-dolphin', 'snow-leopard', 'indian-rhinoceros'];
