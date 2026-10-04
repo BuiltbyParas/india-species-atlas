@@ -3,6 +3,13 @@
 **Working title:** *Lines on the Map* · **Length:** 1:40 (100 s) · **Format:** 1920×1080, 16:9, 60 fps
 **Status:** plan only. Nothing here has been rendered. The five-minute documentary direction is shelved.
 
+**Re-verified 2026-09-29 against the same brief:** the URL still returns 200. All 10 narration claims (V5–V9, V14–V15)
+are present word for word in `src/data/species.ts` and `ConservationMap.tsx`. The Atlas still holds 12 species, and
+the five statuses are unchanged (CR, EN, EN, VU, VU). The environment is unchanged: no `GEMINI_API_KEY`, no Gemini CLI,
+no libx264/libx265 (OpenH264, ProRes and SVT-AV1 only). The decisions in §13 are still open. Note that the older
+`promo-film` branch holds the first 100-second cut (`video/src/films/promo.mjs`). The trailer is a new film file and
+does not build on that cut.
+
 The film is a product trailer for the India Species Atlas
 (<https://builtbyparas.github.io/india-species-atlas/>, the URL in `scripts/promo/config.mjs`; it returns 200).
 It has one idea: **a line**. Wire, road, river, ridge and boundary become map lines, and the map connects the story.
