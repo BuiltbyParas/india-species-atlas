@@ -12,7 +12,7 @@ import { MapLegend } from '../components/map/MapLegend';
 import { ProgrammeLegend } from '../components/map/ProgrammeLegend';
 import { StatePanel } from '../components/map/StatePanel';
 import { StateDensityLegend } from '../components/map/StateDensityLegend';
-import { countSpeciesByState } from '../utils/stateCounts';
+import { countSpeciesByState, recordedInDrawnState } from '../utils/stateCounts';
 import { cn } from '../utils/cn';
 
 const AtlasMap = lazy(() =>
@@ -67,7 +67,7 @@ export function AtlasPage() {
 
   const pointCount = useMemo(() => {
     return filters.results
-      .filter((s) => !selectedState || s.states.includes(selectedState))
+      .filter((s) => !selectedState || recordedInDrawnState(s, selectedState))
       .reduce((n, s) => n + s.distributionPoints.length, 0);
   }, [filters.results, selectedState]);
 

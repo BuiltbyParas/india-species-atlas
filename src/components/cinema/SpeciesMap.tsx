@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { DistributionPoint, Species, ThreatId } from '../../types';
 import { THREAT_LABELS } from '../../data/threats';
-import { formatDeg, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, smoothPath, useIndiaGeo } from '../../geo/india';
+import { formatDeg, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, smoothPath, useIndiaGeo } from '../../geo/india';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 import { programmeSitesFor } from '../map/programmeSites';
 import { cn } from '../../utils/cn';
@@ -97,7 +97,7 @@ export interface SpeciesMapFrame {
 }
 
 /** The zoom that frames a species' localities, padded so the region keeps some context. */
-export function frameFor(species: Species): SpeciesMapFrame {
+export function frameFor(species: Species, geo?: IndiaGeo | null): SpeciesMapFrame {
   const pts = species.distributionPoints.map((p) => project(p.lng, p.lat));
   let minX = Infinity;
   let minY = Infinity;
@@ -108,6 +108,15 @@ export function frameFor(species: Species): SpeciesMapFrame {
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
+  }
+  // The northern territory is far larger than the localities inside it, so
+  // frame all of it rather than clip its western and northern reaches.
+  const north = geo?.byName.get('Jammu and Kashmir');
+  if (north && species.states.some((s) => (GEOJSON_STATE_ALIASES[s] ?? s) === 'Jammu and Kashmir')) {
+    minX = Math.min(minX, north.bounds[0]);
+    minY = Math.min(minY, north.bounds[1]);
+    maxX = Math.max(maxX, north.bounds[2]);
+    maxY = Math.max(maxY, north.bounds[3]);
   }
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
@@ -151,7 +160,7 @@ export function SpeciesMap({
   const ordered = useMemo(() => chain(species.distributionPoints), [species]);
   const thread = useMemo(() => threadPath(species.distributionPoints), [species]);
   const sites = useMemo(() => programmeSitesFor([species]), [species]);
-  const frame = useMemo(() => frameFor(species), [species]);
+  const frame = useMemo(() => frameFor(species, geo), [species, geo]);
 
   const occurrence = geo ? drawnStates.map((n) => geo.byName.get(n)).filter(Boolean) : [];
   const occurrenceD = occurrence.map((s) => s!.d).join('');

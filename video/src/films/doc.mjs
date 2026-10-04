@@ -449,12 +449,12 @@ export const CREDITS = {
   geography: [
     'Relief: NOAA ETOPO1 1 Arc-Minute Global Relief Model.',
     'Rivers, roads, world coastlines and borders: Natural Earth (public domain).',
-    'State boundaries: the Atlas’s own boundary file, which predates the 2019 reorganisation of Jammu and Kashmir.',
+    'State boundaries: the Atlas’s own boundary file, which draws Jammu and Kashmir together with Ladakh, as on India’s political map.',
   ],
   illustration: [
     'The power line, pylons, road, ink and river-surface shots are computer-generated illustrations, as are the snow and haze.',
     'Lines marked “illustrative” on the maps are drawing devices, not data. No AI-generated footage or imagery is used.',
   ],
-  site: 'Website shown: India Species Atlas, captured from the live site. Map tiles © OpenStreetMap contributors.',
+  site: 'Website shown: India Species Atlas, captured from the live site. Basemap © Esri, Garmin, GEBCO, NOAA NGDC and other contributors.',
   software: 'three.js · Vite · TypeScript · Playwright · FFmpeg · edge-tts',
 };

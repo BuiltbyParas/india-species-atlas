@@ -30,6 +30,8 @@ export function project(lng: number, lat: number): [number, number] {
 export interface StatePath {
   name: string;
   d: string;
+  /** Extent in map units: [minX, minY, maxX, maxY]. */
+  bounds: [number, number, number, number];
 }
 
 export interface IndiaGeo {
@@ -56,6 +58,7 @@ function build(geojson: GeoCollection): IndiaGeo {
   for (const feature of geojson.features) {
     const name = String(feature.properties?.state ?? '');
     let d = '';
+    const bounds: StatePath['bounds'] = [Infinity, Infinity, -Infinity, -Infinity];
     for (const polygon of ringsOf(feature)) {
       for (const ring of polygon) {
         ring.forEach(([lng, lat], i) => {
@@ -64,12 +67,16 @@ function build(geojson: GeoCollection): IndiaGeo {
           if (lng < extent.minLng) extent.minLng = lng;
           if (lng > extent.maxLng) extent.maxLng = lng;
           const [x, y] = project(lng, lat);
+          bounds[0] = Math.min(bounds[0], x);
+          bounds[1] = Math.min(bounds[1], y);
+          bounds[2] = Math.max(bounds[2], x);
+          bounds[3] = Math.max(bounds[3], y);
           d += `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
         });
         d += 'Z';
       }
     }
-    states.push({ name, d });
+    states.push({ name, d, bounds });
   }
   return {
     states,

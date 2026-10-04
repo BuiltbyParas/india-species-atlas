@@ -47,7 +47,7 @@ project.
 - **Documentary mode** (`/documentary`) — a deterministic five-minute
   presentation built from the same maps, photographs, type and data, and a
   script that renders it to video. See *Documentary mode* below.
-- **Interactive map of India** (Leaflet + OpenStreetMap) with pan/zoom, a
+- **Interactive map of India** (Leaflet + Esri World Ocean Base) with pan/zoom, a
   status-coded marker for every mapped location, click-to-open species profiles,
   and a "reset to India view" control.
 - **State interaction** — click any state/UT on the map to list the atlas
@@ -75,9 +75,8 @@ project.
   because the markers are illustrative locations and counting them would shade a
   state by how much attention this atlas paid to it. The count is always given as
   a number in the state's tooltip as well as a shade, so colour is never the
-  value. The boundary file predates the 2019 reorganisation of Jammu & Kashmir,
-  so Ladakh records are drawn on the Jammu and Kashmir shape and the legend says
-  so.
+  value. India is drawn as a political map: Jammu and Kashmir and Ladakh are
+  one continuous territory, and records that name Ladakh are counted on it.
 - **Compare** (`/compare`) — two or three species side by side on every attribute
   the dataset holds, with the selection kept in the address bar so a comparison
   can be linked to or handed in. A cell that has nothing to show says so in
@@ -165,7 +164,7 @@ animal groups. **Accuracy was prioritised over quantity.**
 | Typography | Newsreader (serif, display and text) and Geist (sans), via Google Fonts |
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
-| Map | Leaflet + react-leaflet, OpenStreetMap raster tiles (no API key) |
+| Map | Leaflet + react-leaflet, Esri World Ocean Base raster tiles (no API key; chosen because it draws no political boundaries, so the only border on the map is `india-states.geojson`) |
 | Species gallery | three.js — photographic cards on a ring of extruded rounded slabs, card faces composited on a 2D canvas at runtime (photo, scrim, status chip, caption) and uploaded as textures. Lazy-loaded, and only once the section is scrolled near, so it never competes with the hero for the GPU |
 | Hero 3D | three.js, generated from the project's own GeoJSON — no 3D model files, textures or loaders. Species plates are drawn into a single canvas atlas at runtime and billboarded as one instanced draw call; their captions are DOM text positioned per frame. Custom post-processing chain (selective bloom, depth of field, vignette, colour grade) rather than `EffectComposer`. Lazy-loaded in a separate chunk and skipped entirely under `prefers-reduced-motion`, Save-Data, missing WebGL or low-end hardware; watches its own frame rate and steps quality down, then hands back to the flat hero if it still cannot keep up |
 | Scroll & motion | GSAP + ScrollTrigger for the pinned, scrubbed scenes; Lenis for inertial scrolling on the documentary page only (the map, directory and tables keep native scrolling) |
@@ -224,10 +223,11 @@ src/
     programmeSites.ts    which markers stand where, derived from the dataset
     ProgrammeShape.tsx   a programme's plan outline, drawn flat for the legend
 public/
-  india-states.geojson   simplified state boundaries
+  india-states.geojson   the one India boundary (Survey of India states, simplified)
 src/assets/species/      one bundled photograph per species
 scripts/
   postbuild.mjs          writes dist/404.html for static hosts
+  geo/                   rebuilds india-states.geojson from its sources
   images/                sources and licence-checks the species photographs
   promo/                 the promotional-video pipeline (see below)
 ```
@@ -532,10 +532,22 @@ rather than breaking the layout.
 
 ### Update the map boundaries
 
-`public/india-states.geojson` is a simplified open dataset (see the Sources page).
-It predates some state reorganisations — Telangana and Ladakh appear within their
-former parent states. Replace the file with any GeoJSON whose features expose a
-`state` property to change this.
+`public/india-states.geojson` is the single India boundary every map on the site
+draws (Leaflet atlas, flat SVG maps, the 3D relief and the documentary). It draws India as a
+political map — current states and Union Territories, except that the north is
+one continuous territory (Jammu and Kashmir with Ladakh, never a detached
+Ladakh outline): a January 2020 copy of the Survey of India
+state layer (AnujTiwari/India-State-and-Country-Shapefile-Updated-Jan-2020; it
+states no licence), with the Shaksgam Valley completed from Natural Earth (public
+domain). The merged north takes in Pakistan-administered Kashmir, Gilgit-Baltistan,
+Aksai Chin and the Shaksgam Valley, as India's official maps show it
+(`GEOJSON_STATE_ALIASES` maps dataset records for Ladakh onto it). Dadra and Nagar
+Haveli and Daman and Diu is one Union Territory, as since 2020.
+
+Rebuild it with `python3 scripts/geo/build-india-states.py` (needs `pyshp`,
+`shapely` and `pyproj`; mapshaper is fetched by `npx`). The script reprojects,
+repairs, names and simplifies the source layers; nothing is drawn by hand. Any
+replacement GeoJSON must expose a `state` property on each feature.
 
 ---
 
@@ -564,6 +576,6 @@ former parent states. Replace the file with any GeoJSON whose features expose a
   domain), via Wikimedia Commons. Photographer, licence and source page are
   shown beside every picture in the interface and recorded in
   `scripts/images/photo-manifest.json`.
-- Basemap © OpenStreetMap contributors (ODbL).
+- Basemap © Esri, Garmin, GEBCO, NOAA NGDC and other contributors (Esri World Ocean Base).
 - State boundary data: community open dataset (see Sources page).
 - Not affiliated with the IUCN or the Government of India.

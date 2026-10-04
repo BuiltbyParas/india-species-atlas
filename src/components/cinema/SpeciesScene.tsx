@@ -81,7 +81,7 @@ function RangeFacts({ species, play, brief }: { species: Species; play?: boolean
     <div>
       <p className="max-w-md font-serif text-[1.18rem] font-light leading-[1.5] text-canvas/90">{species.habitatNote}</p>
       <div className="mt-6 grid max-w-md grid-cols-3 gap-6">
-        <InteractiveStat size="md" value={species.states.length} label="States and UTs" note={states !== species.states.length ? 'Ladakh drawn on the older J&K boundary' : 'where it is recorded'} play={play} />
+        <InteractiveStat size="md" value={species.states.length} label="States and UTs" note={states !== species.states.length ? "Ladakh counted with J&K" : "where it is recorded"} play={play} />
         <InteractiveStat size="md" value={species.distributionPoints.length} label="Localities" note="indicative, on the map" play={play} />
         <div>
           <p className="font-serif text-[clamp(2.4rem,4vw,3.6rem)] font-light leading-none tabular-nums tracking-[-0.03em] text-canvas">

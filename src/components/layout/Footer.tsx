@@ -37,7 +37,7 @@ export function Footer() {
           </nav>
         </div>
         <p className="mt-10 text-[11px] leading-relaxed text-canvas/35">
-          Student project for an environmental-studies / CAI assignment. Basemap &copy; OpenStreetMap contributors.
+          Student project for an environmental-studies / CAI assignment. Basemap &copy; Esri, Garmin, GEBCO, NOAA NGDC and other contributors.
           Species photographs by their individual photographers, used under Creative Commons licences via Wikimedia
           Commons. Not affiliated with the IUCN or the Government of India.
         </p>

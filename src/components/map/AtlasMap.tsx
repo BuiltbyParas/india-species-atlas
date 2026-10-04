@@ -11,11 +11,11 @@ import {
 } from 'react-leaflet';
 import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
-import { countSpeciesByState, densityOpacity, densityStep } from '../../utils/stateCounts';
+import { countSpeciesByState, recordedInDrawnState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
-const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [36.5, 98.5]);
+const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
 
 interface MapPoint {
   species: Species;
@@ -105,7 +105,7 @@ export function AtlasMap({
     const list: MapPoint[] = [];
     for (const s of results) {
       const relevant = selectedState
-        ? s.states.includes(selectedState)
+        ? recordedInDrawnState(s, selectedState)
         : true;
       if (!relevant) continue;
       for (const p of s.distributionPoints) {
@@ -151,12 +151,14 @@ export function AtlasMap({
         scrollWheelZoom
         worldCopyJump={false}
       >
-        {/* OpenStreetMap standard tiles (no API key). A CSS filter on
-            .leaflet-tile-pane recolours them to match the dark theme. */}
+        {/* Esri World Ocean Base (no API key): relief, vegetation and rivers,
+            with no national or disputed boundary lines, so the only border on
+            the map is the one drawn from india-states.geojson. A CSS filter on
+            .leaflet-tile-pane recolours the tiles to match the dark theme. */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
+          attribution='Basemap &copy; <a href="https://www.esri.com/">Esri</a>, Garmin, GEBCO, NOAA NGDC and other contributors'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={13}
         />
 
         {statesGeo && (
@@ -241,7 +243,7 @@ export function AtlasMap({
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>
 
-      <p className="pointer-events-none absolute bottom-1 left-1 z-[500] max-w-[70%] rounded bg-forest-950/70 px-2 py-1 text-[10px] leading-tight text-canvas/55">
+      <p className="pointer-events-none absolute bottom-12 left-1 z-[500] max-w-[70%] sm:bottom-1 rounded bg-forest-950/70 px-2 py-1 text-[10px] leading-tight text-canvas/55">
         Map locations are simplified educational representations and should not be interpreted as exact
         population boundaries.
       </p>

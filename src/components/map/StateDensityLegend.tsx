@@ -29,8 +29,8 @@ export function StateDensityLegend({ max }: { max: number }) {
         value.
       </p>
       <p className="mt-1.5 text-canvas/45">
-        The boundary file predates the 2019 reorganisation of Jammu &amp; Kashmir, so records for Ladakh are
-        drawn on the Jammu and Kashmir shape.
+        India is drawn as on its political map: Jammu &amp; Kashmir is one territory with Ladakh, so records for
+        Ladakh are counted and listed there.
       </p>
     </div>
   );

@@ -101,7 +101,7 @@ function endCardHtml({ url, qr, stats }) {
     <div class="qr"><img src="${qr}" alt=""></div>
     <p class="url">${display}</p>
     <p class="cta">Scan, or open the link — no app, no account.</p>
-    <p class="foot">Student environmental-studies project · IUCN Red List · © OpenStreetMap contributors</p>
+    <p class="foot">Student environmental-studies project · IUCN Red List · Basemap © Esri, Garmin, GEBCO, NOAA NGDC and other contributors</p>
   </body></html>`;
 }
 

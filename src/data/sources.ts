@@ -112,14 +112,19 @@ export const BIBLIOGRAPHY: Array<{
     category: 'Map & boundary data',
     entries: [
       {
-        label: 'India state boundary GeoJSON (simplified for this project)',
-        url: 'https://github.com/Subhash9325/GeoJson-Data-of-Indian-States',
-        publisher: 'OpenData / community dataset',
+        label: 'India state and Union Territory boundaries, updated January 2020 (Survey of India layer; Jammu & Kashmir and Ladakh joined into one political-map territory, simplified for this project)',
+        url: 'https://github.com/AnujTiwari/India-State-and-Country-Shapefile-Updated-Jan-2020',
+        publisher: 'Survey of India records, via a community repository (no licence stated)',
       },
       {
-        label: 'OpenStreetMap standard basemap tiles',
-        url: 'https://www.openstreetmap.org/copyright',
-        publisher: 'OpenStreetMap contributors',
+        label: 'Shaksgam Valley outline (Natural Earth, public domain)',
+        url: 'https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-breakaway-disputed-areas/',
+        publisher: 'Natural Earth',
+      },
+      {
+        label: 'Esri World Ocean Base (basemap tiles with no political boundaries)',
+        url: 'https://www.arcgis.com/home/item.html?id=5ae9e138a17842688b0b79283a4353f6',
+        publisher: 'Esri, Garmin, GEBCO, NOAA NGDC and other contributors',
       },
     ],
   },

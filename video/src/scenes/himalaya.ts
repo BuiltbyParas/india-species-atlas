@@ -78,7 +78,7 @@ export const himalaya: Scene = (f) => {
   // Once the contours have become the map: where the snow leopard is recorded.
   const s = species(f, 'snow-leopard');
   const vu = STATUS.VU.hex;
-  // The boundary file predates 2019, so Ladakh is recorded on the J&K shape.
+  // The map draws the north as one territory, so Ladakh is recorded on the J&K shape.
   const recorded = s.states.map((n) => (n === 'Ladakh' ? 'Jammu and Kashmir' : n));
   const mapK = clamp01((t - 40.2) / 0.8);
   if (mapK > 0) {
@@ -89,7 +89,7 @@ export const himalaya: Scene = (f) => {
     pts.forEach((p, i) => placeLabel(ctx, p.label, p.p, clamp01((t - 41.0 - i * 0.12) / 0.5), i % 2 ? -30 : 30, i % 2 ? 26 : -24));
     drawText(ctx, { text: s.commonName, x: 60, y: 84, size: 15, weight: 500, tracking: 0.28, upper: true, color: INK.canvasDim, preset: 'tracking', at: 40.4, dur: 0.8 }, t);
     drawText(ctx, { text: 'Contours every 500 m', x: 60, y: 128, size: 38, family: SERIF, weight: 300, italic: true, preset: 'mask', at: 40.55, dur: 0.9 }, t);
-    sourceNote(f, 'Relief and contours: NOAA ETOPO1 · States of record and localities: India Species Atlas · Ladakh drawn on the older J&K boundary', mapK);
+    sourceNote(f, 'Relief and contours: NOAA ETOPO1 · States of record and localities: India Species Atlas · Jammu & Kashmir drawn with Ladakh, as on India's political map', mapK);
   }
 
   // A thin band of valley haze low in frame while the camera is in the mountains.

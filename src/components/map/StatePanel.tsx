@@ -1,5 +1,6 @@
 import { MapPin, X } from 'lucide-react';
 import { SPECIES } from '../../data/species';
+import { recordedInDrawnState } from '../../utils/stateCounts';
 import { StatusBadge } from '../ui/StatusBadge';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 
@@ -11,7 +12,7 @@ export function StatePanel({
   onClear: () => void;
 }) {
   const { open } = useSpeciesProfile();
-  const list = SPECIES.filter((s) => s.states.includes(state));
+  const list = SPECIES.filter((s) => recordedInDrawnState(s, state));
 
   return (
     <div className="rounded-lg border border-forest-700/70 bg-forest-900 p-4">
@@ -22,6 +23,7 @@ export function StatePanel({
             Selected state / UT
           </p>
           <h3 className="font-serif text-xl font-semibold text-canvas">{state}</h3>
+          {state === 'Jammu and Kashmir' && <p className="text-xs text-canvas/55">Including Ladakh, as on India&rsquo;s political map</p>}
         </div>
         <button
           type="button"

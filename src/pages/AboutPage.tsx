@@ -72,9 +72,9 @@ export function AboutPage() {
             the Zoological Survey of India or the IUCN range polygons).
           </li>
           <li>
-            The state boundary layer is a simplified open dataset and predates some recent state
-            reorganisations, so a few boundaries are approximate and Telangana and Ladakh are shown within
-            their former parent states.
+            The state boundary layer is a simplified copy of the Survey of India state and Union Territory
+            boundaries as updated in 2020, drawn as India's political map: Jammu &amp; Kashmir and Ladakh form one
+            continuous northern territory rather than separate Union Territories. Boundaries are simplified for the screen and should not be used for measurement.
           </li>
           <li>
             IUCN categories describe <strong>global</strong> extinction risk, not the size or trend of the

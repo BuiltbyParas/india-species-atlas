@@ -299,7 +299,7 @@ export const CREDITS = {
   geography: [
     'Relief: NOAA ETOPO1 1 Arc-Minute Global Relief Model.',
     'Rivers and roads: Natural Earth 1:10m (public domain).',
-    'State boundaries: the atlas’s own boundary file, which predates the 2019 reorganisation of Jammu and Kashmir.',
+    'State boundaries: the atlas’s own boundary file, which draws Jammu and Kashmir together with Ladakh, as on India’s political map.',
   ],
   illustration: [
     'The power line close-up, the pylons, the road and the river surface are computer-generated illustrations, as is the falling snow.',
