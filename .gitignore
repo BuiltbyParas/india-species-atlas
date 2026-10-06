@@ -35,3 +35,7 @@ dist-ssr
 
 # /ai-team coordination and background-agent runs
 /.ai-team/
+
+# Promotional film (video/atlas-promo): generated interface plates, baked map
+# layers and audio (npm run video:promo:capture / :prep / :audio)
+/video/public/promo/
