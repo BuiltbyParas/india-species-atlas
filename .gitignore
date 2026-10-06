@@ -39,3 +39,13 @@ dist-ssr
 # Promotional film (video/atlas-promo): generated interface plates, baked map
 # layers and audio (npm run video:promo:capture / :prep / :audio)
 /video/public/promo/
+
+# Reel (reel/): generated public copies, and large media kept out of git
+/video/public/reel/
+/reel/video/flow/*.mp4
+/reel/video/flow/*.mov
+/reel/video/renders/*
+!/reel/video/renders/.gitkeep
+/reel/audio/**/*.wav
+/reel/audio/**/*.aif*
+/reel/audio/**/*.mp3

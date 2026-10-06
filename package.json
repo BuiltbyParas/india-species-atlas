@@ -35,7 +35,14 @@
     "video:promo:master": "node scripts/video/atlas-promo/render.mjs master",
     "video:promo:qc": "node scripts/video/atlas-promo/render.mjs qc",
     "video:promo:typecheck": "tsc -p video/atlas-promo/tsconfig.json",
-    "video:promo:audio": "node scripts/video/atlas-promo/placeholder-audio.mjs"
+    "video:promo:audio": "node scripts/video/atlas-promo/placeholder-audio.mjs",
+    "reel:sync": "node scripts/video/atlas-promo/reel.mjs sync",
+    "reel:studio": "node scripts/video/atlas-promo/reel.mjs studio",
+    "reel:tests": "node scripts/video/atlas-promo/reel.mjs tests",
+    "reel:preview": "node scripts/video/atlas-promo/reel.mjs preview",
+    "reel:still": "node scripts/video/atlas-promo/reel.mjs still",
+    "reel:qc": "node scripts/video/atlas-promo/reel.mjs qc",
+    "reel:shotlist": "node scripts/video/atlas-promo/reel.mjs shotlist"
   },
   "engines": {
     "node": ">=20.19"
