@@ -157,6 +157,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
   const [j, setJ] = useState<Journey | null>(null);
   const [geo, setGeo] = useState<IndiaGeo | null>(null);
   const [layers, setLayers] = useState(6);
+  const [lifted, setLifted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -217,6 +218,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
         sheetRef.current = prepare(g, journey);
         layerRefs.current = [];
         setLayers(layerCount());
+        setLifted(Boolean(sheetRef.current.record) && journey.kind !== 'ascend');
         await new Promise<void>((r) => {
           mounted.current = r;
           setJ(journey);
@@ -554,7 +556,6 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
   const species = j?.species ?? null;
   const caption = j ? describeRoute(j.kind === 'ascend' ? '/atlas' : `/species/${species?.id ?? ''}`) : null;
   const status = species ? STATUS_INFO[species.status] : null;
-  const lifted = Boolean(j && j.kind !== 'ascend' && sheetRef.current?.record);
 
   return (
     <div
