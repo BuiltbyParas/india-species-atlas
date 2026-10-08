@@ -591,6 +591,7 @@ body {
 .loader-rule-line {
   animation: gl-draw 1.3s var(--ease-cinema) both;
 }
+
 /* Draws any GeoLine from nothing; the registered --draw makes this interpolate. */
 @keyframes gl-draw {
   from {
@@ -648,20 +649,69 @@ body {
   transform: translate(-50%, -50%);
   overflow: visible;
 }
-.loader-map path {
-  fill: none;
-  stroke: var(--color-canvas);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  opacity: 0.8;
-  animation: draw 1.7s var(--ease-cinema) forwards;
+.loader-state {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+  --gl-w: 1px;
+  --draw: 0;
+  animation: gl-draw 1.7s var(--ease-cinema) forwards;
   animation-delay: calc(1s + var(--i) * 0.03s);
 }
 @keyframes draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+/* The survey mark at the middle of the sheet: first thing on screen, gone once the map draws. */
+.loader-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  animation:
+    loader-in 0.6s ease 0.2s both,
+    loader-fade 0.8s ease 1.5s forwards;
+}
+.loader-cross {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  background:
+    linear-gradient(var(--color-contour), var(--color-contour)) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--color-contour), var(--color-contour)) 0 50% / 100% 1px no-repeat;
+}
+.loader-centre-label {
+  position: absolute;
+  left: 16px;
+  top: 10px;
+  white-space: nowrap;
+  font-size: var(--text-label);
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+/* The route through the five featured anchors, drawn by its nib once the country is in place. */
+.loader-route {
+  --draw: 0;
+  animation: gl-draw 1.9s cubic-bezier(0.45, 0, 0.55, 1) 3s forwards;
+}
+.loader-stop {
+  fill: var(--color-forest-950);
+  stroke: var(--color-contour);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  animation: loader-stop 0.5s var(--ease-out-expo) forwards;
+  animation-delay: calc(3s + var(--at) * 1.9s);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes loader-stop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 .loader-title {
@@ -865,18 +915,15 @@ body {
   overflow: visible;
   pointer-events: none;
 }
-.menu-map path {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-canvas) 12%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.6s var(--ease-cinema);
+.menu-map-line {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 12%, transparent);
+  --gl-w: 1px;
+  --draw: 0;
+  transition: --draw 0.6s var(--ease-cinema);
 }
-.menu[data-open='true'] .menu-map path {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 2.6s var(--ease-cinema) 0.4s;
+.menu[data-open='true'] .menu-map-line {
+  --draw: 1;
+  transition: --draw 2.6s var(--ease-cinema) 0.4s;
 }
 .menu-inner {
   position: relative;
@@ -1085,29 +1132,30 @@ body {
   --line-bold: 2.2px;
 }
 
-.gl {
+/* Roles at zero specificity, so a component's own class can tune any line. */
+:where(.gl) {
   --gl-stroke: var(--color-canvas);
   --gl-w: var(--line-fine);
   --gl-alpha: 1;
 }
-.gl[data-role='survey'] {
+:where(.gl[data-role='survey']) {
   --gl-stroke: color-mix(in srgb, var(--color-canvas) 38%, transparent);
   --gl-w: var(--line-hair);
 }
-.gl[data-role='thread'] {
+:where(.gl[data-role='thread']) {
   --gl-stroke: var(--color-canvas);
   --gl-w: var(--line-fine);
   --gl-alpha: 0.72;
 }
-.gl[data-role='route'] {
+:where(.gl[data-role='route']) {
   --gl-stroke: var(--color-contour);
   --gl-w: var(--line-firm);
 }
-.gl[data-role='protect'] {
+:where(.gl[data-role='protect']) {
   --gl-stroke: var(--color-river);
   --gl-w: var(--line-fine);
 }
-.gl[data-role='schematic'] {
+:where(.gl[data-role='schematic']) {
   --gl-stroke: var(--color-contour);
   --gl-w: var(--line-firm);
 }
@@ -1119,21 +1167,19 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--draw));
   transition:
     stroke-width 0.3s var(--ease-out-expo),
     stroke-opacity 0.3s;
 }
 .gl-dashes {
+  /* Screen pixels, deliberately: a schematic's dash is the same at any zoom. */
   stroke-dasharray: 5 4;
-  stroke-dashoffset: 0;
 }
+/* The reveal: in map units, so its dash follows the path exactly. Butt ends, so nothing shows ahead of the nib. */
 .gl-reveal {
   fill: none;
   stroke: #fff;
-  stroke-width: 14px;
-  vector-effect: non-scaling-stroke;
+  stroke-width: 28;
   stroke-dasharray: 1;
   stroke-dashoffset: calc(1 - var(--draw));
 }
@@ -1889,8 +1935,8 @@ body {
   transition: opacity 0.3s;
 }
 .nm-thread .gl-path {
-  stroke-dasharray: calc(0.08 - var(--frag) * 0.062) calc(var(--frag) * 0.03);
-  stroke-dashoffset: 0;
+  /* Whole at rest; under fragmentation, short dashes with growing gaps (screen pixels). */
+  stroke-dasharray: calc(10px - var(--frag) * 6px) calc(var(--frag) * 5px);
 }
 .national-map.has-hl .nm-thread,
 .national-map.has-hl .nm-point {
@@ -2035,8 +2081,7 @@ body {
 }
 /* The dotted guide under each leg: a survey line, the route still to come. */
 .gp-guide .gl-path {
-  stroke-dasharray: 0.01 0.02;
-  stroke-dashoffset: 0;
+  stroke-dasharray: 1px 3px;
   stroke-opacity: 0.5;
 }
 .gp-stop {
@@ -2412,8 +2457,9 @@ body {
     opacity: 1 !important;
     filter: none !important;
   }
-  .loader-map path {
-    stroke-dashoffset: 0 !important;
+  .loader-state,
+  .menu-map-line {
+    --draw: 1 !important;
   }
   .final .fm-country,
   .final .fm-line {

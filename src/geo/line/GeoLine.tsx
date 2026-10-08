@@ -42,6 +42,8 @@ export function GeoLine({
   style,
   pathRef,
   ref,
+  still,
+  reveal,
 }: {
   d: string;
   role: LineRole;
@@ -55,23 +57,31 @@ export function GeoLine({
   pathRef?: Ref<SVGPathElement>;
   /** The line's group, for a driver that writes `--draw` straight onto it. */
   ref?: Ref<SVGGElement>;
+  /** A line that is never drawn on (always whole): no reveal mask. */
+  still?: boolean;
+  /** Width of the reveal mask in user units, if the default would be too thin or too fat for this map. */
+  reveal?: number;
 }) {
   const id = useId().replace(/:/g, '');
   const vars = { ...(draw !== undefined ? { '--draw': draw } : null), ...style } as CSSProperties;
-  const dashed = role === 'schematic';
+  const cls = role === 'schematic' ? 'gl-path gl-dashes' : 'gl-path';
   return (
     <g ref={ref} className={['gl', className].filter(Boolean).join(' ')} data-role={role} style={vars}>
-      {dashed ? (
-        // A dashed line cannot also be drawn with its dash offset, so it is
-        // revealed through a mask that is drawn instead.
+      {still ? (
+        <path ref={pathRef} id={`${id}-p`} d={d} className={cls} />
+      ) : (
+        // The visible stroke keeps its screen weight at any zoom
+        // (non-scaling), and a browser then measures its dashes in screen
+        // pixels, which a unit path length cannot drive. So the line is
+        // revealed through a mask instead: the mask's stroke scales with the
+        // map, its dash is measured along the path, and a draw of 0.5 is
+        // exactly half the line, wherever the nib is.
         <>
           <mask id={`${id}-m`} maskUnits="userSpaceOnUse">
-            <path d={d} pathLength={1} className="gl-reveal" />
+            <path d={d} pathLength={1} className="gl-reveal" style={reveal ? { strokeWidth: reveal } : undefined} />
           </mask>
-          <path ref={pathRef} id={`${id}-p`} d={d} className="gl-path gl-dashes" mask={`url(#${id}-m)`} />
+          <path ref={pathRef} id={`${id}-p`} d={d} className={cls} mask={`url(#${id}-m)`} />
         </>
-      ) : (
-        <path ref={pathRef} id={`${id}-p`} d={d} pathLength={1} className="gl-path" />
       )}
       {nib !== undefined && isSingleRun(d) && (
         <circle r={nib} className="gl-nib" style={{ offsetPath: `path('${d}')` }} />

@@ -1,4 +1,5 @@
-import { SPECIES_BY_ID, SPECIES } from '../data/species';
+import { SPECIES } from '../data/species';
+import { FEATURED } from '../content/featured';
 import { REGIONS } from '../data/regions';
 import { STATUS_INFO } from '../data/statusInfo';
 import { countByStatus } from '../utils/stats';
@@ -11,15 +12,6 @@ import { ConservationChapter } from '../components/cinema/ConservationMap';
 import { FinalChapter } from '../components/cinema/FinalChapter';
 import { GeoProgress } from '../components/cinema/GeoProgress';
 import { InteractiveStat } from '../components/cinema/InteractiveStat';
-
-/**
- * The five species the documentary follows, in the order the route line
- * visits them: west to east, desert to floodplain — the Thar, the central
- * forests, the Ganga, the high Himalaya, the Brahmaputra.
- */
-const FEATURED = ['great-indian-bustard', 'bengal-tiger', 'ganges-river-dolphin', 'snow-leopard', 'indian-rhinoceros']
-  .map((id) => SPECIES_BY_ID[id])
-  .filter(Boolean);
 
 export function HomePage() {
   const byStatus = countByStatus();

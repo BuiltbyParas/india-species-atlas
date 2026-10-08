@@ -28,6 +28,8 @@ export const MAP_WIDTH = 1000;
 const K = MAP_WIDTH / ((MAX_LNG - MIN_LNG) * LNG_SCALE);
 export const MAP_HEIGHT = Math.round((MAX_LAT - MIN_LAT) * K);
 export const MAP_VIEWBOX = `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`;
+/** The geographic point at the middle of the drawn sheet (not a claim about India's centre). */
+export const SHEET_CENTRE = { lat: (MIN_LAT + MAX_LAT) / 2, lng: (MIN_LNG + MAX_LNG) / 2 };
 
 export function project(lng: number, lat: number): [number, number] {
   return [(lng - MIN_LNG) * LNG_SCALE * K, (MAX_LAT - lat) * K];

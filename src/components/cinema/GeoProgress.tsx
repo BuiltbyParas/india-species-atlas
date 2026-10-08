@@ -121,7 +121,7 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
         <path d={geo?.all ?? ''} className="gp-country" />
         {legs.map((d, i) => (
           <g key={i}>
-            <GeoLine d={d} role="survey" className="gp-guide" />
+            <GeoLine d={d} role="survey" className="gp-guide" still />
             <GeoLine
               ref={(n) => {
                 legRefs.current[i] = n;

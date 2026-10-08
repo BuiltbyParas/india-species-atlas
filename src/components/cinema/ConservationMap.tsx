@@ -79,6 +79,7 @@ export function NationalMap({
               key={s.id}
               d={d}
               role="thread"
+              still
               className={cn('nm-thread', hlThreat && s.majorThreats.includes(hlThreat) && 'is-hl')}
               style={{ ['--c' as string]: STATUS_HEX[s.status] }}
             />

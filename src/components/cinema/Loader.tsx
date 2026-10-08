@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SPECIES } from '../../data/species';
-import { formatDeg, loadIndiaGeo, MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
+import { FEATURED } from '../../content/featured';
+import { formatDeg, loadIndiaGeo, MAP_VIEWBOX, project, SHEET_CENTRE, smoothPath, useIndiaGeo } from '../../geo/india';
 import { markIntroDone, whenFirstFrame } from '../../motion/intro';
 import { prefersReducedMotion } from '../../motion/preferences';
 import { lockScroll } from '../../motion/SmoothScroll';
@@ -8,11 +9,21 @@ import { canRender3D } from '../../utils/canRender3D';
 import { GeoLine } from '../../geo/line/GeoLine';
 
 /**
- * The opening title sequence.
+ * The opening title sequence — about five seconds, once per session.
  *
- * A survey line is ruled across the sheet, the extent of the country is
- * written at its ends, and the state boundaries are drawn in until they
- * resolve into India. Then the sheet lifts off the hero.
+ *   0.2 s  a survey mark at the middle of the sheet, with its coordinates
+ *   0.4 s  the survey line is ruled through it, edge to edge
+ *   0.9 s  the country's extent is written at the line's ends
+ *   1.0 s  the state boundaries draw in until they resolve into India
+ *   3.0 s  the route line is drawn by its nib through the five species the
+ *          documentary follows, west to east — the journey the page is about
+ *          to take, at the same anchor localities the scenes ring
+ *   ~5 s   the sheet lifts off the hero, which is already in place beneath
+ *
+ * Every mark is the atlas's own: the sheet's centre is computed from the map
+ * projection and labelled as the sheet's, not as India's centre; the extents
+ * come from the boundary file; the stops are the dataset's anchor
+ * localities. A click or a key press skips whatever minimum time remains.
  *
  * The counter is honest: each of the five steps is real work the page needs
  * before the documentary can start — the typefaces, the boundary file, the
@@ -26,7 +37,7 @@ import { GeoLine } from '../../geo/line/GeoLine';
  * Shown once per session, when a visit starts on the home page. Reduced
  * motion skips it entirely.
  */
-const MIN_MS = 2900;
+const MIN_MS = 5200;
 /** The longest the sequence will wait for the hero's first frame. */
 const FRAME_CEILING_MS = 6000;
 const SEEN_KEY = 'isa-intro-seen';
@@ -55,10 +66,24 @@ export function Loader({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const skipRef = useRef<() => void>(() => undefined);
+
+  // The route: one continuous, gently smoothed stroke through the featured
+  // anchors, so a single nib can draw it. Each stop lights when the nib
+  // reaches it (its share of the polyline's length).
+  const route = useMemo(() => {
+    const pts = FEATURED.map((s) => project(s.distributionPoints[0].lng, s.distributionPoints[0].lat));
+    let total = 0;
+    const at = [0];
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      at.push(total);
+    }
+    return { d: smoothPath(pts, 0.5), pts, at: at.map((v) => v / (total || 1)) };
+  }, []);
 
   useEffect(() => {
     lockScroll(true);
-    const started = performance.now();
     let live = true;
     const tick = (n: number) => live && setStep((s) => Math.max(s, n));
 
@@ -73,18 +98,32 @@ export function Loader({ onDone }: { onDone: () => void }) {
       canRender3D() ? import('../home/heroScene').then(() => tick(4)) : tick(4),
     );
 
+    // The minimum running time, which a click or key press cuts short.
+    const minimum = new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, MIN_MS);
+      skipRef.current = () => {
+        clearTimeout(t);
+        resolve();
+      };
+    });
+
     relief
       .catch(() => undefined)
       .then(() => Promise.race([whenFirstFrame(), new Promise((r) => setTimeout(r, FRAME_CEILING_MS))]))
-      .then(() => new Promise((r) => setTimeout(r, Math.max(0, MIN_MS - (performance.now() - started)))))
+      .then(() => minimum)
       .then(() => {
         if (!live) return;
         tick(5);
         setTimeout(() => live && setLeaving(true), 450);
       });
 
+    const skip = () => skipRef.current();
+    window.addEventListener('pointerdown', skip);
+    window.addEventListener('keydown', skip);
     return () => {
       live = false;
+      window.removeEventListener('pointerdown', skip);
+      window.removeEventListener('keydown', skip);
     };
   }, []);
 
@@ -121,6 +160,15 @@ export function Loader({ onDone }: { onDone: () => void }) {
       aria-valuemax={100}
       aria-valuenow={pct}
     >
+      {/* A survey mark at the middle of the sheet, where the first line will cross. */}
+      <div className="loader-centre" aria-hidden="true">
+        <span className="loader-cross" />
+        <span className="loader-centre-label tabular-nums">
+          {formatDeg(SHEET_CENTRE.lat, 'lat')} {formatDeg(SHEET_CENTRE.lng, 'lng')}
+          <span className="block text-canvas/40">middle of the sheet</span>
+        </span>
+      </div>
+
       {/* The survey line: the first line the atlas draws, ruled edge to edge. */}
       <svg className="loader-rule" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true">
         <GeoLine d="M0 1H100" role="survey" className="loader-rule-line" />
@@ -137,7 +185,11 @@ export function Loader({ onDone }: { onDone: () => void }) {
 
       <svg className="loader-map" viewBox={MAP_VIEWBOX} aria-hidden="true">
         {geo?.states.map((s, i) => (
-          <path key={s.name} d={s.d} pathLength={1} style={{ ['--i' as string]: i }} />
+          <GeoLine key={s.name} d={s.d} role="survey" className="loader-state" style={{ ['--i' as string]: i }} />
+        ))}
+        <GeoLine d={route.d} role="route" nib={9} className="loader-route" />
+        {route.pts.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="8" className="loader-stop" style={{ ['--at' as string]: route.at[i] }} />
         ))}
       </svg>
 

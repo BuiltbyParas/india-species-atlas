@@ -29,7 +29,7 @@ They now share one primitive, one vocabulary and one driver.
 
 - **Weights** are in screen pixels at any zoom (`vector-effect: non-scaling-stroke`). Emphasis is `--line-bold` (2.2 px).
 - **Caps and joins** are round.
-- **Drawing** uses `stroke-dashoffset` on a unit `pathLength`. A schematic line is dashed, so it is revealed through a drawn mask instead.
+- **Drawing** happens through a reveal mask. The visible stroke is non-scaling and undashed. The mask's stroke is in map units, and its unit-`pathLength` dash is offset by `--draw`. Browsers measure a non-scaling stroke's dashes in screen pixels, so drawing the visible stroke directly would go wrong at any zoom other than 1:1 (see Gate 6 in PRODUCTION_STATUS). `still` lines skip the mask, and dash patterns on visible strokes are in screen pixels.
 - **The nib** is a small mark at the drawing end of a line, shown only while `0 < draw < 1`, so a finished line is just a line. It is placed with CSS `offset-path`, at no JavaScript cost per frame, and it follows single-run paths only.
 - **Labels** set words along the line with `textPath` and fade in once the line is more than half drawn. This is ready for the species world and the bustard transition.
 

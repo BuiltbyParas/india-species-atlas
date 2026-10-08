@@ -7,6 +7,7 @@ import { BIBLIOGRAPHY } from '../../data/sources';
 import { MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
 import { cn } from '../../utils/cn';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
+import { GeoLine } from '../../geo/line/GeoLine';
 
 const LOCALITY_COUNT = SPECIES.reduce((n, s) => n + s.distributionPoints.length, 0);
 const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => e.publisher)))];
@@ -157,7 +158,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
 
       {geo && (
         <svg className="menu-map" viewBox={MAP_VIEWBOX} aria-hidden="true">
-          <path d={geo.all} pathLength={1} />
+          <GeoLine d={geo.all} role="survey" className="menu-map-line" />
         </svg>
       )}
 

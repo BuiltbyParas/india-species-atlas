@@ -10,8 +10,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 3 — Species world | **Done** (8 Oct 2026) | tag `atlas/premium-gate-3-species-world` |
 | 4 — Spatial atlas | **Done** (8 Oct 2026) | tag `atlas/premium-gate-4-spatial-atlas` |
 | 5 — Atlas explorer | **Done** (8 Oct 2026); rivers, forests and protected-area polygons deliberately not drawn (no sourced dataset) | tag `atlas/premium-gate-5-explorer` |
-| 6 — Cinematic intro | In progress | |
-| 7 — Bustard transition | Not started | |
+| 6 — Cinematic intro | **Done** (8 Oct 2026) | tag `atlas/premium-gate-6-intro` |
+| 7 — Bustard transition | In progress | |
 | 8 — Final polish | Not started | |
 
 ## Gate 0
@@ -215,3 +215,34 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 ### Verification
 - Screenshots on desktop (Species and Threats modes, legends) and phone. No page errors.
 - The arrow-key tablist test and the profile dialog test still pass.
+
+## Gate 6 — Cinematic intro
+
+The existing loader was evolved into the opening rather than given a second intro. It is still shown once per session, still skipped entirely under reduced motion, and its checklist is still honest.
+
+### The sequence (≈ 5.2 s minimum)
+| t | What happens |
+|---|---|
+| 0.2 s | A survey mark at the middle of the sheet, with its coordinates (21°51′N 82°45′E). It is labelled "middle of the sheet", because it is the projection's centre and makes no claim about India. |
+| 0.4 s | The survey line is ruled through it, edge to edge. |
+| 0.9 s | The country's extent is written at the line's ends, read from the boundary file. |
+| 1.0 s | The state boundaries draw in until they resolve into India. |
+| 3.0 s | The **route line** is drawn by its nib through the five featured species' anchor localities, west to east. Each stop rings as the nib reaches it. It previews the journey the page takes. |
+| ≥ 5.2 s | Once the hero's first frame is in, the sheet lifts off a hero that is already in place. |
+
+- A click or a key press skips whatever minimum time remains. The real loading steps still have to finish.
+- `src/content/featured.ts` now holds the five featured species, shared by the home page and the opening.
+
+### A line-system fix found here (it affected Gate 2's lines too)
+- **The bug.** A line was drawn by animating its dash along a `pathLength` of 1. When the stroke is also `vector-effect: non-scaling-stroke`, browsers measure dashes in screen pixels, so whenever a map was not shown at 1:1 the line drew at the wrong rate. This had been true of the site's draw-on lines since before the upgrade. In the route-progress map, at about 0.11 scale, each leg was "drawn" about nine times too fast; the finale and the loader boundaries were off too. It showed in the intro as a dashed survey rule, and as a route that finished well before its nib.
+- **The fix.**
+  - Every `GeoLine` keeps a non-scaling, undashed visible stroke, and is revealed through a mask whose stroke is in map units, where the unit-length dash is exact. A draw of 0.5 is now exactly half the line, and the nib sits at its end.
+  - Lines that never draw on are marked `still` and carry no mask: the conservation threads and the route guide.
+  - Their dash patterns are now explicit screen-pixel patterns. Fragmentation goes from 10/0 px to 4/5 px.
+- **Old animations converted.** The loader's state boundaries and the menu's map were the last non-`GeoLine` draw-on animations; both now use the primitive.
+- **Overrides restored.** Line roles now sit at zero specificity (`:where(...)`), so a component's own class can tune a line's weight, colour or alpha. Before, the role rules silently beat several of those overrides.
+
+### Verification
+- Frame-by-frame captures at 0.6–7.2 s on desktop and phone, on real GPU WebGL. No page errors.
+- All Gate 2 line moments re-captured: scene thread, conservation, finale, route progress.
+- The keyboard test passes.
