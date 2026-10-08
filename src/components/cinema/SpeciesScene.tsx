@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Species, ThreatId } from '../../types';
 import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
@@ -31,7 +32,7 @@ export const PHASE_VARS: Record<Phase, { range: number; threat: number; cons: nu
   conservation: { range: 1, threat: 1, cons: 1, zoom: 1 },
 };
 
-function setVars(el: HTMLElement | null, v: { range: number; threat: number; cons: number; zoom: number }, animate: boolean) {
+export function setVars(el: HTMLElement | null, v: { range: number; threat: number; cons: number; zoom: number }, animate: boolean) {
   if (!el) return;
   const vars = { '--range': v.range, '--threat': v.threat, '--cons': v.cons, '--zoom': v.zoom };
   if (animate) gsap.to(el, { ...vars, duration: 1.4, ease: 'atlas.cinema', overwrite: true });
@@ -100,7 +101,7 @@ function RangeFacts({ species, play, brief }: { species: Species; play?: boolean
   );
 }
 
-function ThreatFacts({ species, onHover }: { species: Species; onHover: (t: ThreatId | null) => void }) {
+export function ThreatFacts({ species, onHover }: { species: Species; onHover: (t: ThreatId | null) => void }) {
   return (
     <div>
       <ul className="max-w-md">
@@ -128,7 +129,7 @@ function ThreatFacts({ species, onHover }: { species: Species; onHover: (t: Thre
   );
 }
 
-function ConservationFacts({ species, onHover }: { species: Species; onHover: (on: boolean) => void }) {
+export function ConservationFacts({ species, onHover }: { species: Species; onHover: (on: boolean) => void }) {
   return (
     <div onPointerEnter={() => onHover(true)} onPointerLeave={() => onHover(false)}>
       <ul className="max-w-md space-y-2.5">
@@ -153,7 +154,7 @@ function ConservationFacts({ species, onHover }: { species: Species; onHover: (o
   );
 }
 
-function Photo({
+export function Photo({
   species,
   className,
   imgRef,
@@ -316,11 +317,16 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
                   </button>
                 ))}
               </nav>
-              <Magnetic>
-                <button type="button" className="text-link whitespace-nowrap" onClick={() => open(species.id)} data-cursor="Discover">
-                  Full profile and sources
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+                <Magnetic>
+                  <Link to={`/species/${species.id}`} className="text-link whitespace-nowrap" data-cursor="Enter">
+                    The {species.commonName}&rsquo;s page
+                  </Link>
+                </Magnetic>
+                <button type="button" className="text-link whitespace-nowrap text-canvas/60" onClick={() => open(species.id)} data-cursor="Discover">
+                  Quick profile
                 </button>
-              </Magnetic>
+              </div>
             </div>
           </div>
 
@@ -430,9 +436,14 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
               }}
             />
           </div>
-          <button type="button" className="text-link" onClick={() => open(species.id)}>
-            Full profile and sources
-          </button>
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+            <Link to={`/species/${species.id}`} className="text-link">
+              The {species.commonName}&rsquo;s page
+            </Link>
+            <button type="button" className="text-link text-canvas/60" onClick={() => open(species.id)}>
+              Quick profile
+            </button>
+          </div>
         </div>
       </div>
     </section>

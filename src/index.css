@@ -2114,6 +2114,263 @@ body {
   background: color-mix(in srgb, var(--color-canvas) 30%, transparent);
 }
 
+/* --- species world (/species/:id) --- */
+.sw-wash {
+  position: absolute;
+  inset: -10%;
+  z-index: -1;
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  filter: blur(70px) saturate(0.6);
+  opacity: 0.16;
+  pointer-events: none;
+}
+.sw-open::after {
+  /* The wash fades into the page below rather than ending on an edge. */
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 40%;
+  z-index: -1;
+  background: linear-gradient(to bottom, transparent, var(--color-forest-950));
+}
+/* The photograph at its own proportions: contained, never cropped to fit. */
+.sw-photo {
+  width: 100%;
+  max-height: min(72svh, 760px);
+  background: transparent;
+}
+.sw-photo .photo-img {
+  object-fit: contain;
+  object-position: 50% 100%;
+}
+.sw-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 14%, transparent);
+  padding-top: 1.25rem;
+  font-size: var(--text-small);
+}
+.sw-facts dt {
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+}
+.sw-facts dd {
+  margin-top: 0.3rem;
+  color: color-mix(in srgb, var(--color-canvas) 88%, transparent);
+}
+
+/*
+  Map and chapters. On a wide screen the map holds the right of the page
+  while the chapters pass on the left. On a phone it is a band held under the
+  header while the chapters scroll up beneath it, fading out at its lower
+  edge so the text slides under rather than being cut.
+*/
+.sw-grid {
+  display: block;
+}
+@media (min-width: 1024px) {
+  .sw-grid {
+    display: grid;
+    gap: 0 3rem;
+  }
+}
+.sw-map-col {
+  position: sticky;
+  top: 4rem;
+  z-index: 2;
+  height: 42svh;
+  background: var(--color-forest-950);
+  -webkit-mask-image: linear-gradient(to bottom, #000 86%, transparent);
+  mask-image: linear-gradient(to bottom, #000 86%, transparent);
+}
+.sw-map-sticky {
+  height: 100%;
+}
+.sw-map {
+  height: 100%;
+  width: 100%;
+}
+.sw-chapters {
+  position: relative;
+  z-index: 1;
+}
+.sw-chapter {
+  padding: 3.5rem 0 4.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 12%, transparent);
+}
+.sw-chapter:first-child {
+  border-top: 0;
+}
+.sw-chapter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: var(--text-heading);
+  line-height: var(--text-heading--line-height);
+  letter-spacing: var(--text-heading--letter-spacing);
+  color: var(--color-canvas);
+}
+.sw-chapter-head > span {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  letter-spacing: 0;
+  color: var(--color-contour);
+}
+@media (min-width: 1024px) {
+  .sw-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+  .sw-chapters {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .sw-map-col {
+    position: static;
+    grid-row: 1;
+    grid-column: 2;
+    height: auto;
+    background: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .sw-map-sticky {
+    position: sticky;
+    top: 6rem;
+    height: calc(100svh - 8rem);
+  }
+  .sw-chapter {
+    min-height: 80svh;
+    padding: 4rem 0 6rem;
+  }
+}
+.sw-tags {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.25rem;
+  align-items: baseline;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--color-canvas) 78%, transparent);
+}
+.sw-register {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+.sw-register thead th {
+  padding: 0 0 0.5rem;
+  text-align: left;
+  font-weight: 400;
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+}
+.sw-register tbody th,
+.sw-register td {
+  padding: 0.7rem 1rem 0.7rem 0;
+  vertical-align: top;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+}
+.sw-register tbody th {
+  font-weight: 400;
+  color: color-mix(in srgb, var(--color-canvas) 88%, transparent);
+}
+.sw-register td {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-contour);
+}
+.sw-anchor {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-canvas);
+  box-shadow: inset 0 0 0 2px var(--color-forest-950), inset 0 0 0 6px var(--color-canvas);
+  vertical-align: 0.05em;
+}
+.sw-prog {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  font-size: var(--text-small);
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+}
+.sw-history {
+  display: grid;
+  gap: 0;
+}
+.sw-history li {
+  display: grid;
+  grid-template-columns: 3.25rem 2.5rem 1fr;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  font-size: var(--text-small);
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+}
+.sw-source {
+  display: block;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--color-canvas) 85%, transparent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-canvas) 20%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.3s;
+}
+.sw-source:hover {
+  text-decoration-color: var(--color-canvas);
+}
+.sw-onwards {
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 10%, transparent);
+}
+.sw-next {
+  display: block;
+  margin-top: 1.25rem;
+  color: var(--color-canvas);
+  transition: transform 0.6s var(--ease-out-expo);
+}
+.sw-next:hover {
+  transform: translateX(0.5rem);
+}
+.sw-country {
+  fill: color-mix(in srgb, var(--color-canvas) 3%, transparent);
+  stroke: color-mix(in srgb, var(--color-canvas) 22%, transparent);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+.sw-leg {
+  --draw: 0;
+}
+.sw-onwards.is-shown .sw-leg {
+  --draw: 1;
+  transition: --draw var(--dur-draw) var(--ease-cinema) 0.3s;
+}
+.sw-stop {
+  fill: var(--color-forest-950);
+  stroke: var(--color-canvas);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.sw-stop.is-next {
+  stroke: var(--color-contour);
+  opacity: 0;
+  transition: opacity 0.6s 1.6s;
+}
+.sw-onwards.is-shown .sw-stop.is-next {
+  opacity: 1;
+}
+
 /* --- reduced motion: everything lands in its final state --- */
 @media (prefers-reduced-motion: reduce) {
   .reveal-word-inner,
@@ -2138,6 +2395,12 @@ body {
   .hero-meta {
     opacity: 1;
     transform: none;
+  }
+  .sw-leg {
+    --draw: 1 !important;
+  }
+  .sw-stop.is-next {
+    opacity: 1;
   }
   .menu-flow-track,
   .status-pulse,

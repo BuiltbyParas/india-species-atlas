@@ -7,8 +7,8 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { X, Shuffle } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, X, Shuffle } from 'lucide-react';
 import { SPECIES, SPECIES_BY_ID } from '../../data/species';
 import { SpeciesProfile } from './SpeciesProfile';
 import { lockScroll } from '../../motion/SmoothScroll';
@@ -128,6 +128,13 @@ export function SpeciesProfileProvider({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-between gap-3 border-b border-canvas/10 px-5 py-2">
               <p className="caps">Species profile</p>
               <div className="flex items-center gap-1">
+                <Link
+                  to={`/species/${species.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-xs px-2.5 py-1.5 text-xs font-medium text-canvas/70 hover:bg-forest-800 hover:text-canvas"
+                >
+                  Full page
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
                 <button
                   type="button"
                   onClick={openRandom}

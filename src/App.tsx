@@ -13,6 +13,9 @@ import { HomePage } from './pages/HomePage';
 // only what it shows.
 const AtlasPage = lazy(() => import('./pages/AtlasPage').then((m) => ({ default: m.AtlasPage })));
 const SpeciesPage = lazy(() => import('./pages/SpeciesPage').then((m) => ({ default: m.SpeciesPage })));
+const SpeciesWorldPage = lazy(() =>
+  import('./pages/SpeciesWorldPage').then((m) => ({ default: m.SpeciesWorldPage })),
+);
 const ComparePage = lazy(() => import('./pages/ComparePage').then((m) => ({ default: m.ComparePage })));
 const ConservationPage = lazy(() => import('./pages/ConservationPage').then((m) => ({ default: m.ConservationPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
@@ -75,6 +78,7 @@ function Shell() {
               <Route path="/" element={<HomePage />} />
               <Route path="/atlas" element={<AtlasPage />} />
               <Route path="/species" element={<SpeciesPage />} />
+              <Route path="/species/:id" element={<SpeciesWorldPage />} />
               <Route path="/compare" element={<ComparePage />} />
               <Route path="/conservation" element={<ConservationPage />} />
               <Route path="/about" element={<AboutPage />} />

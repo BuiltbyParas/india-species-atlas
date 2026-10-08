@@ -7,8 +7,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 0 — Repository audit | **Done** (8 Oct 2026) | tag `atlas/premium-gate-0-audit` |
 | 1 — Foundation polish | **Done** (8 Oct 2026) | tag `atlas/premium-gate-1-foundation` |
 | 2 — Geographic line system | **Done** (8 Oct 2026) | tag `atlas/premium-gate-2-line-system` |
-| 3 — Species world | In progress | |
-| 4 — Spatial atlas | Not started | |
+| 3 — Species world | **Done** (8 Oct 2026) | tag `atlas/premium-gate-3-species-world` |
+| 4 — Spatial atlas | In progress | |
 | 5 — Atlas explorer | Not started; rivers, forests and protected areas need sourced datasets (see the upgrade plan, §6) | |
 | 6 — Cinematic intro | Not started | |
 | 7 — Bustard transition | Not started | |
@@ -106,3 +106,44 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 - Full screenshot pass (1440, 1920, 1024, 390, reduced motion on desktop and phone): no console errors and no horizontal overflow.
 - Line moments captured mid-draw (nibs), settled, and under reduced motion (fully drawn, no nibs).
 - The keyboard test from Gate 1 re-run: passes.
+
+## Gate 3 — Species world
+
+### What changed
+- **New route `/species/:id`.** Every one of the 12 species has its own page (`src/pages/SpeciesWorldPage.tsx`, a 3.7 kB gzip lazy chunk).
+- **Deep links.** `postbuild` writes a real `index.html` for each species page (ids read from the dataset), so a deep link is served as 200. An unknown id renders the Not Found page.
+- **The opening** sets the species beside its photograph:
+  - the photograph is shown at its own proportions, contained rather than cropped, so the portrait macaque is whole;
+  - a 70 px blurred wash of the same photograph gives each page its own atmosphere;
+  - the survey facts: the anchor locality with coordinates, the count of states/UTs, the count of localities, and the assessment year;
+  - the photo's alt text as a caption, with the credit.
+- **The lede:** the summary set as a headline, then the description and "why it matters".
+- **Map and chapters.**
+  - **Layout:** a map holds the right of the page while four chapters pass on the left. Each chapter sets the map's layer (range → threats → protection) as it crosses the middle of the screen, at the reader's pace and with nothing pinned. The map waits until it is on screen, then draws its thread with the nib.
+  - **01 Where it lives:** the habitat note, distribution, habitats and regions, and a **locality register**, a table of every indicative locality with its coordinates, starting from the anchor.
+  - **02 What cuts through it:** the scene's threat rows; hovering one highlights its hatch on the map.
+  - **03 What protects it:** actions; programmes by start year, with their authority; protected areas named in the record.
+  - **04 The record:** the IUCN category and its definition, the dated status history, sources, and the last-verified date.
+- **Onwards:** a route line (`GeoLine`, route role, with nib) drawn from this species' anchor to the next species' anchor, with both coordinates, plus previous / all species / the map.
+- **On phones** the map becomes a band held under the header while the chapters scroll up beneath it, fading at its lower edge.
+- **Entry points:**
+  - each documentary scene now offers "The ⟨species⟩'s page" alongside a "Quick profile" button, which opens the existing panel;
+  - the profile panel has a "Full page" link;
+  - the `?species=` panel still works everywhere.
+
+### Data honesty
+- **Every value comes from the dataset:**
+  - the 12 species records, with their photographs and credits;
+  - the localities and coordinates;
+  - the programmes, with their start years and authorities;
+  - the status history;
+  - the sources.
+- **Nothing is added:** no range area, no population number beyond the cited prose, and no altitude.
+- The locality register says that these are indicative localities, not a range boundary.
+
+### Verification
+- All 12 pages are screenshotted at 1440. The bustard page was screenshotted chapter by chapter on desktop and phone.
+- There are no console errors and no horizontal overflow.
+- Unknown ids give "Page not found".
+- The accessibility tree has one `h1`, numbered `h2` chapters, a captioned table with row headers, and labelled `nav`s.
+- The keyboard test from Gate 1 still passes.

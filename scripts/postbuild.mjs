@@ -39,7 +39,19 @@ async function staticRoutes() {
 const index = join(dist, 'index.html');
 await copyFile(index, join(dist, '404.html'));
 
-const routes = await staticRoutes();
+/**
+ * The species pages (/species/:id), one per entry in the dataset. The ids are
+ * read from the dataset's own `id:` lines rather than listed here, for the
+ * same reason the routes are read from the router.
+ */
+async function speciesRoutes() {
+  const data = await readFile(join(root, 'src/data/species.ts'), 'utf8');
+  const ids = [...data.matchAll(/^ {4}id: '([a-z0-9-]+)',$/gm)].map((m) => m[1]);
+  if (ids.length === 0) throw new Error('postbuild: no species ids found in src/data/species.ts');
+  return ids.map((id) => `/species/${id}`);
+}
+
+const routes = [...(await staticRoutes()), ...(await speciesRoutes())];
 for (const route of routes) {
   const dir = join(dist, route);
   await mkdir(dir, { recursive: true });
