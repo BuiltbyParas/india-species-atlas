@@ -1,3 +1,4 @@
+import { LineTitle } from '../cinema/LineTitle';
 import type { ReactNode } from 'react';
 import { cn } from '../../utils/cn';
 
@@ -40,7 +41,10 @@ export function SectionHeading({
           {eyebrow}
         </p>
       )}
-      <Tag className={cn('font-serif font-light text-canvas', TITLE_SIZE[size])}>{title}</Tag>
+      <Tag className={cn('font-serif font-light text-canvas', TITLE_SIZE[size])}>
+        {/* A page's own title is written along a contour that straightens into its rule. */}
+        {Tag === 'h1' && typeof title === 'string' ? <LineTitle text={title} seed={title.length % 7} /> : title}
+      </Tag>
       {description && (
         <p
           className={cn(

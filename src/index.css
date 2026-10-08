@@ -524,6 +524,40 @@ body {
   width: 100%;
   height: 100%;
 }
+.cursor-thread {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The reticle's reading over anything that stands for a place: its coordinates, set like a sheet's margin note. */
+.cursor-geo {
+  position: absolute;
+  left: 22px;
+  top: 20px;
+  white-space: pre;
+  font-size: var(--text-micro);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-contour);
+  opacity: 0;
+  translate: -4px 0;
+  transition: opacity 0.25s, translate 0.35s var(--ease-out-expo);
+}
+.cursor-ring[data-geo='true'] .cursor-geo {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 0.08s;
+}
+.cursor-ring[data-state='label'] .cursor-geo {
+  left: 0;
+  top: 46px;
+  transform: translateX(-50%);
+}
+.cursor-ring[data-state='lock'] .cursor-geo {
+  left: calc(var(--lw) / -2);
+  top: calc(var(--lh) / 2 + 7px);
+}
 .cursor-dot,
 .cursor-ring {
   position: fixed;
@@ -2070,6 +2104,43 @@ body {
     transform: translateY(calc(-50% + (1 - var(--in)) * 24px));
   }
 }
+/* Leaving for the atlas, the relief is laid flat into the journey's sheet;
+   whatever is laid over it steps back as it goes (HeroStage → toSheet). */
+.hero-stage > :not(canvas) {
+  opacity: calc(1 - var(--sheet, 0));
+}
+/* The survey probe's reading, set beside its ring on the ground. */
+.hero-probe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0 0 0 1.6rem;
+  pointer-events: none;
+  white-space: pre;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+  text-shadow: 0 1px 6px rgb(5 12 8 / 0.9);
+  opacity: 0;
+  translate: 0 -0.75em;
+  transition: opacity 0.25s var(--ease-out-expo);
+  will-change: transform, opacity;
+}
+.hero-probe[data-on='true'] {
+  opacity: 1;
+}
+.hero-probe[data-side='left'] {
+  padding: 0 1.6rem 0 0;
+  translate: -100% -0.75em;
+  text-align: right;
+}
+.hero-probe[data-snapped='true']::first-line {
+  color: var(--color-canvas);
+}
 .flat-india path {
   fill: none;
   stroke: color-mix(in srgb, var(--color-canvas) 35%, transparent);
@@ -2217,13 +2288,54 @@ body {
   --dy: 0;
   --dh: 0;
 }
-.photo-img {
+.photo-img,
+.photo-contours {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  translate: calc(var(--dx) * -16px) calc(var(--dy) * -14px);
-  scale: calc(1 + var(--dh) * 0.035);
+  /* Hover depth (--dx/--dy/--dh), and the scroll's momentum (--atlas-velocity,
+     bound only while the frame is on screen): the print lags a few pixels
+     behind the page and settles when it stops. */
+  translate: calc(var(--dx) * -16px) calc(var(--dy) * -14px + var(--atlas-velocity, 0) * var(--atlas-velocity-dir, 1) * -16px);
+  scale: calc(1 + var(--dh) * 0.035 + var(--atlas-velocity, 0) * 0.03);
   will-change: transform;
+}
+/* The print's own contours (interaction/photoContours.ts): faint under the hand. */
+.photo-contours {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 0.7px;
+  vector-effect: non-scaling-stroke;
+  opacity: calc(var(--dh) * 0.4);
+}
+.photo-contours path {
+  vector-effect: non-scaling-stroke;
+  opacity: calc(0.45 + var(--k) * 0.12);
+}
+/* LINE → CONTOURS → PRINT: as the shutter opens, the print's contours spread
+   from the ruled line first, and the photograph develops under them. */
+.photo-shutter.is-open .photo-contours {
+  animation: contours-develop 2.6s var(--ease-cinema) 0.2s both;
+}
+@keyframes contours-develop {
+  0% {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0.9;
+  }
+  30% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.85;
+  }
+  62% {
+    opacity: 0.5;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0;
+  }
 }
 /* The photograph is the evidence; the effect stays around it: a light crossing the print. */
 .photo-frame::after {
@@ -3099,6 +3211,9 @@ body {
   .photo-shutter .photo-grain {
     clip-path: none;
     transition: none;
+  }
+  .photo-contours {
+    display: none;
   }
   .photo-shutter-line {
     display: none;

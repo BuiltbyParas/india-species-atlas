@@ -4,11 +4,12 @@ import { STATUS_HEX } from '../../theme';
 import { StatusBadge } from '../ui/StatusBadge';
 import { HeroArt } from './HeroArt';
 import { canRender3D } from '../../utils/canRender3D';
-import { loadIndiaGeoJson } from '../../geo/india';
+import { formatDeg, loadIndiaGeoJson } from '../../geo/india';
 import { markFirstFrame } from '../../motion/intro';
 import { hasFinePointer } from '../../motion/preferences';
 import type { GeoCollection, HeroPlate, HeroPoint, HeroScene } from './heroScene';
 import { registerScene } from '../../world/sceneRegistry';
+import { onScrollVelocity } from '../../interaction/velocity';
 import { setWorld } from '../../world/worldState';
 import { camAt, INDIA_CAM } from '../../world/geoCamera';
 
@@ -53,6 +54,9 @@ const REVEAL_BY_SPECIES = new Map(JOURNEY.map((entry) => [entry.species.id, entr
  * IUCN category and lit on the species' own schedule, so a species' markers
  * come up together with its plate.
  */
+const POINT_NAMES = SPECIES.flatMap((species) =>
+  species.distributionPoints.map((point) => ({ place: point.label.split(',')[0], species: species.commonName })),
+);
 const POINTS: HeroPoint[] = SPECIES.flatMap((species) =>
   species.distributionPoints.map((point) => ({
     lng: point.lng,
@@ -117,6 +121,7 @@ export function HeroStage({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const labelRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const probeRef = useRef<HTMLParagraphElement>(null);
   /**
    * Half the rendered width of each caption, measured once and reused to keep
    * it inside the frame. Cleared on resize, since the copy can rewrap.
@@ -243,6 +248,25 @@ export function HeroStage({
               )}px, 0)`;
             }
           },
+          // The probe's reading, set beside its ring on the ground: the
+          // coordinates under the hand, or the locality it has closed on.
+          onProbe: (reading) => {
+            const node = probeRef.current;
+            if (!node) return;
+            if (!reading) {
+              node.dataset.on = 'false';
+              return;
+            }
+            const at = `${formatDeg(reading.lat, 'lat')}  ${formatDeg(reading.lng, 'lng')}`;
+            const named = reading.snapped >= 0 ? POINT_NAMES[reading.snapped] : null;
+            const text = named ? `${named.place} · ${named.species}\n${at}` : at;
+            if (node.textContent !== text) node.textContent = text;
+            node.dataset.on = 'true';
+            node.dataset.snapped = named ? 'true' : 'false';
+            // Set on whichever side of the ring has room.
+            node.dataset.side = reading.x > stage.clientWidth * 0.55 ? 'left' : 'right';
+            node.style.transform = `translate3d(${reading.x.toFixed(1)}px, ${reading.y.toFixed(1)}px, 0)`;
+          },
           // The scene has already stepped its own quality down and still can't
           // keep up on this device, so stop asking it to.
           onTooSlow: bail,
@@ -273,22 +297,64 @@ export function HeroStage({
         // Pause the render loop whenever the hero is off-screen or the tab is
         // in the background — a static scene costs nothing to leave mounted.
         // (world/sceneRegistry.ts, which also holds it still while a journey covers the screen.)
-        cleanups.push(registerScene('hero', { setActive: (a) => scene?.setActive(a) }, stage));
+        cleanups.push(
+          registerScene(
+            'hero',
+            {
+              setActive: (a) => scene?.setActive(a),
+              // A journey to the atlas lays the relief flat into its sheet;
+              // everything laid over the relief steps back as it does.
+              toSheet: (cam, t) => {
+                stage.style.setProperty('--sheet', t.toFixed(3));
+                scene?.toSheet(cam, t);
+              },
+            },
+            stage,
+          ),
+        );
 
+        // The shared scroll-velocity signal reaches the camera as momentum.
+        cleanups.push(onScrollVelocity((level) => scene?.setMomentum(level)));
+
+        const frameXY = (event: { clientX: number; clientY: number }): [number, number] => {
+          const rect = stage.getBoundingClientRect();
+          return [((event.clientX - rect.left) / rect.width) * 2 - 1, ((event.clientY - rect.top) / rect.height) * 2 - 1];
+        };
         if (hasFinePointer()) {
+          // The hand moves the camera a little (parallax) and surveys the
+          // ground under it (the probe). No drag, no orbit: scroll stays the
+          // way through the descent.
           const onPointerMove = (event: PointerEvent) => {
-            const rect = stage.getBoundingClientRect();
-            scene?.setPointer(
-              ((event.clientX - rect.left) / rect.width) * 2 - 1,
-              ((event.clientY - rect.top) / rect.height) * 2 - 1,
-            );
+            if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+            const [x, y] = frameXY(event);
+            scene?.setPointer(x, y);
+            scene?.setProbe(x, y);
           };
-          const onPointerLeave = () => scene?.setPointer(0, 0);
+          const onPointerLeave = () => {
+            scene?.setPointer(0, 0);
+            scene?.setProbe(null, 0);
+          };
           stage.addEventListener('pointermove', onPointerMove);
           stage.addEventListener('pointerleave', onPointerLeave);
           cleanups.push(() => {
             stage.removeEventListener('pointermove', onPointerMove);
             stage.removeEventListener('pointerleave', onPointerLeave);
+          });
+        } else {
+          // Touch: a tap (not a scroll) sets the probe down where the finger
+          // was, reads the ground there, and lifts it again.
+          let lift = 0;
+          const onTap = (event: MouseEvent) => {
+            if ((event.target as Element | null)?.closest('a, button')) return;
+            const [x, y] = frameXY(event);
+            scene?.setProbe(x, y);
+            window.clearTimeout(lift);
+            lift = window.setTimeout(() => scene?.setProbe(null, 0), 2200);
+          };
+          stage.addEventListener('click', onTap);
+          cleanups.push(() => {
+            stage.removeEventListener('click', onTap);
+            window.clearTimeout(lift);
           });
         }
 
@@ -346,7 +412,7 @@ export function HeroStage({
       ref={sectionRef}
       className={withPlates ? 'relative border-b border-forest-800 bg-forest-950 h-[250vh] lg:h-[310vh]' : 'relative bg-forest-950 h-[300vh] lg:h-[380vh]'}
     >
-      <div ref={stageRef} className="sticky top-0 h-screen h-[100svh] overflow-hidden" style={{ ['--p' as string]: 0 }}>
+      <div ref={stageRef} className="hero-stage sticky top-0 h-screen h-[100svh] overflow-hidden" style={{ ['--p' as string]: 0 }}>
         <canvas
           ref={canvasRef}
           aria-hidden="true"
@@ -407,6 +473,7 @@ export function HeroStage({
           </div>
         )}
         {overlay}
+        {mode === 'live' && <p ref={probeRef} className="hero-probe" data-on="false" aria-hidden="true" />}
         {mode === 'live' && withPlates && (
           <p
             aria-hidden="true"

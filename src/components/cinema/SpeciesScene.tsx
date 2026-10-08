@@ -7,6 +7,8 @@ import { gsap, ScrollTrigger } from '../../motion/gsap';
 import { scrollToTarget } from '../../motion/SmoothScroll';
 import { useInView } from '../../motion/useInView';
 import { useInkBleed } from '../../interaction/ink';
+import { bindVelocity } from '../../interaction/velocity';
+import { photoContours, type ContourSet } from '../../interaction/photoContours';
 import { useReducedMotion, useWideLayout } from '../../motion/preferences';
 import { photoSources } from '../../utils/photo';
 import { cn } from '../../utils/cn';
@@ -176,6 +178,45 @@ export function Photo({
   const photo = photoSources(species);
   const frameRef = useRef<HTMLDivElement>(null);
   const seen = useInView(frameRef, { rootMargin: '0px 0px -8% 0px' });
+  const reduced = useReducedMotion();
+  const [contours, setContours] = useState<ContourSet | null>(null);
+  // The print's own contours (interaction/photoContours.ts): measured once it is
+  // near the screen, in idle time, from the image the browser chose.
+  useEffect(() => {
+    if (!seen || reduced || contours) return;
+    const img = frameRef.current?.querySelector('img');
+    let cancelled = false;
+    const run = () => {
+      const src = img?.currentSrc || img?.src;
+      if (src) void photoContours(src).then((c) => !cancelled && setContours(c));
+    };
+    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 200));
+    const id = idle(run);
+    return () => {
+      cancelled = true;
+      (window.cancelIdleCallback ?? window.clearTimeout)(id as number);
+    };
+  }, [seen, reduced, contours]);
+  // While on screen, the print feels the scroll: it lags a little inside its
+  // frame in the direction of travel, and settles when the page does.
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || reduced) return;
+    let unbind: (() => void) | null = null;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !unbind) unbind = bindVelocity(frame);
+      else if (!e.isIntersecting && unbind) {
+        unbind();
+        unbind = null;
+        frame.style.removeProperty('--atlas-velocity');
+      }
+    });
+    io.observe(frame);
+    return () => {
+      io.disconnect();
+      unbind?.();
+    };
+  }, [reduced]);
   // The shutter's edges run like ink as the print opens (interaction/ink.ts).
   useInkBleed(frameRef, Boolean(shutter && seen));
   // A print still on its way develops in the frame (a graticule, then the photograph fades up)
@@ -210,6 +251,18 @@ export function Photo({
         decoding="async"
         className="photo-img"
       />
+      {contours && (
+        <svg
+          className="photo-contours"
+          viewBox={`0 0 ${contours.w} ${contours.h}`}
+          preserveAspectRatio={className?.includes('sw-photo') ? 'xMidYMax meet' : 'xMidYMid slice'}
+          aria-hidden="true"
+        >
+          {contours.paths.map((d, i) => (
+            <path key={i} d={d} style={{ ['--k' as string]: i }} />
+          ))}
+        </svg>
+      )}
       <span className="photo-grain" aria-hidden="true" />
       <span className="photo-marks" aria-hidden="true" />
       {shutter && <span className="photo-shutter-line" aria-hidden="true" />}
@@ -328,7 +381,7 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
               </nav>
               <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
                 <Magnetic>
-                  <Link to={`/species/${species.id}`} className="text-link whitespace-nowrap" data-cursor="Enter">
+                  <Link to={`/species/${species.id}`} className="text-link whitespace-nowrap" data-cursor="Enter" data-geo={`${species.distributionPoints[0].lng},${species.distributionPoints[0].lat}`} data-geo-kind="link">
                     The {species.commonName}&rsquo;s page
                   </Link>
                 </Magnetic>
@@ -389,7 +442,7 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
           <Header species={species} index={index} total={total} />
         </div>
         <Reveal className="mt-10" direction="up">
-          <Photo species={species} className="aspect-[4/3] w-full" sizes="(min-width: 800px) 768px, calc(100vw - 2rem)" />
+          <Photo species={species} className="aspect-[4/3] w-full" sizes="(min-width: 800px) 768px, calc(100vw - 2rem)" shutter />
           <PhotoCredit species={species} className="mt-2" />
         </Reveal>
         <p className="mt-10 font-serif text-lede font-light text-canvas/85">{species.summary}</p>

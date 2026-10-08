@@ -1,15 +1,18 @@
 import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from 'react';
 import { STATUS_INFO } from '../data/statusInfo';
+import { SPECIES } from '../data/species';
 import { formatDeg, KM_PER_UNIT, loadIndiaGeo, project, unproject, type IndiaGeo } from '../geo/india';
 import { bowedLeg } from '../geo/line/paths';
 import { schedule } from '../interaction/loop';
+import { kmBetween } from '../interaction/geoThread';
 import { cubicBezier } from '../motion/gsap';
 import { describeRoute } from '../interaction/routeCaption';
 import { GEOJSON_STATE_ALIASES } from '../utils/stateCounts';
 import { photoSources } from '../utils/photo';
 import { camPath, type GeoCam } from './geoCamera';
-import { atlasLanding, type Journey } from './journeys';
-import { setWorld } from './worldState';
+import { atlasLanding, liveAtlasCamera, type Journey } from './journeys';
+import { getWorld, setWorld } from './worldState';
+import { keepAwake } from './sceneRegistry';
 import './world.css';
 
 /**
@@ -149,7 +152,11 @@ interface Sheet {
   /** The states of record's extent, in map units. */
   recordBox: [number, number, number, number] | null;
   legPts: Array<[number, number]> | null;
+  /** The leg's length, anchor to anchor, set along it as it is drawn. */
+  legLabel: string | null;
   origin: [number, number] | null;
+  /** Ascending to the atlas: every locality, so the sheet lands on the map's own markers. */
+  marks: Array<{ x: number; y: number; color: string }> | null;
   ink: Ink;
 }
 
@@ -262,7 +269,24 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
       record,
       recordBox,
       legPts: journey.leg ? sample(bowedLeg(journey.leg[0], journey.leg[1], 0.2, { max: 160 })) : null,
+      legLabel:
+        journey.leg && journey.leg.length === 2
+          ? (() => {
+              const [a, b] = journey.leg!.map(([x, y]) => unproject(x, y));
+              const km = kmBetween({ lng: a[0], lat: a[1] }, { lng: b[0], lat: b[1] });
+              return `${Math.round(km).toLocaleString('en-GB')} km`;
+            })()
+          : null,
       origin: journey.origin ? project(journey.origin.lng, journey.origin.lat) : null,
+      marks:
+        journey.kind === 'ascend'
+          ? SPECIES.flatMap((sp) =>
+              sp.distributionPoints.map((pt) => {
+                const [x, y] = project(pt.lng, pt.lat);
+                return { x, y, color: STATUS_INFO[sp.status].hex };
+              }),
+            )
+          : null,
       ink: {
         canvas: v('--color-canvas', '#e8e1cf'),
         contour: v('--color-contour', '#b07a52'),
@@ -329,6 +353,38 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
         ctx.beginPath();
         ctx.arc(x, y, px(3.5), 0, Math.PI * 2);
         ctx.fillStyle = ink.contour;
+        ctx.fill();
+      }
+      // The distance is set along the line itself, once the pen has passed its middle.
+      if (s.legLabel && legT > 0.55) {
+        const m = Math.floor(s.legPts.length / 2);
+        const [x0, y0] = s.legPts[m - 2];
+        const [x1, y1] = s.legPts[m + 2];
+        const [mx, my] = s.legPts[m];
+        let ang = Math.atan2(y1 - y0, x1 - x0);
+        if (ang > Math.PI / 2) ang -= Math.PI;
+        if (ang < -Math.PI / 2) ang += Math.PI;
+        ctx.save();
+        ctx.translate(mx, my);
+        ctx.rotate(ang);
+        ctx.scale(px(1), px(1));
+        ctx.globalAlpha = Math.min(1, (legT - 0.55) / 0.3);
+        ctx.fillStyle = ink.river;
+        ctx.font = '500 11px Geist, ui-sans-serif, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(s.legLabel.toUpperCase().split('').join('\u200a'), 0, -6);
+        ctx.restore();
+      }
+    }
+    if (s.marks && kind === 'ascend' && fly > 0) {
+      // MAP: the localities come up as the camera reaches the map's height.
+      const a = Math.min(1, fly * 1.6) * 0.9;
+      const r = px(2.6);
+      for (const m of s.marks) {
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = alpha(m.color, a);
         ctx.fill();
       }
     }
@@ -405,7 +461,17 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     const H = window.innerHeight;
     const wide = W >= 700;
 
-    const start = journey.fromBox ? fullscreenOf(journey.from, journey.fromBox) : journey.from;
+    // On the atlas, the real map moves first: it leans in to the chosen
+    // locality, and the journey picks up from where it settles.
+    const atlasCam = journey.fromBox && journey.origin && journey.kind !== 'ascend' ? liveAtlasCamera() : null;
+    let from = journey.from;
+    if (atlasCam && journey.origin) {
+      root.dataset.approach = 'true';
+      await atlasCam.approach(journey.origin.lng, journey.origin.lat);
+      delete root.dataset.approach;
+      from = getWorld().camera;
+    }
+    const start = journey.fromBox ? fullscreenOf(from, journey.fromBox) : from;
     setCam(start, 0, 0, journey.kind);
     view.style.clipPath = insetOf(journey.fromBox, 0);
     root.dataset.state = 'on';
@@ -502,6 +568,32 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     const photo = photoRef.current!;
     const img = imgRef.current!;
 
+    // TERRAIN → MAP: from the hero, the relief itself is laid flat — the
+    // hero's own camera turns straight down over the framing the sheet will
+    // draw, at the sheet's scale — and the sheet's lines come up over it.
+    const hero = journey.fromHero;
+    if (hero?.toSheet) {
+      const menu = document.querySelector('.menu[data-open="true"]');
+      if (menu) {
+        window.dispatchEvent(new Event('atlas:menu:close'));
+        await after(380);
+      }
+      const release = keepAwake('hero');
+      const cam = journey.from;
+      try {
+        root.style.setProperty('--in', '0');
+        root.dataset.flatten = 'true';
+        await tween(1050, (e) => {
+          hero.toSheet!(cam, e);
+          root.style.setProperty('--flat', e.toFixed(3));
+        }, cinema);
+        await tween(380, (e) => root.style.setProperty('--in', e.toFixed(3)), outExpo);
+      } finally {
+        release();
+        delete root.dataset.flatten;
+      }
+    }
+
     // PHOTOGRAPH → LINE: the photograph on screen closes into a ruled line.
     const shot = journey.closeFrom;
     if (shot) {
@@ -516,7 +608,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
       await tween(520, (e) => root.style.setProperty('--open', (1 - e).toFixed(3)), cinema);
     }
     // LINE → POINT: the sheet comes up and the line gathers to the place it belongs to.
-    await tween(
+    if (!hero) await tween(
       360,
       (e) => {
         root.style.setProperty('--in', e.toFixed(3));

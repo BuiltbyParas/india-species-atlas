@@ -23,6 +23,12 @@ export function Navbar() {
 
   const close = useCallback(() => setOpen(false), []);
 
+  // A journey that needs the screen (the hero laid flat into the atlas) folds the menu away first.
+  useEffect(() => {
+    window.addEventListener('atlas:menu:close', close);
+    return () => window.removeEventListener('atlas:menu:close', close);
+  }, [close]);
+
   useEffect(() => {
     lockScroll(open);
     return () => {
@@ -49,7 +55,7 @@ export function Navbar() {
         data-open={open ? 'true' : 'false'}
       >
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-8 lg:h-20 lg:px-12">
-          <Link to="/" className="group flex items-baseline gap-3" aria-label="India Species Atlas, home">
+          <Link to="/" className="group flex items-baseline gap-3" aria-label="India Species Atlas, home" data-magnetic="0.15" data-cursor="Return">
             <span className="font-serif text-[1.15rem] font-normal leading-none tracking-[-0.01em] text-canvas">
               India Species Atlas
             </span>

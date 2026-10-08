@@ -236,3 +236,12 @@
 .wj[data-closing='true'] .wj-sheet {
   opacity: 0;
 }
+
+/* Home → atlas: while the hero's relief is laid flat underneath (--flat),
+   the sheet is still clear, and only the instruments read the ground. */
+.wj[data-flatten='true'] {
+  cursor: progress;
+}
+.wj[data-flatten='true'] .wj-instruments {
+  opacity: var(--flat, 0);
+}

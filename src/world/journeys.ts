@@ -1,7 +1,8 @@
 import type { Species } from '../types';
 import { SPECIES_BY_ID } from '../data/species';
-import { project } from '../geo/india';
-import { camAt, fitCam, type GeoCam } from './geoCamera';
+import { MAP_HEIGHT, MAP_WIDTH, project } from '../geo/india';
+import { camAt, fitCam, INDIA_CAM, type GeoCam } from './geoCamera';
+import { sceneNamed, type Pausable } from './sceneRegistry';
 import { getWorld, type AtlasView, type GeoOrigin } from './worldState';
 
 /**
@@ -42,9 +43,31 @@ export interface Journey {
   leg: [[number, number], [number, number]] | null;
   /** Species → atlas: the photograph on screen now, which closes into a line first. */
   closeFrom: HTMLImageElement | null;
+  /**
+   * Home → atlas from the hero: the live relief, which is laid flat into the
+   * sheet first (TERRAIN → MAP) with the hero's own renderer.
+   */
+  fromHero: Pausable | null;
 }
 
 const ATLAS_PANEL = '#atlas-map-panel';
+
+/**
+ * The live atlas map, while it is mounted: a journey that starts on it first
+ * moves the map's own camera to the chosen marker (MARKER → COORDINATE →
+ * CAMERA on the real map), and only then hands over to the sheet.
+ */
+export interface AtlasCamera {
+  /** Ease the map towards a locality; resolves when it has settled (or soon after). */
+  approach: (lng: number, lat: number) => Promise<void>;
+}
+let atlasCamera: AtlasCamera | null = null;
+export function registerAtlasCamera(cam: AtlasCamera | null) {
+  atlasCamera = cam;
+}
+export function liveAtlasCamera(): AtlasCamera | null {
+  return atlasCamera;
+}
 
 function speciesIn(path: string): Species | null {
   const m = path.match(/^\/species\/([^/?#]+)/);
@@ -97,18 +120,31 @@ export function planJourney(fromPath: string, toPath: string, origin: GeoOrigin 
       to: camAt(a.lng, a.lat),
       fromBox,
       toSelector: null,
-      origin: origin ?? (fromSpecies ? { ...fromSpecies.distributionPoints[0], kind: 'leg' } : null),
+      // A next / previous link names where it goes, not where the reader stands: the ring is the start.
+      origin: (origin && origin.kind !== 'leg' ? origin : null) ?? (fromSpecies ? { ...fromSpecies.distributionPoints[0], kind: 'leg' } : null),
       species: toSpecies,
       leg,
       closeFrom: null,
+      fromHero: null,
     };
   }
 
   // To the atlas: up to where the map was left, or the whole country.
   const photo = fromSpecies ? document.querySelector<HTMLImageElement>('.sw-photo img') : null;
+  // From the hero, while its relief fills the screen, the journey starts from
+  // the relief itself: over the whole country, or over the region the
+  // descent has come down to.
+  const hero = fromPath === '/' ? sceneNamed('hero') : null;
+  const heroRect = hero?.element.getBoundingClientRect();
+  const heroFills = Boolean(
+    hero?.scene.toSheet && heroRect && heroRect.top <= 1 && heroRect.bottom >= window.innerHeight - 1,
+  );
+  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const heroCam =
+    from === INDIA_CAM || from.w >= INDIA_CAM.w * 0.9 ? fitCam([0, 0, MAP_WIDTH, MAP_HEIGHT], aspect, 0.04) : from;
   return {
     kind: 'ascend',
-    from,
+    from: heroFills ? heroCam : from,
     to: null,
     fromBox,
     toSelector: ATLAS_PANEL,
@@ -116,6 +152,7 @@ export function planJourney(fromPath: string, toPath: string, origin: GeoOrigin 
     species: fromSpecies,
     leg: null,
     closeFrom: onScreen(photo) ? photo : null,
+    fromHero: heroFills ? hero!.scene : null,
   };
 }
 

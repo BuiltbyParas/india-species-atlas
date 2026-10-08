@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { SPECIES } from '../../data/species';
 import type { DistributionPoint, Species } from '../../types';
 import { formatDeg, MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
@@ -128,6 +129,10 @@ export function CinematicHero({ focus }: { focus?: Species }) {
                 <span className="scroll-cue-line" aria-hidden="true" />
                 Scroll to follow the line
               </p>
+              {/* The other way in: the relief laid flat becomes the working map. */}
+              <Link to="/atlas" className="text-link mt-3 inline-block text-small" data-cursor="Open">
+                Or open the working map
+              </Link>
             </div>
           </div>
         </div>

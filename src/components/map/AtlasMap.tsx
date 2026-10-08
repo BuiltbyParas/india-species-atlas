@@ -23,6 +23,7 @@ import { STATUS_INFO } from '../../data/statusInfo';
 import { SPECIES } from '../../data/species';
 import { project } from '../../geo/india';
 import { getWorld, setWorld, useWorld } from '../../world/worldState';
+import { registerAtlasCamera } from '../../world/journeys';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
 const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
@@ -94,6 +95,37 @@ function WorldSync() {
 }
 
 /**
+ * The map's camera, lent to the journey: entering a species from here, the
+ * map itself first leans in to the chosen locality — the popup folds away
+ * and the real map moves — before the journey's sheet takes over from the
+ * framing it settles on.
+ */
+function JourneyCamera() {
+  const map = useMap();
+  useEffect(() => {
+    registerAtlasCamera({
+      approach: (lng, lat) =>
+        new Promise<void>((resolve) => {
+          map.closePopup();
+          const zoom = Math.min(Math.max(map.getZoom() + 1.25, 5.5), 7);
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            map.off('moveend', finish);
+            resolve();
+          };
+          map.once('moveend', finish);
+          window.setTimeout(finish, 1100);
+          map.flyTo([lat, lng], zoom, { duration: 0.8, easeLinearity: 0.35 });
+        }),
+    });
+    return () => registerAtlasCamera(null);
+  }, [map]);
+  return null;
+}
+
+/**
  * When the filters change, the map breathes to the localities that remain —
  * a slow fit, never closer than a region — rather than leaving the reader
  * looking at faded marks. It does not move on first paint, or while a state
@@ -158,6 +190,7 @@ function ResetView({ onReset }: { onReset: () => void }) {
   return (
     <button
       type="button"
+      data-magnetic="0.2"
       onClick={() => {
         map.flyToBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
         onReset();
@@ -237,6 +270,20 @@ export function AtlasMap({
       el.classList.toggle('is-quiet', hot !== null && hot !== id && !out);
       if (out) el.setAttribute('tabindex', '-1');
       else el.setAttribute('tabindex', '0');
+      // The instrument's grammar on the map: the reticle locks onto a marker,
+      // and moving from one marker to another rules the distance between them.
+      // Its coordinates are already in the marker's own preview, so the reticle
+      // does not repeat them (data-geo-quiet).
+      const at = marker.getLatLng();
+      el.dataset.geo = `${at.lng},${at.lat}`;
+      el.dataset.geoQuiet = '';
+      if (out) {
+        delete el.dataset.magnetic;
+        delete el.dataset.cursor;
+      } else {
+        el.dataset.magnetic = '0.35';
+        el.dataset.cursor = 'Open';
+      }
       el.setAttribute('aria-hidden', out ? 'true' : 'false');
     }
   }, [shown, visited, hot, mode]);
@@ -427,6 +474,7 @@ export function AtlasMap({
 
         <FitIndia />
         <WorldSync />
+        <JourneyCamera />
         <Breathe points={inView} selectedState={selectedState} />
         <Instruments />
         <ResetView onReset={() => onSelectState(null)} />

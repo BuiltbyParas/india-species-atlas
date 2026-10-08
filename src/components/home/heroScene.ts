@@ -17,6 +17,8 @@ import * as THREE from 'three';
 import { buildTerrain, TERRAIN_DEPTH, type GeoCollection } from './heroTerrain';
 import { createPostChain, type PostQuality } from './heroPost';
 import { buildPlateAtlas, PLATE_CELL, PLATE_COLUMNS } from './heroPlates';
+import { unproject } from '../../geo/india';
+import type { GeoCam } from '../../world/geoCamera';
 
 export type { GeoCollection } from './heroTerrain';
 
@@ -80,6 +82,12 @@ export interface HeroSceneOptions {
    */
   atmosphere?: 'dust' | 'snow';
   /**
+   * What the probe reads: the ground's coordinates under the hand, the lit
+   * locality it has snapped to (an index into `points`, or −1), and where
+   * the probe sits in the frame. Null when the probe is off the land.
+   */
+  onProbe?: (reading: { lng: number; lat: number; snapped: number; x: number; y: number } | null) => void;
+  /**
    * Called when the device cannot hold a usable frame rate even after the
    * scene has stepped its own quality all the way down. The caller should
    * unmount the scene and show the flat artwork instead.
@@ -92,8 +100,22 @@ export interface HeroScene {
   setProgress: (p: number) => void;
   /** Pointer parallax, each axis in −1 → 1. */
   setPointer: (x: number, y: number) => void;
+  /** Scroll momentum, 0 → 1 (the shared scroll-velocity signal). */
+  setMomentum: (v: number) => void;
   /** Pause the render loop entirely when the hero is off-screen or hidden. */
   setActive: (active: boolean) => void;
+  /**
+   * The survey probe: where the hand is over the relief, in frame coordinates
+   * (−1 → 1), or null when it leaves. The scene finds the ground under it,
+   * snaps to a lit locality close by, and turns the key light towards it.
+   */
+  setProbe: (x: number | null, y: number) => void;
+  /**
+   * Lay the camera flat over a framing of the shared sheet, `t` 0 → 1: from
+   * the scroll pose to straight down, north up, at exactly the scale the
+   * journey's sheet will draw. TERRAIN → MAP, with this renderer.
+   */
+  toSheet: (cam: GeoCam, t: number) => void;
   resize: (width: number, height: number) => void;
   dispose: () => void;
 }
@@ -199,7 +221,7 @@ const easeOutBack = (t: number) => {
 };
 
 /** Hoisted: allocating these inside the frame loop is enough to cause GC stalls. */
-const POSE_AXES = ['progress', 'px', 'py'] as const;
+const POSE_AXES = ['progress', 'px', 'py', 'mv'] as const;
 
 const SKY_VERTEX = /* glsl */ `
   varying vec3 vDir;
@@ -319,7 +341,7 @@ function makeRandom(seed: number) {
 }
 
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, endFocus, atmosphere } = options;
+  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, onProbe, endFocus, atmosphere } = options;
 
   /* ---------------------------------------------------------------- renderer */
 
@@ -592,6 +614,53 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     return { ring, r };
   });
 
+  /* ------------------------------------------------------------ survey probe */
+  // Where the hand is over the relief: a hairline ring and four ticks lying on
+  // the ground, always the same size on screen. Near a lit locality it closes
+  // onto it in that species' colour. It is the cursor's reticle, set down on
+  // the terrain — the same instrument, now measuring the ground.
+  const probeRingGeometry = new THREE.RingGeometry(0.93, 1, 64);
+  const probeTickGeometry = new THREE.BufferGeometry();
+  probeTickGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute([1.2, 0, 0, 1.75, 0, 0, -1.2, 0, 0, -1.75, 0, 0, 0, 1.2, 0, 0, 1.75, 0, 0, -1.2, 0, 0, -1.75, 0], 3),
+  );
+  const probeMaterial = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(BORDER_HEX),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: false,
+    fog: false,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+  });
+  const probeTickMaterial = new THREE.LineBasicMaterial({
+    color: new THREE.Color(BORDER_HEX),
+    transparent: true,
+    opacity: 0,
+    depthTest: false,
+    fog: false,
+    toneMapped: false,
+  });
+  const probe = new THREE.Group();
+  const probeRing = new THREE.Mesh(probeRingGeometry, probeMaterial);
+  const probeTicks = new THREE.LineSegments(probeTickGeometry, probeTickMaterial);
+  probe.add(probeRing, probeTicks);
+  probe.renderOrder = 4;
+  probeRing.renderOrder = 4;
+  probeTicks.renderOrder = 4;
+  probe.visible = false;
+  scene.add(probe);
+  const probeColor = new THREE.Color(BORDER_HEX);
+  const probeIdle = new THREE.Color(BORDER_HEX);
+
+  // The relief's projection is affine, so world → degrees is three samples.
+  const [o0x, o0y] = terrain.project(0, 0);
+  const [o1x] = terrain.project(1, 0);
+  const [, o2y] = terrain.project(0, 1);
+  const worldToLngLat = (x: number, y: number): [number, number] => [(x - o0x) / (o1x - o0x), (y - o0y) / (o2y - o0y)];
+
   /* ------------------------------------------------------ habitat atmosphere */
   // Only where the descent ends, and only as much as reads at the last frames.
   const AIR_COUNT = endFocus && atmosphere ? 420 : 0;
@@ -697,8 +766,23 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   /* ------------------------------------------------------------------ state */
 
-  const target = { progress: 0, px: 0, py: 0 };
-  const current = { progress: 0, px: 0, py: 0 };
+  const target = { progress: 0, px: 0, py: 0, mv: 0 };
+  const current = { progress: 0, px: 0, py: 0, mv: 0 };
+  /** The probe: the hand in frame coordinates, and where its ring is (eased) on the ground. */
+  const probeIn = { on: false, x: 0, y: 0 };
+  const probeAt = { x: 0, y: 0, r: 0, alpha: 0, snapped: -1, set: false };
+  const probeTo = { x: 0, y: 0, r: 0, alpha: 0 };
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -TERRAIN_DEPTH);
+  const hit = new THREE.Vector3();
+  const keyBase = new THREE.Vector3(-3, 2.5, 5);
+  const keyTo = keyBase.clone();
+  /** The sheet hand-off (see `toSheet`). */
+  const sheet: { cam: GeoCam | null; t: number } = { cam: null, t: 0 };
+  const sheetPos = new THREE.Vector3();
+  const sheetQuat = new THREE.Quaternion();
+  const SHEET_FOV = 16;
   const matrix = new THREE.Matrix4();
   const position = new THREE.Vector3();
   const quaternion = new THREE.Quaternion();
@@ -839,7 +923,9 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     const parallaxFalloff = 1 - 0.55 * j;
     const pitch = lerp(START_PITCH, endPitch, j) + current.py * 0.09 * parallaxFalloff;
     const yaw = lerp(START_YAW, END_YAW, easeOutCubic(p)) + current.px * 0.12 * parallaxFalloff;
-    const fov = lerp(START_FOV, END_FOV, j);
+    // Momentum: a fast scroll widens the lens a little, as if the camera were
+    // carried by it; it narrows again as the page settles.
+    const fov = lerp(START_FOV, END_FOV, j) + current.mv * 3.2;
 
     // Country first, region second: the target drifts towards the middle of the
     // relief for the first part of the descent and only then turns for the
@@ -881,6 +967,9 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     }
     camera.lookAt(lookTarget);
 
+    // The hand-off to the sheet: straight down, north up, at the sheet's scale.
+    const flat = applySheet();
+
     sky.position.copy(camera.position);
 
     // Atmosphere: cold and empty out in the dark, warming as the ground rises.
@@ -889,12 +978,13 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     skyMaterial.uniforms.uBottom.value.copy(SKY_SPACE.bottom).lerp(SKY_GROUND.bottom, j);
     seaMaterial.color.copy(SEA_SPACE).lerp(SEA_GROUND, j);
     fog.color.copy(skyMaterial.uniforms.uHorizon.value);
-    fog.near = distance * 0.35;
-    fog.far = distance * 2.5;
+    fog.near = lerp(distance * 0.35, 400, flat);
+    fog.far = lerp(distance * 2.5, 800, flat);
 
-    stars.material.uniforms.uOpacity.value = clamp(1 - p / 0.58, 0, 1);
-    motes.material.uniforms.uOpacity.value = clamp((p - 0.45) / 0.4, 0, 1) * 0.5;
-    gridMaterial.opacity = clamp(1 - p / 0.5, 0, 1) * 0.9;
+    stars.material.uniforms.uOpacity.value = clamp(1 - p / 0.58, 0, 1) * (1 - flat);
+    motes.material.uniforms.uOpacity.value = clamp((p - 0.45) / 0.4, 0, 1) * 0.5 * (1 - flat);
+    // Laid flat, the relief is a map again, and the map's graticule returns.
+    gridMaterial.opacity = Math.max(clamp(1 - p / 0.5, 0, 1) * 0.9, flat * 0.7);
     borderMaterial.opacity = lerp(0.20, 0.58, j);
 
     // The plate maths and the caption projection both read the camera's
@@ -904,14 +994,15 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 
     applyMarkers(p);
-    applyPlates(p);
+    applyPlates(p, flat);
+    applyProbe();
     if (endFocus) {
       const open = smoother(clamp((p - 0.82) / 0.16, 0, 1));
       focusRingMaterial.opacity = open * 0.8;
       for (const { ring, r } of focusRings) ring.scale.setScalar(r * (0.4 + 0.6 * open));
       if (AIR_COUNT) {
         const k = clamp((p - 0.78) / 0.17, 0, 1);
-        air.material.uniforms.uOpacity.value = smoother(k) * (atmosphere === 'dust' ? 0.6 : 0.7);
+        air.material.uniforms.uOpacity.value = smoother(k) * (atmosphere === 'dust' ? 0.6 : 0.7) * (1 - flat);
         // Carried a little by the descent itself: dust drifts across, snow settles.
         const drift = clamp((p - 0.78) / 0.22, 0, 1);
         if (atmosphere === 'dust') air.points.position.set(drift * 0.07, drift * 0.02, 0);
@@ -922,13 +1013,14 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     if (post) {
       tintColor.copy(TINT_SPACE).lerp(TINT_GROUND, j);
       post.apply({
-        focus: distance,
+        focus: lerp(distance, camera.position.z, flat),
         // A tight focal range at the end is what separates the near ridge from
         // the far country; wide open at the start so the whole map reads sharp.
-        focusRange: lerp(90, 6, j),
-        maxCoc: lerp(0.0015, 0.006, j),
+        // Laid flat for the sheet, everything is in focus again.
+        focusRange: lerp(lerp(90, 6, j), 400, flat),
+        maxCoc: lerp(0.0015, 0.006, j) * (1 - flat),
         bloom: lerp(0.45, 0.5, j),
-        vignette: lerp(0.32, 0.5, j),
+        vignette: lerp(lerp(0.32, 0.5, j), 0.12, flat),
         tint: tintColor,
         saturation: lerp(0.6, 0.86, j),
         contrast: lerp(1.02, 1.12, j),
@@ -980,7 +1072,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
    * Sizes, places and fades each species plate, and reports where its caption
    * should sit on screen.
    */
-  function applyPlates(p: number) {
+  function applyPlates(p: number, flat = 0) {
     const halfFovTan = Math.tan((camera.fov * Math.PI) / 360);
 
     for (let i = 0; i < plateCount; i++) {
@@ -988,7 +1080,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       const since = p - plate.revealAt;
       const rise = clamp(since / PLATE_FADE_IN, 0, 1);
       const leaving = clamp((since - PLATE_FADE_IN - PLATE_HOLD) / PLATE_FADE_OUT, 0, 1);
-      const alpha = rise * (1 - leaving);
+      const alpha = rise * (1 - leaving) * (1 - flat);
       const grow = easeOutCubic(rise);
 
       plateAnchor.set(plate.x, plate.y, TERRAIN_DEPTH);
@@ -1037,6 +1129,132 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     onLabels?.(labelLayout);
   }
 
+  /**
+   * Blends the camera from its scroll pose to the sheet's: straight down over
+   * the framing's centre, north up, with a narrow field of view so the ground
+   * plane maps to the screen exactly as the journey's 2D sheet will draw it.
+   * Returns the blend (0 when there is no hand-off).
+   */
+  function applySheet(): number {
+    const cam = sheet.cam;
+    const e = sheet.t;
+    if (!cam || e <= 0) return 0;
+    const [lng, lat] = unproject(cam.x, cam.y);
+    const [cx, cy] = terrain.project(lng, lat);
+    const [lng1, lat1] = unproject(cam.x + 10, cam.y);
+    const [ex] = terrain.project(lng1, lat1);
+    const perUnit = Math.abs(ex - cx) / 10;
+    const visibleH = cam.w * (viewHeight / viewWidth) * perUnit;
+    const d = visibleH / (2 * Math.tan((SHEET_FOV * Math.PI) / 360));
+    sheetPos.set(cx, cy, TERRAIN_DEPTH + d);
+    camera.position.lerp(sheetPos, e);
+    camera.quaternion.slerp(sheetQuat, e);
+    camera.fov = lerp(camera.fov, SHEET_FOV, e);
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+    return e;
+  }
+
+  /**
+   * The probe: finds the ground under the hand, snaps to a lit locality
+   * within reach on screen, and places the ring at a constant screen size.
+   * The key light turns a little towards the hand, so the walls of the relief
+   * and the water catch it — a raking light, not a spotlight.
+   */
+  function applyProbe() {
+    const flat = sheet.t;
+    if (probeIn.on && flat < 0.01) {
+      ndc.set(probeIn.x, -probeIn.y);
+      ray.setFromCamera(ndc, camera);
+      const ok = ray.ray.intersectPlane(groundPlane, hit);
+      // Only the sheet's own extent is read: off it there is nothing the atlas measures.
+      const [hLng, hLat] = ok ? worldToLngLat(hit.x, hit.y) : [0, 0];
+      if (ok && hLng >= 68 && hLng <= 97.5 && hLat >= 6.5 && hLat <= 37.2) {
+        // Snap to the nearest lit locality within 34 px.
+        let best = -1;
+        let bestD = 34 * 34;
+        for (let i = 0; i < markerCount; i++) {
+          const m = markerBase[i];
+          if (current.progress < m.revealAt + REVEAL_DURATION * 0.6) continue;
+          plateProjected.set(m.x, m.y, TERRAIN_DEPTH).project(camera);
+          if (plateProjected.z > 1) continue;
+          const dx = (plateProjected.x - probeIn.x) * 0.5 * viewWidth;
+          const dy = (-plateProjected.y - probeIn.y) * 0.5 * viewHeight;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < bestD) {
+            bestD = d2;
+            best = i;
+          }
+        }
+        const gx = best >= 0 ? markerBase[best].x : hit.x;
+        const gy = best >= 0 ? markerBase[best].y : hit.y;
+        const dist = camera.position.distanceTo(hit);
+        const pxWorld = (2 * dist * Math.tan((camera.fov * Math.PI) / 360)) / viewHeight;
+        probeTo.x = gx;
+        probeTo.y = gy;
+        // Free, it is the reticle's footprint on the ground: wide and faint.
+        // Closed on a locality, it tightens and takes the species' colour.
+        probeTo.r = pxWorld * (best >= 0 ? 11 : 26);
+        probeTo.alpha = best >= 0 ? 0.95 : 0.32;
+        if (best !== probeAt.snapped) {
+          probeAt.snapped = best;
+          probeColor.copy(best >= 0 ? markerBase[best].color : probeIdle);
+          probeMaterial.color.copy(probeColor);
+          probeTickMaterial.color.copy(probeColor);
+        }
+        if (!probeAt.set) {
+          probeAt.set = true;
+          probeAt.x = gx;
+          probeAt.y = gy;
+          probeAt.r = probeTo.r * 1.6;
+        }
+        keyTo.set(keyBase.x + (gx - lookTarget.x) * 1.4, keyBase.y + (gy - lookTarget.y) * 1.4, keyBase.z);
+        if (onProbe) {
+          const [lng, lat] = worldToLngLat(gx, gy);
+          plateProjected.set(gx, gy, TERRAIN_DEPTH).project(camera);
+          onProbe({
+            lng,
+            lat,
+            snapped: best,
+            x: (plateProjected.x * 0.5 + 0.5) * viewWidth,
+            y: (-plateProjected.y * 0.5 + 0.5) * viewHeight,
+          });
+        }
+      } else {
+        probeTo.alpha = 0;
+        onProbe?.(null);
+      }
+    } else {
+      probeTo.alpha = 0;
+      keyTo.copy(keyBase);
+    }
+    probe.position.set(probeAt.x, probeAt.y, TERRAIN_DEPTH + 0.003);
+    probe.scale.setScalar(Math.max(probeAt.r, 1e-4));
+    probeMaterial.opacity = probeAt.alpha;
+    probeTickMaterial.opacity = probeAt.alpha * 0.8;
+    probe.visible = probeAt.alpha > 0.01;
+  }
+
+  /** Eases the probe towards its target; true while it is still moving. */
+  function stepProbe(): boolean {
+    let moving = false;
+    const k = 0.32;
+    for (const axis of ['x', 'y', 'r', 'alpha'] as const) {
+      const delta = probeTo[axis] - probeAt[axis];
+      if (Math.abs(delta) > (axis === 'alpha' ? 0.004 : 1e-5)) {
+        probeAt[axis] += delta * k;
+        moving = true;
+      } else probeAt[axis] = probeTo[axis];
+    }
+    if (!moving && probeTo.alpha === 0) probeAt.set = false;
+    if (key.position.distanceToSquared(keyTo) > 1e-5) {
+      key.position.lerp(keyTo, 0.12);
+      moving = true;
+    }
+    return moving;
+  }
+
   function renderFrame() {
     if (post) post.render(scene, camera);
     else {
@@ -1063,6 +1281,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     }
 
     applyPose();
+    if (stepProbe()) moving = true;
     renderFrame();
 
     if (!firstFrameSent) {
@@ -1092,6 +1311,33 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     setPointer(x, y) {
       target.px = clamp(x, -1, 1);
       target.py = clamp(y, -1, 1);
+      invalidate();
+    },
+    setMomentum(v) {
+      const next = clamp(v, 0, 1);
+      if (Math.abs(next - target.mv) < 0.004) return;
+      target.mv = next;
+      invalidate();
+    },
+    setProbe(x, y) {
+      if (x === null) {
+        if (!probeIn.on) return;
+        probeIn.on = false;
+        onProbe?.(null);
+      } else {
+        probeIn.on = true;
+        probeIn.x = clamp(x, -1, 1);
+        probeIn.y = clamp(y, -1, 1);
+      }
+      invalidate();
+    },
+    toSheet(cam, t) {
+      sheet.cam = cam;
+      sheet.t = clamp(t, 0, 1);
+      if (sheet.t > 0 && probeIn.on) {
+        probeIn.on = false;
+        onProbe?.(null);
+      }
       invalidate();
     },
     setActive(next) {
@@ -1124,6 +1370,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       terrain.land.dispose();
       terrain.borders.dispose();
       focusRingGeometry.dispose();
+      probeRingGeometry.dispose();
+      probeTickGeometry.dispose();
+      probeMaterial.dispose();
+      probeTickMaterial.dispose();
       focusRingMaterial.dispose();
       gridGeometry.dispose();
       seaGeometry.dispose();

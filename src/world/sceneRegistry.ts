@@ -1,4 +1,5 @@
 import { on } from '../interaction/events';
+import type { GeoCam } from './geoCamera';
 
 /**
  * Every live WebGL scene, in one place.
@@ -26,11 +27,18 @@ import { on } from '../interaction/events';
  */
 export interface Pausable {
   setActive: (active: boolean) => void;
+  /**
+   * Optional: lay the scene's camera flat over a framing of the shared sheet
+   * (`world/geoCamera.ts`), `t` 0 → 1, so a journey can start from exactly
+   * what the scene shows. Only the hero relief implements it.
+   */
+  toSheet?: (cam: GeoCam, t: number) => void;
 }
 
 interface Entry {
   name: string;
   scene: Pausable;
+  element: Element;
   onScreen: boolean;
   active: boolean | null;
 }
@@ -38,9 +46,11 @@ interface Entry {
 const entries = new Set<Entry>();
 let travelling = false;
 let wired = false;
+/** A scene a journey is still drawing with, so it stays awake while the rest pause. */
+let awake: string | null = null;
 
 function sync(entry: Entry) {
-  const next = entry.onScreen && !travelling && !document.hidden;
+  const next = entry.onScreen && (!travelling || entry.name === awake) && !document.hidden;
   if (next === entry.active) return;
   entry.active = next;
   entry.scene.setActive(next);
@@ -70,7 +80,7 @@ function wire() {
  */
 export function registerScene(name: string, scene: Pausable, element: Element, rootMargin = '0px'): () => void {
   wire();
-  const entry: Entry = { name, scene, onScreen: true, active: null };
+  const entry: Entry = { name, scene, element, onScreen: true, active: null };
   entries.add(entry);
   const io = new IntersectionObserver(
     (records) => {
@@ -87,6 +97,25 @@ export function registerScene(name: string, scene: Pausable, element: Element, r
   };
 }
 
+/** A registered scene and the element it draws into, if it is mounted. */
+export function sceneNamed(name: string): { scene: Pausable; element: Element } | null {
+  for (const e of entries) if (e.name === name) return { scene: e.scene, element: e.element };
+  return null;
+}
+
+/**
+ * Keep one scene rendering through a journey (the hero, while its relief is
+ * laid flat into the journey's sheet). Returns the release.
+ */
+export function keepAwake(name: string): () => void {
+  awake = name;
+  syncAll();
+  return () => {
+    if (awake === name) awake = null;
+    syncAll();
+  };
+}
+
 /** For the performance notes and tests: which scenes exist and which are rendering. */
 export function liveScenes(): Array<{ name: string; active: boolean }> {
   return [...entries].map((e) => ({ name: e.name, active: Boolean(e.active) }));
@@ -94,4 +123,5 @@ export function liveScenes(): Array<{ name: string; active: boolean }> {
 
 if (typeof window !== 'undefined') {
   (window as unknown as { __atlasScenes?: typeof liveScenes }).__atlasScenes = liveScenes;
+  (window as unknown as { __atlasSceneNamed?: typeof sceneNamed }).__atlasSceneNamed = sceneNamed;
 }

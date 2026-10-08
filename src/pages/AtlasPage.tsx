@@ -14,6 +14,7 @@ import { StatePanel } from '../components/map/StatePanel';
 import { StateDensityLegend } from '../components/map/StateDensityLegend';
 import { countSpeciesByState, recordedInDrawnState } from '../utils/stateCounts';
 import { cn } from '../utils/cn';
+import { LineTitle } from '../components/cinema/LineTitle';
 
 const AtlasMap = lazy(() =>
   import('../components/map/AtlasMap').then((m) => ({ default: m.AtlasMap })),
@@ -79,7 +80,9 @@ export function AtlasPage() {
       <div className="mb-6 flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
         <div>
           <p className="eyebrow">The working map</p>
-          <h1 className="mt-3 font-serif text-heading font-light text-canvas">Interactive map</h1>
+          <h1 className="mt-3 font-serif text-heading font-light text-canvas">
+            <LineTitle text="Interactive map" seed={2} />
+          </h1>
         </div>
         <p className="hidden max-w-xl text-small text-canvas/60 sm:block">
           Pan and zoom, click a state to list its species, click a marker to open a profile, and switch between
@@ -126,6 +129,7 @@ export function AtlasPage() {
                 >
                   <button
                     type="button"
+                    data-magnetic="0.18"
                     aria-pressed={!show3D}
                     onClick={() => setWants3D(false)}
                     className={cn(
@@ -138,6 +142,7 @@ export function AtlasPage() {
                   </button>
                   <button
                     type="button"
+                    data-magnetic="0.18"
                     aria-pressed={show3D}
                     onClick={() => {
                       setUnavailable(null);

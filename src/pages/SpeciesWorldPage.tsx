@@ -368,15 +368,17 @@ function RangeChapter({
               <tr
                 key={p.label}
                 data-locality={p.label}
+                data-geo={`${p.lng},${p.lat}`}
+                data-geo-quiet=""
                 className={cn(highlight === p.label && 'is-hl')}
                 onPointerEnter={() => onHover(p.label)}
                 onPointerLeave={() => onHover(null)}
               >
                 <th scope="row">
                   {i === 0 ? (
-                    <span className="sw-anchor" title="Anchor locality" aria-label="Anchor locality: " />
+                    <span className="sw-anchor" title="Anchor locality" aria-label="Anchor locality: " data-geo-anchor="" />
                   ) : (
-                    <span className="sw-reg-dot" aria-hidden="true" />
+                    <span className="sw-reg-dot" aria-hidden="true" data-geo-anchor="" />
                   )}
                   {p.label}
                   {p.note && <span className="block text-label text-canvas/45">{p.note}</span>}
@@ -493,12 +495,12 @@ function Onwards({ from, next, prev }: { from: Species; next: Species; prev: Spe
       <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-(--gutter) py-(--space-chapter) lg:grid-cols-12 lg:gap-x-12">
         <div className="lg:col-span-6">
           <p className="eyebrow">Next on the line</p>
-          <Link to={`/species/${next.id}`} className="sw-next" data-cursor="Follow" data-magnetic="0.12">
+          <Link to={`/species/${next.id}`} className="sw-next" data-cursor="Follow" data-magnetic="0.12" data-geo={`${next.distributionPoints[0].lng},${next.distributionPoints[0].lat}`} data-geo-kind="leg">
             <span className="font-serif text-headline font-light">{next.commonName}</span>
             <span className="mt-2 block font-serif text-lg italic text-canvas/55">{next.scientificName}</span>
           </Link>
           <p className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-small">
-            <Link to={`/species/${prev.id}`} className="text-link" data-cursor="Return" data-magnetic="0.2">
+            <Link to={`/species/${prev.id}`} className="text-link" data-cursor="Return" data-magnetic="0.2" data-geo={`${prev.distributionPoints[0].lng},${prev.distributionPoints[0].lat}`} data-geo-kind="leg">
               Previous: {prev.commonName}
             </Link>
             <Link to="/species" className="text-link">

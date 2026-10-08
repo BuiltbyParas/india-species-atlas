@@ -34,6 +34,7 @@ export function ModeSwitch({
           const active = m.id === mode;
           return (
             <button
+              data-magnetic="0.18"
               key={m.id}
               {...tab(m.id)}
               aria-controls={panelId}

@@ -5,6 +5,7 @@ import { onPointerExit, onPointerMove, pointer } from '../../interaction/pointer
 import { Spring, SPRINGS, springDriver } from '../../interaction/spring';
 import { INTERACTIVE } from '../../interaction/targets';
 import { createTrail } from '../../interaction/trail';
+import { createGeoThread, placeOf, readPlace } from '../../interaction/geoThread';
 
 /**
  * The pointer, redrawn as a survey instrument.
@@ -51,6 +52,8 @@ export function CustomCursor() {
   const labelRef = useRef<HTMLSpanElement>(null);
   const splashRef = useRef<HTMLDivElement>(null);
   const trailRef = useRef<HTMLCanvasElement>(null);
+  const threadRef = useRef<HTMLCanvasElement>(null);
+  const geoRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -61,6 +64,27 @@ export function CustomCursor() {
     const label = labelRef.current!;
     const splashLayer = splashRef.current!;
     const trail = createTrail(trailRef.current!);
+    const geoLabel = geoRef.current!;
+    const contour = getComputedStyle(document.documentElement).getPropertyValue('--color-contour').trim() || '#b07a52';
+    const thread = createGeoThread(threadRef.current!, () => contour);
+    let geoEl: Element | null = null;
+    // Over anything that stands for a place, the reticle reads its coordinates,
+    // and moving on to another place rules a thread between the two.
+    const setGeo = (el: Element | null) => {
+      if (el === geoEl) {
+        if (el) thread.hold(el);
+        return;
+      }
+      geoEl = el;
+      const place = placeOf(el);
+      if (el && place) {
+        geoLabel.textContent = readPlace(place);
+        ring.dataset.geo = el.hasAttribute('data-geo-quiet') ? 'quiet' : 'true';
+        thread.visit(el);
+      } else {
+        ring.dataset.geo = 'false';
+      }
+    };
     document.documentElement.classList.add('has-custom-cursor');
 
     const rx = new Spring(-100, SPRINGS.cursor);
@@ -98,6 +122,8 @@ export function CustomCursor() {
       const target = pointer.target;
       const lock = magneticFocus();
       if (moved) tracing = trail.move();
+
+      setGeo((lock?.el ?? target)?.closest('[data-geo]') ?? null);
 
       if (lock) {
         // Close on the control, leaning a little after the hand.
@@ -184,6 +210,12 @@ export function CustomCursor() {
       press.target = 1;
       kick();
     };
+    // The keyboard's equivalent: tabbing from one place to the next rules the same thread.
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target instanceof Element ? e.target.closest('[data-geo]') : null;
+      if (el && (e.target as Element).matches(':focus-visible')) thread.visit(el);
+    };
+    document.addEventListener('focusin', onFocus);
 
     // A page change replaces what is under a still hand, too.
     window.addEventListener('atlas:navigation:start', onScroll);
@@ -196,6 +228,8 @@ export function CustomCursor() {
       offExit();
       window.clearTimeout(scrollTimer);
       trail.dispose();
+      thread.dispose();
+      document.removeEventListener('focusin', onFocus);
       document.documentElement.classList.remove('has-custom-cursor');
       window.removeEventListener('atlas:navigation:start', onScroll);
       window.removeEventListener('atlas:navigation:end', onScroll);
@@ -210,12 +244,14 @@ export function CustomCursor() {
   return (
     <div ref={layerRef} aria-hidden="true" className="cursor-layer" data-visible="false">
       <canvas ref={trailRef} className="cursor-trail" />
+      <canvas ref={threadRef} className="cursor-thread" />
       <div ref={splashRef} />
       <div ref={ringRef} className="cursor-ring" data-state="idle">
         <div ref={bodyRef} className="cursor-ring-body">
           <span className="cursor-ring-shape" />
         </div>
         <span ref={labelRef} className="cursor-label" />
+        <span ref={geoRef} className="cursor-geo" />
       </div>
       <div ref={dotRef} className="cursor-dot" />
     </div>
