@@ -9,6 +9,7 @@ import { SmoothScroll } from './motion/SmoothScroll';
 import { markIntroDone } from './motion/intro';
 import { InteractionProvider } from './interaction/InteractionProvider';
 import { RouteTransition } from './interaction/RouteTransition';
+import { useOpenMedia } from './interaction/media';
 import { HomePage } from './pages/HomePage';
 
 // The working pages are split out, so the documentary's first load carries
@@ -24,6 +25,17 @@ const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default:
 const SourcesPage = lazy(() => import('./pages/SourcesPage').then((m) => ({ default: m.SourcesPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const DocumentaryPage = lazy(() => import('./pages/DocumentaryPage').then((m) => ({ default: m.DocumentaryPage })));
+// The cinema is only needed once something is opened (interaction/media.ts); the film entry prefetches it.
+const MediaStage = lazy(() => import('./components/cinema/MediaStage').then((m) => ({ default: m.MediaStage })));
+
+function MediaHost() {
+  const open = useOpenMedia();
+  return open ? (
+    <Suspense fallback={null}>
+      <MediaStage />
+    </Suspense>
+  ) : null;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -73,6 +85,7 @@ function Shell() {
       <InteractionProvider />
       <CustomCursor />
       <RouteTransition />
+      <MediaHost />
       {loading && <Loader onDone={done} />}
       <div className="flex min-h-screen flex-col">
         <Navbar />

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { perFrame } from '../../interaction/spring';
+import { FrameGovernor, pixelRatio } from '../../world/quality';
 
 /**
  * The species gallery: a ring of photographic cards in real 3D space.
@@ -93,17 +95,10 @@ const FACE_H = 892;
 
 /* --------------------------------------------------------------- behaviour */
 
-/** Exponential smoothing per frame, for everything that eases. */
-const EASE = 0.13;
+/** Exponential smoothing for everything that eases, per second (0.13 a frame at 60 Hz). */
+const EASE_LAMBDA = perFrame(0.13);
 /** Pixels of horizontal drag that turn the ring by one card. */
 const DRAG_PER_CARD = 190;
-
-const SLOW_FRAME_MS = 34;
-const SAMPLE_WINDOW = 30;
-const SAMPLE_WINDOW_MS = 900;
-const DEGRADE_SLOW_FRACTION = 0.5;
-const ABANDON_SLOW_FRACTION = 0.68;
-const BAD_WINDOWS_BEFORE_ABANDON = 2;
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -287,7 +282,7 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
   await document.fonts.ready.catch(() => undefined);
   const images = await Promise.all(cards.map((card) => loadImage(card.src)));
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = pixelRatio(2);
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
@@ -489,47 +484,18 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
 
   /* ------------------------------------------------------- adaptive quality */
 
-  let previousFrameAt = 0;
-  let sampledFrames = 0;
-  let sampledTime = 0;
-  let slowFrames = 0;
-  let badWindows = 0;
-  let degraded = false;
-  let cooldown = 0;
-
-  function sampleFrameRate(now: number) {
-    const gap = previousFrameAt ? now - previousFrameAt : 0;
-    previousFrameAt = now;
-    if (cooldown > 0) {
-      cooldown--;
-      return;
-    }
-    if (gap <= 0) return;
-    sampledTime += gap;
-    sampledFrames++;
-    if (gap > SLOW_FRAME_MS) slowFrames++;
-    if (sampledFrames < SAMPLE_WINDOW && sampledTime < SAMPLE_WINDOW_MS) return;
-
-    const fraction = slowFrames / sampledFrames;
-    sampledFrames = 0;
-    sampledTime = 0;
-    slowFrames = 0;
-    if (fraction < DEGRADE_SLOW_FRACTION) {
-      badWindows = 0;
-      return;
-    }
-    if (!degraded) {
-      degraded = true;
+  let lastDrawAt = 0;
+  /* Soften once, and only hand back to the flat page if softening did not help (world/quality.ts). */
+  const governor = new FrameGovernor({
+    rungs: 1,
+    onTooSlow,
+    slowFrameMs: 34, windowFrames: 30, windowMs: 900, degradeFraction: 0.5, abandonFraction: 0.68,
+    onStep() {
       renderer.setPixelRatio(Math.min(dpr, 1));
       for (const node of nodes) node.glow.visible = false;
-      cooldown = 12;
-      return;
-    }
-    if (fraction >= ABANDON_SLOW_FRACTION && ++badWindows >= BAD_WINDOWS_BEFORE_ABANDON) {
-      badWindows = 0;
-      onTooSlow?.();
-    }
-  }
+    },
+  });
+  governor.begin();
 
   /* ------------------------------------------------------------- the loop */
 
@@ -542,13 +508,16 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
   function draw(now: number) {
     frame = 0;
     if (disposed) return;
-    sampleFrameRate(now);
+    governor.sample(now);
+    const dt = lastDrawAt ? Math.min((now - lastDrawAt) / 1000, 1 / 20) : 1 / 60;
+    lastDrawAt = now;
+    const ease = 1 - Math.exp(-EASE_LAMBDA * dt);
 
     const before = currentIndex;
-    currentIndex += (targetIndex - currentIndex) * EASE;
-    pointerEased.x += (pointer.x - pointerEased.x) * EASE;
-    pointerEased.y += (pointer.y - pointerEased.y) * EASE;
-    scrollEased += (scrollOffset - scrollEased) * EASE;
+    currentIndex += (targetIndex - currentIndex) * ease;
+    pointerEased.x += (pointer.x - pointerEased.x) * ease;
+    pointerEased.y += (pointer.y - pointerEased.y) * ease;
+    scrollEased += (scrollOffset - scrollEased) * ease;
 
     const moving =
       Math.abs(targetIndex - currentIndex) > 0.0004 ||
@@ -584,7 +553,10 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
     if (disposed || !active || frame) return;
     // A frame resuming an idle scene follows an arbitrarily long pause, which
     // says nothing about how fast this device renders.
-    if (settled) previousFrameAt = 0;
+    if (settled) {
+      governor.reset();
+      lastDrawAt = 0;
+    }
     settled = false;
     frame = requestAnimationFrame(draw);
   }
@@ -721,7 +693,8 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
       if (next === active) return;
       active = next;
       if (active) {
-        previousFrameAt = 0;
+        governor.reset();
+        lastDrawAt = 0;
         invalidate();
       } else if (frame) {
         cancelAnimationFrame(frame);

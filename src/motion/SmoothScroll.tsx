@@ -18,13 +18,24 @@ export function getLenis(): Lenis | null {
   return current;
 }
 
-/** Freeze and release the page, for the loader and the menu. */
+let locks = 0;
+
+/**
+ * Freeze and release the page, for the loader, the menu, the species sheet
+ * and the film. Counted: each `lockScroll(true)` needs its own
+ * `lockScroll(false)`, so one overlay closing cannot release the page while
+ * another is still open over it.
+ */
 export function lockScroll(lock: boolean) {
+  const was = locks > 0;
+  locks = Math.max(0, locks + (lock ? 1 : -1));
+  const now = locks > 0;
+  if (was === now) return;
   if (current) {
-    if (lock) current.stop();
+    if (now) current.stop();
     else current.start();
   }
-  document.documentElement.style.overflow = lock ? 'hidden' : '';
+  document.documentElement.style.overflow = now ? 'hidden' : '';
 }
 
 export function scrollToTarget(target: string | number | HTMLElement) {
@@ -46,6 +57,7 @@ export function SmoothScroll() {
     if (reduced) return;
     const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9, smoothWheel: true });
     current = lenis;
+    if (locks > 0) lenis.stop();
     lenis.on('scroll', ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);

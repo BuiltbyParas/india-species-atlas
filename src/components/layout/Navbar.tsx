@@ -5,6 +5,7 @@ import { lockScroll } from '../../motion/SmoothScroll';
 import { cn } from '../../utils/cn';
 import { describeRoute } from '../../interaction/routeCaption';
 import { FlowingMenu } from './FlowingMenu';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
  * The site header: a wordmark, the running title of the chapter on screen,
@@ -30,17 +31,16 @@ export function Navbar() {
   }, [close]);
 
   useEffect(() => {
-    lockScroll(open);
-    return () => {
-      if (open) lockScroll(false);
-    };
+    if (!open) return;
+    lockScroll(true);
+    return () => lockScroll(false);
   }, [open]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const offScroll = subscribeScroll(onScroll);
+    return () => offScroll();
   }, []);
 
   return (

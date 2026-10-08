@@ -23,6 +23,8 @@
  * no loader.
  */
 import * as THREE from 'three';
+import { perFrame } from '../../interaction/spring';
+import { FrameGovernor, pixelRatio } from '../../world/quality';
 import {
   bakeCapAndWallColors,
   fitToHeight,
@@ -121,16 +123,8 @@ const ZOOM_STEP = 0.55;
 /** Pixels of drag that turn the view by a full circle. */
 const DRAG_PER_TURN = 900;
 
-const EASE = 0.16;
-
-/* The same frame-rate guard the species gallery uses: soften once, and only
-   hand back to the flat map if softening did not help. */
-const SLOW_FRAME_MS = 34;
-const SAMPLE_WINDOW = 30;
-const SAMPLE_WINDOW_MS = 900;
-const DEGRADE_SLOW_FRACTION = 0.5;
-const ABANDON_SLOW_FRACTION = 0.68;
-const BAD_WINDOWS_BEFORE_ABANDON = 2;
+/** Smoothing per second (0.16 a frame at 60 Hz). */
+const EASE_LAMBDA = perFrame(0.16);
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -181,7 +175,7 @@ interface MarkerNode {
 export function createConservationScene(options: ConservationSceneOptions): ConservationScene {
   const { canvas, geojson, sites, raisedStates, onSelect, onHover, onFirstFrame, onTooSlow } = options;
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = pixelRatio(2);
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
@@ -373,11 +367,11 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
     camera.lookAt(lookAt);
   }
 
-  function applyMarkers() {
+  function applyMarkers(ease = 1) {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       node.target = i === selected ? 1 : i === hovered ? 0.45 : 0;
-      node.lift += (node.target - node.lift) * EASE;
+      node.lift += (node.target - node.lift) * ease;
       if (Math.abs(node.target - node.lift) < 0.002) node.lift = node.target;
       node.group.position.z = RAISED_DEPTH + node.lift * 0.07;
       node.prism.scale.set(1 + node.lift * 0.14, 1 + node.lift * 0.14, 1 + node.lift * 0.42);
@@ -393,49 +387,20 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
 
   /* ------------------------------------------------------------ frame guard */
 
-  let previousFrameAt = 0;
-  let sampledFrames = 0;
-  let sampledTime = 0;
-  let slowFrames = 0;
-  let badWindows = 0;
-  let degraded = false;
+  let lastDrawAt = 0;
   let haloesVisible = true;
-  let cooldown = 0;
-
-  function sampleFrameRate(now: number) {
-    const gap = previousFrameAt ? now - previousFrameAt : 0;
-    previousFrameAt = now;
-    if (cooldown > 0) {
-      cooldown--;
-      return;
-    }
-    if (gap <= 0) return;
-    sampledTime += gap;
-    sampledFrames++;
-    if (gap > SLOW_FRAME_MS) slowFrames++;
-    if (sampledFrames < SAMPLE_WINDOW && sampledTime < SAMPLE_WINDOW_MS) return;
-
-    const fraction = slowFrames / sampledFrames;
-    sampledFrames = 0;
-    sampledTime = 0;
-    slowFrames = 0;
-    if (fraction < DEGRADE_SLOW_FRACTION) {
-      badWindows = 0;
-      return;
-    }
-    if (!degraded) {
-      degraded = true;
+  /* Soften once, and only hand back to the flat page if softening did not help (world/quality.ts). */
+  const governor = new FrameGovernor({
+    rungs: 1,
+    onTooSlow,
+    slowFrameMs: 34, windowFrames: 30, windowMs: 900, degradeFraction: 0.5, abandonFraction: 0.68,
+    onStep() {
       renderer.setPixelRatio(Math.min(dpr, 1));
       renderer.setSize(viewWidth, viewHeight, false);
       haloesVisible = false;
-      cooldown = 12;
-      return;
-    }
-    if (fraction >= ABANDON_SLOW_FRACTION && ++badWindows >= BAD_WINDOWS_BEFORE_ABANDON) {
-      badWindows = 0;
-      onTooSlow?.();
-    }
-  }
+    },
+  });
+  governor.begin();
 
   /* -------------------------------------------------------------- the loop */
 
@@ -448,11 +413,14 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
   function draw(now: number) {
     frame = 0;
     if (disposed) return;
-    sampleFrameRate(now);
+    governor.sample(now);
+    const dt = lastDrawAt ? Math.min((now - lastDrawAt) / 1000, 1 / 20) : 1 / 60;
+    lastDrawAt = now;
+    const ease = 1 - Math.exp(-EASE_LAMBDA * dt);
 
-    current.yaw += (target.yaw - current.yaw) * EASE;
-    current.pitch += (target.pitch - current.pitch) * EASE;
-    current.distance += (target.distance - current.distance) * EASE;
+    current.yaw += (target.yaw - current.yaw) * ease;
+    current.pitch += (target.pitch - current.pitch) * ease;
+    current.distance += (target.distance - current.distance) * ease;
 
     const moving =
       Math.abs(target.yaw - current.yaw) > 0.0004 ||
@@ -465,7 +433,7 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
     }
 
     placeCamera();
-    applyMarkers();
+    applyMarkers(ease);
     renderer.render(scene, camera);
 
     if (!firstFrameSent) {
@@ -481,7 +449,10 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
     if (disposed || !active || frame) return;
     // A frame that resumes an idle scene follows an arbitrarily long pause,
     // which says nothing about how fast this device renders.
-    if (settled) previousFrameAt = 0;
+    if (settled) {
+      governor.reset();
+      lastDrawAt = 0;
+    }
     settled = false;
     frame = requestAnimationFrame(draw);
   }
@@ -597,7 +568,8 @@ export function createConservationScene(options: ConservationSceneOptions): Cons
       if (next === active) return;
       active = next;
       if (active) {
-        previousFrameAt = 0;
+        governor.reset();
+        lastDrawAt = 0;
         invalidate();
       } else if (frame) {
         cancelAnimationFrame(frame);

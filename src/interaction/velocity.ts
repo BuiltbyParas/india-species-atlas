@@ -2,6 +2,7 @@ import { useEffect, type RefObject } from 'react';
 import { getLenis } from '../motion/SmoothScroll';
 import { schedule } from './loop';
 import { Spring } from './spring';
+import { onScroll, type ScrollSample } from './scroll';
 
 /**
  * How fast the page is moving, as one shared value.
@@ -50,9 +51,8 @@ function step(dt: number) {
   return true;
 }
 
-function onScroll() {
+function onScrollSample({ y }: ScrollSample) {
   const now = performance.now();
-  const y = window.scrollY;
   const lenis = getLenis();
   if (lenis) {
     // Lenis reports px per frame; scale to px/s at 60 Hz.
@@ -74,7 +74,7 @@ function ensure() {
   if (listening || typeof window === 'undefined') return;
   listening = true;
   lastY = window.scrollY;
-  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(onScrollSample);
 }
 
 /** 0 → 1, smoothed. */

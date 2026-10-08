@@ -4,8 +4,11 @@ import { magneticFocus } from '../../interaction/magnetic';
 import { onPointerExit, onPointerMove, pointer } from '../../interaction/pointer';
 import { Spring, SPRINGS, springDriver } from '../../interaction/spring';
 import { INTERACTIVE } from '../../interaction/targets';
+import { intentOf } from '../../interaction/intent';
+import { on } from '../../interaction/events';
 import { createTrail } from '../../interaction/trail';
 import { createGeoThread, placeOf, readPlace } from '../../interaction/geoThread';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
  * The pointer, redrawn as a survey instrument.
@@ -31,6 +34,10 @@ import { createGeoThread, placeOf, readPlace } from '../../interaction/geoThread
  *   trace     the ink trail has found one of the atlas's lines (see
  *             `interaction/trail.ts`)
  *   text      a text field: the reticle steps aside for the system caret
+ *
+ * The word's intent (`interaction/intent.ts`: discover, enter, trace, locate,
+ * turn, define, drag, play) is written as `data-intent` and gives each kind of
+ * gesture its own reticle, whatever the word.
  *
  * A press on something interactive sends out three contour rings — the
  * splash — which is the one flourish, and it only answers an action.
@@ -65,7 +72,10 @@ export function CustomCursor() {
     const splashLayer = splashRef.current!;
     const trail = createTrail(trailRef.current!);
     const geoLabel = geoRef.current!;
-    const contour = getComputedStyle(document.documentElement).getPropertyValue('--color-contour').trim() || '#b07a52';
+    // The thread is ruled in the environment's line colour, re-read when the reader crosses into another ground.
+    const readLine = () => getComputedStyle(document.documentElement).getPropertyValue('--env-line').trim() || '#b07a52';
+    let contour = readLine();
+    const offEnv = on('environment:change', () => (contour = readLine()));
     const thread = createGeoThread(threadRef.current!, () => contour);
     let geoEl: Element | null = null;
     // Over anything that stands for a place, the reticle reads its coordinates,
@@ -113,7 +123,11 @@ export function CustomCursor() {
 
     const setState = (next: string, nextWord: string) => {
       if (next !== state) ring.dataset.state = state = next;
-      if (nextWord !== word) label.textContent = word = nextWord;
+      if (nextWord !== word) {
+        label.textContent = word = nextWord;
+        // The word is for reading; its intent decides the reticle's shape (interaction/intent.ts).
+        ring.dataset.intent = nextWord ? intentOf(nextWord) : '';
+      }
     };
 
     let tracing = false;
@@ -220,7 +234,7 @@ export function CustomCursor() {
     // A page change replaces what is under a still hand, too.
     window.addEventListener('atlas:navigation:start', onScroll);
     window.addEventListener('atlas:navigation:end', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const offScroll = subscribeScroll(onScroll);
     window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('pointerup', onUp, { passive: true });
     return () => {
@@ -229,11 +243,12 @@ export function CustomCursor() {
       window.clearTimeout(scrollTimer);
       trail.dispose();
       thread.dispose();
+      offEnv();
       document.removeEventListener('focusin', onFocus);
       document.documentElement.classList.remove('has-custom-cursor');
       window.removeEventListener('atlas:navigation:start', onScroll);
       window.removeEventListener('atlas:navigation:end', onScroll);
-      window.removeEventListener('scroll', onScroll);
+      offScroll();
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
     };

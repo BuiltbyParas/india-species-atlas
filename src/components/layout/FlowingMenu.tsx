@@ -8,6 +8,8 @@ import { MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
 import { cn } from '../../utils/cn';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { GeoLine } from '../../geo/line/GeoLine';
+import { openMedia } from '../../interaction/media';
+import { FILM, FILM_RUNTIME } from '../../content/film';
 
 const LOCALITY_COUNT = SPECIES.reduce((n, s) => n + s.distributionPoints.length, 0);
 const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => e.publisher)))];
@@ -221,6 +223,21 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
                 </Link>
               </li>
             ))}
+            <li>
+              <button
+                type="button"
+                className="menu-secondary"
+                data-cursor="Play"
+                onClick={() => {
+                  onClose();
+                  // Opened from a word, not a picture: the film comes forward on its own (MediaStage),
+                  // and focus comes back to the menu button, since the menu will be folded away.
+                  openMedia(FILM, null, document.querySelector<HTMLElement>('.menu-button'));
+                }}
+              >
+                Play the film <span className="tabular-nums text-canvas/45">· {FILM_RUNTIME}</span>
+              </button>
+            </li>
             <li>
               <button
                 type="button"

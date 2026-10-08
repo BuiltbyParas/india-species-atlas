@@ -82,8 +82,18 @@ export function Loader({ onDone }: { onDone: () => void }) {
     return { d: smoothPath(pts, 0.5), pts, at: at.map((v) => v / (total || 1)) };
   }, []);
 
+  // The page is held while the sheet is down; released once, by the hand-off or on unmount.
+  const lockedRef = useRef(false);
+  const release = () => {
+    if (!lockedRef.current) return;
+    lockedRef.current = false;
+    lockScroll(false);
+  };
   useEffect(() => {
-    lockScroll(true);
+    if (!lockedRef.current) {
+      lockedRef.current = true;
+      lockScroll(true);
+    }
     let live = true;
     const tick = (n: number) => live && setStep((s) => Math.max(s, n));
 
@@ -126,6 +136,9 @@ export function Loader({ onDone }: { onDone: () => void }) {
       window.removeEventListener('keydown', skip);
     };
   }, []);
+  // Unmounting before the hand-off (a route change mid-sequence) still lets the page go.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => release, []);
 
   useEffect(() => {
     if (!leaving) return;
@@ -137,7 +150,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
     // The hero starts its own entrance while the sheet is still lifting, so
     // the two overlap into one move.
     const handOff = setTimeout(() => {
-      lockScroll(false);
+      release();
       markIntroDone();
     }, 350);
     const unmount = setTimeout(onDone, 1300);

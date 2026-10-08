@@ -1,6 +1,7 @@
 import { pointer, pointerVelocity } from './pointer';
 import { schedule } from './loop';
 import { INTERACTIVE } from './targets';
+import { on } from './events';
 
 /**
  * The ink trail: the cursor as a drawing instrument.
@@ -152,7 +153,12 @@ export function createTrail(canvas: HTMLCanvasElement): Trail {
     return m && m.length >= 3 ? `${m[0]}, ${m[1]}, ${m[2]}` : fallback;
   };
   ink = rgb(css.getPropertyValue('--color-canvas').trim() || '#ece5d3', ink);
-  contour = rgb(css.getPropertyValue('--color-contour').trim() || '#c9a86a', contour);
+  // The line a trace snaps to is drawn in the environment's own line colour (world/environment.ts).
+  const readLine = () => {
+    contour = rgb(getComputedStyle(document.documentElement).getPropertyValue('--env-line').trim() || '#c9a86a', contour);
+  };
+  readLine();
+  const offEnv = on('environment:change', readLine);
 
   const resize = () => {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -248,6 +254,7 @@ export function createTrail(canvas: HTMLCanvasElement): Trail {
       return snap > 0.5;
     },
     dispose() {
+      offEnv();
       window.removeEventListener('resize', resize);
       marks.length = 0;
       ctx?.clearRect(0, 0, canvas.width, canvas.height);

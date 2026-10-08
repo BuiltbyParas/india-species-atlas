@@ -1,3 +1,4 @@
+import type { Environment } from '../world/environment';
 import { SPECIES_BY_ID } from '../data/species';
 
 /**
@@ -11,3 +12,16 @@ import { SPECIES_BY_ID } from '../data/species';
 export const FEATURED = ['great-indian-bustard', 'bengal-tiger', 'ganges-river-dolphin', 'snow-leopard', 'indian-rhinoceros']
   .map((id) => SPECIES_BY_ID[id])
   .filter(Boolean);
+
+/**
+ * The ground each featured species is shown on (world/environment.ts). Also
+ * editorial: the environment names the landscape the scene is about, not a
+ * habitat classification.
+ */
+export const FEATURED_ENV: Record<string, Environment> = {
+  'great-indian-bustard': 'thar',
+  'bengal-tiger': 'forest',
+  'ganges-river-dolphin': 'river',
+  'snow-leopard': 'himalaya',
+  'indian-rhinoceros': 'forest',
+};

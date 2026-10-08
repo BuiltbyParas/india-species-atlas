@@ -14,6 +14,9 @@
  * at all rather than by animating it more gently.
  */
 import * as THREE from 'three';
+import { damp, perFrame } from '../../interaction/spring';
+import { FrameGovernor, pixelRatio } from '../../world/quality';
+import { makePointCloud, particleBudget, seededRandom } from '../../world/gl/particles';
 import { buildTerrain, TERRAIN_DEPTH, type GeoCollection } from './heroTerrain';
 import { createPostChain, type PostQuality } from './heroPost';
 import { buildPlateAtlas, PLATE_CELL, PLATE_COLUMNS } from './heroPlates';
@@ -185,29 +188,6 @@ const PLATE_FALLOFF = 0.22;
 const PLATE_RISE_FROM = 0.55;
 const PLATE_RISE_TO = 1;
 
-/**
- * Frame-time budget, measured while the scene is actually animating.
- *
- * Judged by the *proportion* of slow frames in a window rather than the mean.
- * A mean is hostage to single outliers, and one unavoidable outlier exists on
- * every device: the first frame that forces a driver to compile a shader can
- * take hundreds of milliseconds. Averaging that in condemns hardware that is
- * in fact perfectly capable, whereas a count only trips when frames are
- * *persistently* slow, which is the thing actually worth reacting to.
- */
-const SLOW_FRAME_MS = 32;
-const DEGRADE_SLOW_FRACTION = 0.45;
-const ABANDON_SLOW_FRACTION = 0.6;
-const SAMPLE_WINDOW = 24;
-/**
- * A window also closes once this much time has accumulated. Judging purely by
- * frame count means a device rendering at 8 fps takes three seconds to fill a
- * single window and the better part of ten to reach the fallback — the exact
- * device that should get there quickest.
- */
-const SAMPLE_WINDOW_MS = 700;
-const BAD_WINDOWS_BEFORE_ABANDON = 2;
-
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** Ken Perlin's smootherstep — zero first *and* second derivative at the ends. */
@@ -222,6 +202,10 @@ const easeOutBack = (t: number) => {
 
 /** Hoisted: allocating these inside the frame loop is enough to cause GC stalls. */
 const POSE_AXES = ['progress', 'px', 'py', 'mv'] as const;
+/** Camera, probe and light smoothing rates, per second (tuned as 0.14, 0.32 and 0.12 a frame at 60 Hz). */
+const POSE_LAMBDA = perFrame(0.14);
+const PROBE_LAMBDA = perFrame(0.32);
+const KEY_LAMBDA = perFrame(0.12);
 
 const SKY_VERTEX = /* glsl */ `
   varying vec3 vDir;
@@ -242,31 +226,6 @@ const SKY_FRAGMENT = /* glsl */ `
       ? mix(uHorizon, uTop, pow(h, 0.30))
       : mix(uHorizon, uBottom, pow(-h, 0.35));
     gl_FragColor = vec4(c, 1.0);
-  }
-`;
-
-const POINTS_VERTEX = /* glsl */ `
-  attribute float aSize;
-  attribute float aAlpha;
-  uniform float uPixelRatio;
-  varying float vAlpha;
-  void main() {
-    vAlpha = aAlpha;
-    vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    gl_Position = projectionMatrix * mv;
-    gl_PointSize = aSize * uPixelRatio;
-  }
-`;
-
-const POINTS_FRAGMENT = /* glsl */ `
-  uniform float uOpacity;
-  uniform vec3 uColor;
-  varying float vAlpha;
-  void main() {
-    float d = length(gl_PointCoord - 0.5);
-    float mask = 1.0 - smoothstep(0.14, 0.5, d);
-    if (mask <= 0.001) discard;
-    gl_FragColor = vec4(uColor, mask * uOpacity * vAlpha);
   }
 `;
 
@@ -305,41 +264,6 @@ const PLATE_FRAGMENT = /* glsl */ `
   }
 `;
 
-function makePointCloud(
-  positions: Float32Array,
-  sizes: Float32Array,
-  alphas: Float32Array,
-  color: string,
-  pixelRatio: number,
-) {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-  geometry.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
-  const material = new THREE.ShaderMaterial({
-    vertexShader: POINTS_VERTEX,
-    fragmentShader: POINTS_FRAGMENT,
-    uniforms: {
-      uOpacity: { value: 1 },
-      uColor: { value: new THREE.Color(color) },
-      uPixelRatio: { value: pixelRatio },
-    },
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-  return { points: new THREE.Points(geometry, material), geometry, material };
-}
-
-/** Deterministic pseudo-random, so the starfield is identical on every load. */
-function makeRandom(seed: number) {
-  let state = seed;
-  return () => {
-    state = (state * 1664525 + 1013904223) % 4294967296;
-    return state / 4294967296;
-  };
-}
-
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, onProbe, endFocus, atmosphere } = options;
 
@@ -348,7 +272,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   // Capped below the device ratio on purpose: the post chain blurs and blooms
   // the image anyway, so a full 2x buffer costs 78% more pixels for detail
   // that never survives to the screen.
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const dpr = pixelRatio(1.5);
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: false,
@@ -473,8 +397,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   /* ----------------------------------------------------------- stars & motes */
 
-  const random = makeRandom(20260906);
-  const STAR_COUNT = 1400;
+  const random = seededRandom(20260906);
+  const STAR_COUNT = particleBudget(1400);
   const starPositions = new Float32Array(STAR_COUNT * 3);
   const starSizes = new Float32Array(STAR_COUNT);
   const starAlphas = new Float32Array(STAR_COUNT);
@@ -493,7 +417,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const stars = makePointCloud(starPositions, starSizes, starAlphas, '#cfe0ff', dpr);
   scene.add(stars.points);
 
-  const MOTE_COUNT = 220;
+  const MOTE_COUNT = particleBudget(220);
   const motePositions = new Float32Array(MOTE_COUNT * 3);
   const moteSizes = new Float32Array(MOTE_COUNT);
   const moteAlphas = new Float32Array(MOTE_COUNT);
@@ -663,7 +587,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   /* ------------------------------------------------------ habitat atmosphere */
   // Only where the descent ends, and only as much as reads at the last frames.
-  const AIR_COUNT = endFocus && atmosphere ? 420 : 0;
+  const AIR_COUNT = endFocus && atmosphere ? particleBudget(420) : 0;
   const airPositions = new Float32Array(AIR_COUNT * 3);
   const airSizes = new Float32Array(AIR_COUNT);
   const airAlphas = new Float32Array(AIR_COUNT);
@@ -808,89 +732,33 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   let firstFrameSent = false;
   let warmed = false;
 
-  /* --- adaptive quality --- */
-  let previousFrameAt = 0;
-  let sampledFrames = 0;
-  let sampledTime = 0;
-  let slowFrames = 0;
-  let level = 0;
-  let badWindows = 0;
+  /* --- adaptive quality (world/quality.ts) --- */
   let continuing = false;
+  let lastDrawAt = 0;
   /**
-   * Frames to ignore after a step-down or a resize. Both reallocate the render
-   * targets, which is itself a very slow frame — without this the guard reads
-   * the cost of degrading as evidence that it should degrade again, and walks
-   * itself down to the fallback in three windows regardless of the hardware.
+   * The ladder. Each rung removes the most expensive thing still running, so
+   * the effect survives on weaker hardware for as long as it can before being
+   * abandoned altogether.
    */
-  let sampleCooldown = 0;
-
-  function resetFrameSampling(cooldownFrames = 0) {
-    previousFrameAt = 0;
-    sampledFrames = 0;
-    sampledTime = 0;
-    slowFrames = 0;
-    sampleCooldown = Math.max(sampleCooldown, cooldownFrames);
-  }
-
-  /**
-   * Steps the scene down one rung. Each rung removes the most expensive thing
-   * still running, so the effect survives on weaker hardware for as long as it
-   * can before being abandoned altogether.
-   */
-  function degrade() {
-    level++;
-    if (level === 1) {
-      // Depth of field first: it is both the widest pass in the chain (seven
-      // texture reads for every pixel on screen) and the least missed.
-      post?.setQuality(1 as PostQuality);
-      halos.visible = false;
-      renderer.setPixelRatio(Math.min(dpr, 0.85));
+  const governor = new FrameGovernor({
+    rungs: 2,
+    onTooSlow,
+    onStep(rung) {
+      if (rung === 1) {
+        // Depth of field first: it is both the widest pass in the chain (seven
+        // texture reads for every pixel on screen) and the least missed.
+        post?.setQuality(1 as PostQuality);
+        halos.visible = false;
+        renderer.setPixelRatio(Math.min(dpr, 0.85));
+      } else {
+        post?.setQuality(2 as PostQuality);
+        motes.points.visible = false;
+        renderer.setPixelRatio(Math.min(dpr, 0.62));
+      }
       applySize();
-      resetFrameSampling(10);
-    } else if (level === 2) {
-      post?.setQuality(2 as PostQuality);
-      motes.points.visible = false;
-      renderer.setPixelRatio(Math.min(dpr, 0.62));
-      applySize();
-      resetFrameSampling(10);
-    }
-  }
-
-  function sampleFrameRate(now: number) {
-    const gap = previousFrameAt ? now - previousFrameAt : 0;
-    previousFrameAt = now;
-    if (sampleCooldown > 0) {
-      sampleCooldown--;
-      return;
-    }
-    if (gap <= 0) return;
-
-    // Long frames are the whole point of measuring, so they are clamped into
-    // the average rather than discarded — an earlier cut-off here meant the
-    // slowest devices produced no samples at all and never stepped down.
-    sampledTime += gap;
-    sampledFrames++;
-    if (gap > SLOW_FRAME_MS) slowFrames++;
-    if (sampledFrames < SAMPLE_WINDOW && sampledTime < SAMPLE_WINDOW_MS) return;
-
-    const slowFraction = slowFrames / sampledFrames;
-    sampledFrames = 0;
-    sampledTime = 0;
-    slowFrames = 0;
-
-    if (slowFraction < DEGRADE_SLOW_FRACTION) {
-      badWindows = 0;
-      return;
-    }
-    if (level < 2) {
-      degrade();
-      return;
-    }
-    if (slowFraction >= ABANDON_SLOW_FRACTION && ++badWindows >= BAD_WINDOWS_BEFORE_ABANDON) {
-      badWindows = 0;
-      onTooSlow?.();
-    }
-  }
+    },
+  });
+  governor.begin();
 
   function applySize() {
     const ratio = renderer.getPixelRatio();
@@ -1237,19 +1105,18 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   }
 
   /** Eases the probe towards its target; true while it is still moving. */
-  function stepProbe(): boolean {
+  function stepProbe(dt: number): boolean {
     let moving = false;
-    const k = 0.32;
     for (const axis of ['x', 'y', 'r', 'alpha'] as const) {
       const delta = probeTo[axis] - probeAt[axis];
       if (Math.abs(delta) > (axis === 'alpha' ? 0.004 : 1e-5)) {
-        probeAt[axis] += delta * k;
+        probeAt[axis] = damp(probeAt[axis], probeTo[axis], PROBE_LAMBDA, dt);
         moving = true;
       } else probeAt[axis] = probeTo[axis];
     }
     if (!moving && probeTo.alpha === 0) probeAt.set = false;
     if (key.position.distanceToSquared(keyTo) > 1e-5) {
-      key.position.lerp(keyTo, 0.12);
+      key.position.lerp(keyTo, 1 - Math.exp(-KEY_LAMBDA * dt));
       moving = true;
     }
     return moving;
@@ -1266,14 +1133,16 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   function draw(now: number) {
     frame = 0;
     if (disposed) return;
-    sampleFrameRate(now);
+    governor.sample(now);
 
-    const k = 0.14;
+    // Damped by time, not by frame, so the camera is as heavy at 120 Hz as at 60.
+    const dt = lastDrawAt ? Math.min((now - lastDrawAt) / 1000, 1 / 20) : 1 / 60;
+    lastDrawAt = now;
     let moving = false;
     for (const axis of POSE_AXES) {
       const delta = target[axis] - current[axis];
       if (Math.abs(delta) > 0.0002) {
-        current[axis] += delta * k;
+        current[axis] = damp(current[axis], target[axis], POSE_LAMBDA, dt);
         moving = true;
       } else {
         current[axis] = target[axis];
@@ -1281,7 +1150,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     }
 
     applyPose();
-    if (stepProbe()) moving = true;
+    if (stepProbe(dt)) moving = true;
     renderFrame();
 
     if (!firstFrameSent) {
@@ -1296,7 +1165,10 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     if (disposed || !active || frame) return;
     // A frame that resumes an idle scene is preceded by an arbitrarily long
     // pause, which says nothing about how fast this device renders.
-    if (!continuing) resetFrameSampling();
+    if (!continuing) {
+      governor.reset();
+      lastDrawAt = 0;
+    }
     continuing = false;
     frame = requestAnimationFrame(draw);
   }
@@ -1342,7 +1214,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     },
     setActive(next) {
       active = next;
-      resetFrameSampling();
+      governor.reset();
       continuing = false;
       if (next) invalidate();
       else if (frame) {
@@ -1359,7 +1231,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
         warmed = true;
         post?.warmUp();
       }
-      resetFrameSampling();
+      governor.reset();
       applyPose();
       renderFrame();
     },

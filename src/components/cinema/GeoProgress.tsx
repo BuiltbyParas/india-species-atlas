@@ -5,6 +5,7 @@ import { GeoLine } from '../../geo/line/GeoLine';
 import { bowedLeg } from '../../geo/line/paths';
 import { useCurrentChapter } from '../../motion/chapters';
 import { useVelocityVar } from '../../interaction/velocity';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
  * Scroll progress drawn as a route across a small map of India.
@@ -110,11 +111,11 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
       update();
     });
     ro.observe(document.body);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const offScroll = subscribeScroll(onScroll);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener('scroll', onScroll);
+      offScroll();
     };
   }, [legs.length, anchors]);
 

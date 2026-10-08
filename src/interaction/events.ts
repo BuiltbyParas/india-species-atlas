@@ -19,6 +19,9 @@ export interface AtlasEvents {
   'chapter:start': { index: number; title: string };
   'species:enter': { id: string };
   'species:exit': { id: string };
+  'environment:change': { env: string };
+  'media:open': { kind: string };
+  'media:close': { kind: string };
 }
 
 type Listener<K extends keyof AtlasEvents> = (detail: AtlasEvents[K]) => void;

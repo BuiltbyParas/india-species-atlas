@@ -13,8 +13,9 @@ import type { GeoCam } from './geoCamera';
  * What they share instead is a lifecycle, which this registry runs:
  *
  *   mount     the page builds the scene and registers it with its element
- *   pause     when the element leaves the viewport, the tab is hidden, or a
- *             journey between pages is covering the screen
+ *   pause     when the element leaves the viewport, the tab is hidden, a
+ *             journey between pages is covering the screen, or a film or
+ *             photograph is open over it (`interaction/media.ts`)
  *   resume    when none of those holds any more
  *   unmount   the page disposes it; the registration goes with it
  *
@@ -45,12 +46,14 @@ interface Entry {
 
 const entries = new Set<Entry>();
 let travelling = false;
+/** A film or a photograph is open over the whole screen (`interaction/media.ts`). */
+let covered = false;
 let wired = false;
 /** A scene a journey is still drawing with, so it stays awake while the rest pause. */
 let awake: string | null = null;
 
 function sync(entry: Entry) {
-  const next = entry.onScreen && (!travelling || entry.name === awake) && !document.hidden;
+  const next = entry.onScreen && (!travelling || entry.name === awake) && !covered && !document.hidden;
   if (next === entry.active) return;
   entry.active = next;
   entry.scene.setActive(next);
@@ -70,6 +73,14 @@ function wire() {
   });
   on('navigation:end', () => {
     travelling = false;
+    syncAll();
+  });
+  on('media:open', () => {
+    covered = true;
+    syncAll();
+  });
+  on('media:close', () => {
+    covered = false;
     syncAll();
   });
 }

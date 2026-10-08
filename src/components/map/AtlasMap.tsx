@@ -257,6 +257,8 @@ export function AtlasMap({
   const visited = useWorld((w) => w.visited);
   const [hot, setHot] = useState<string | null>(null);
   const markerEls = useRef(new Map<string, L.Marker>());
+  /** Where the pointer entered the hovered species, for the kin ping's timing. */
+  const hotFrom = useRef<[number, number] | null>(null);
 
   useEffect(() => {
     for (const [key, marker] of markerEls.current) {
@@ -266,7 +268,15 @@ export function AtlasMap({
       const out = !shown.has(id);
       el.classList.toggle('is-out', out);
       el.classList.toggle('is-surveyed', visited.includes(id));
-      el.classList.toggle('is-kin', hot !== null && hot === id);
+      const kin = hot !== null && hot === id;
+      // The species' other localities answer the hovered one in order of
+      // distance from it: a survey ping that travels across the country.
+      if (kin && hotFrom.current) {
+        const at = marker.getLatLng();
+        const d = Math.hypot(at.lat - hotFrom.current[0], at.lng - hotFrom.current[1]);
+        el.style.setProperty('--kin-delay', `${Math.min(Math.round(d * 28), 520)}ms`);
+      }
+      el.classList.toggle('is-kin', kin);
       el.classList.toggle('is-quiet', hot !== null && hot !== id && !out);
       if (out) el.setAttribute('tabindex', '-1');
       else el.setAttribute('tabindex', '0');
@@ -282,7 +292,7 @@ export function AtlasMap({
         delete el.dataset.cursor;
       } else {
         el.dataset.magnetic = '0.35';
-        el.dataset.cursor = 'Open';
+        el.dataset.cursor = 'Locate';
       }
       el.setAttribute('aria-hidden', out ? 'true' : 'false');
     }
@@ -416,7 +426,10 @@ export function AtlasMap({
             position={[p.lat, p.lng]}
             icon={iconForSpecies(p.species, mode)}
             eventHandlers={{
-              mouseover: () => setHot(p.species.id),
+              mouseover: () => {
+                hotFrom.current = [p.lat, p.lng];
+                setHot(p.species.id);
+              },
               mouseout: () => setHot(null),
             }}
             title={`${p.species.commonName} — ${p.label}`}

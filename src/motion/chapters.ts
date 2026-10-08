@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore, type RefObject } from 'react';
 import { emit as announce } from '../interaction/events';
+import { onScroll as subscribeScroll } from '../interaction/scroll';
 
 /**
  * Which chapter of the documentary is on screen, for the header's running
@@ -46,7 +47,7 @@ function schedule() {
 function ensureListening() {
   if (listening) return;
   listening = true;
-  window.addEventListener('scroll', schedule, { passive: true });
+  subscribeScroll(schedule);
   window.addEventListener('resize', schedule);
 }
 

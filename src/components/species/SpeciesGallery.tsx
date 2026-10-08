@@ -12,6 +12,7 @@ import type { Gallery, GalleryCard } from './galleryScene';
 import { registerScene } from '../../world/sceneRegistry';
 import { Link } from 'react-router-dom';
 import { SpeciesLocator } from './SpeciesLocator';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
  * The species gallery: photographic cards mounted in real 3D space.
@@ -130,8 +131,8 @@ export function SpeciesGallery({
             instance.setScroll((centre - window.innerHeight / 2) / window.innerHeight);
           };
           onScroll();
-          window.addEventListener('scroll', onScroll, { passive: true });
-          cleanups.push(() => window.removeEventListener('scroll', onScroll));
+          const offScroll = subscribeScroll(onScroll);
+          cleanups.push(offScroll);
 
           canvas.addEventListener('webglcontextlost', bail);
           cleanups.push(() => canvas.removeEventListener('webglcontextlost', bail));

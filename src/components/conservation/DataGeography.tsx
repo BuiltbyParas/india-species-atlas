@@ -11,6 +11,7 @@ import { schedule } from '../../interaction/loop';
 import { cubicBezier } from '../../motion/gsap';
 import { useReducedMotion, useWideLayout } from '../../motion/preferences';
 import { cn } from '../../utils/cn';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
  * DATA → GEOGRAPHY → NETWORK, and back.
@@ -159,10 +160,10 @@ export function DataGeography() {
       schedule(read);
     };
     read();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const offScroll = subscribeScroll(onScroll);
     window.addEventListener('resize', onScroll);
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      offScroll();
       window.removeEventListener('resize', onScroll);
     };
   }, [scrub, anchors]);

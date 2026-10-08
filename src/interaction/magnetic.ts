@@ -1,5 +1,6 @@
 import { hasFinePointer, prefersReducedMotion } from '../motion/preferences';
 import { onPointerExit, onPointerMove, pointer } from './pointer';
+import { onScroll } from './scroll';
 import { Spring, SPRINGS, springDriver } from './spring';
 
 /**
@@ -107,5 +108,5 @@ export function installMagnetic() {
   installed = true;
   onPointerMove(onMove);
   onPointerExit(release);
-  window.addEventListener('scroll', () => engaged && onMove(), { passive: true });
+  onScroll(() => engaged && onMove());
 }

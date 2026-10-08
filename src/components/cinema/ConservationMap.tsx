@@ -185,7 +185,7 @@ export function ConservationChapter() {
   const ref = useRef<HTMLElement>(null);
   useChapter(ref, CHAPTER);
   return (
-    <section ref={ref} id="conservation-chapter" data-trail aria-labelledby="cons-title" className="relative">
+    <section ref={ref} id="conservation-chapter" data-trail data-env="forest" aria-labelledby="cons-title" className="relative">
       {wide && !reduced ? <PinnedConservation /> : <StackedConservation />}
       <Closing />
     </section>

@@ -329,6 +329,32 @@ select,
 .leaflet-marker-icon.is-kin .species-pin {
   transform: scale(1.18);
 }
+/* …and each sends one survey ring, later the further it is from the marker under the hand. */
+.leaflet-marker-icon.is-kin .species-pin::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 1px solid var(--pin);
+  opacity: 0;
+  animation: kin-ping 1.1s var(--ease-out-expo) var(--kin-delay, 0ms) 1;
+  pointer-events: none;
+}
+@keyframes kin-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-marker-icon.is-kin .species-pin::before {
+    animation: none;
+  }
+}
 /* Species already visited this session carry a fine survey ring. */
 .leaflet-marker-icon.is-surveyed .species-pin::after {
   content: '';
@@ -512,6 +538,72 @@ body {
 .has-custom-cursor textarea {
   cursor: text !important;
 }
+/*
+  Environments (world/environment.ts). One visual language whose tokens move
+  with the geography: the line the instrument draws, an accent, and the ground
+  and ink a field study can adopt. Written once per section boundary on
+  <html data-env>; never transitioned on the root (an inherited property
+  animated there restyles the whole page every frame) — elements that use a
+  token transition their own colour instead.
+
+  Ground and ink follow documentation/HOMEPAGE_CREATIVE_DECONSTRUCTION.md §4;
+  the line and accent are tuned to read on the documentary's night ground.
+*/
+:root {
+  --env-line: var(--color-contour);
+  --env-accent: var(--color-contour);
+  --env-ground: var(--color-forest-950);
+  --env-ink: var(--color-canvas);
+}
+:root[data-env='calibration'] {
+  --env-line: #8f8a7c;
+  --env-accent: var(--color-contour);
+  --env-ground: #efe9dc;
+  --env-ink: #1b1d1a;
+}
+:root[data-env='thar'] {
+  --env-line: #d1a06a;
+  --env-accent: #b9835a;
+  --env-ground: #d9c3a0;
+  --env-ink: #3a2618;
+}
+:root[data-env='himalaya'] {
+  --env-line: #a9c6d3;
+  --env-accent: #a9c6d3;
+  --env-ground: #f2f3f1;
+  --env-ink: #22292d;
+}
+:root[data-env='river'] {
+  --env-line: #7ea3b5;
+  --env-accent: #b9a98c;
+  --env-ground: #163a52;
+  --env-ink: #ede8dd;
+}
+:root[data-env='forest'] {
+  --env-line: #86a593;
+  --env-accent: #5f9a72;
+  --env-ground: #1f3a2b;
+  --env-ink: #e7eedf;
+}
+:root[data-env='data'] {
+  --env-line: #c9c2b0;
+  --env-accent: var(--color-status-cr);
+  --env-ground: #f1ece2;
+  --env-ink: #141414;
+}
+:root[data-env='cinema'] {
+  --env-line: #e8e1cf;
+  --env-accent: #e8e1cf;
+  --env-ground: #050605;
+  --env-ink: #e8e1cf;
+}
+:root[data-env='final'] {
+  --env-line: var(--color-contour);
+  --env-accent: var(--color-contour);
+  --env-ground: #0f1413;
+  --env-ink: var(--color-canvas);
+}
+
 .cursor-layer {
   pointer-events: none;
   position: fixed;
@@ -539,7 +631,7 @@ body {
   font-size: var(--text-micro);
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
-  color: var(--color-contour);
+  color: var(--env-line);
   opacity: 0;
   translate: -4px 0;
   transition: opacity 0.25s, translate 0.35s var(--ease-out-expo);
@@ -658,7 +750,7 @@ body {
   border-color: color-mix(in srgb, var(--color-canvas) 60%, transparent);
 }
 .cursor-ring[data-state='label'] .cursor-ring-shape {
-  --tick: var(--color-contour);
+  --tick: var(--env-line);
   width: 78px;
   height: 78px;
   background-color: color-mix(in srgb, var(--color-forest-950) 78%, transparent);
@@ -680,8 +772,38 @@ body {
   height: 22px;
 }
 .cursor-ring[data-state='trace'] .cursor-ring-shape {
-  --tick: var(--color-contour);
-  border-color: var(--color-contour);
+  --tick: var(--env-line);
+  border-color: var(--env-line);
+}
+/*
+  Intents (interaction/intent.ts): the same gesture always draws the same
+  reticle, whatever word it carries. Shape only; the states above still decide
+  size and fill.
+*/
+/* locate: the ticks run in to a crosshair, the instrument taking a fix */
+.cursor-ring[data-intent='locate'] .cursor-ring-shape {
+  background-size: 1px 13px, 1px 13px, 13px 1px, 13px 1px, auto;
+}
+/* turn: a dashed ring, an object that rotates */
+.cursor-ring[data-intent='turn'] .cursor-ring-shape {
+  border-style: dashed;
+}
+/* define: a squared frame, a term boxed on the sheet */
+.cursor-ring[data-intent='define'] .cursor-ring-shape {
+  border-radius: 6px;
+}
+/* drag: only the horizontal ticks, an object that moves sideways */
+.cursor-ring[data-intent='drag'] .cursor-ring-shape {
+  background-size: 0 0, 0 0, 9px 1px, 9px 1px, auto;
+}
+/* trace: the line's own colour, wherever it appears */
+.cursor-ring[data-intent='trace'] .cursor-ring-shape {
+  --tick: var(--env-line);
+  border-color: color-mix(in srgb, var(--env-line) 80%, transparent);
+}
+/* play: filled like enter, with a hairline inner ring, the lens of a projector */
+.cursor-ring[data-intent='play'] .cursor-ring-shape {
+  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--color-forest-950) 78%, transparent), inset 0 0 0 6px color-mix(in srgb, var(--color-canvas) 30%, transparent);
 }
 .cursor-label {
   position: absolute;
@@ -711,7 +833,7 @@ body {
   opacity: 1;
 }
 .cursor-ring[data-state='trace'] .cursor-label {
-  color: var(--color-contour);
+  color: var(--env-line);
 }
 .cursor-ring[data-state='lock'] .cursor-label {
   left: calc(var(--lw) / 2 + 6px);
@@ -720,7 +842,7 @@ body {
   font-size: var(--text-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-contour);
+  color: var(--env-line);
   opacity: 1;
   transition-delay: 0.18s;
 }
@@ -738,17 +860,17 @@ body {
   height: 16px;
   margin: -8px 0 0 -8px;
   border-radius: 999px;
-  border: 1px solid var(--color-contour);
+  border: 1px solid var(--env-line);
   animation: cursor-splash 1s var(--ease-out-expo) forwards;
 }
 .cursor-splash span:nth-child(2),
 .touch-mark span:nth-child(2) {
   animation-delay: 0.08s;
-  border-color: color-mix(in srgb, var(--color-contour) 70%, transparent);
+  border-color: color-mix(in srgb, var(--env-line) 70%, transparent);
 }
 .cursor-splash span:nth-child(3) {
   animation-delay: 0.16s;
-  border-color: color-mix(in srgb, var(--color-contour) 40%, transparent);
+  border-color: color-mix(in srgb, var(--env-line) 40%, transparent);
 }
 @keyframes cursor-splash {
   from {
@@ -4457,4 +4579,317 @@ body {
   .photo-shutter .photo-img {
     transition: none;
   }
+}
+
+/* --- the cinema (components/cinema/MediaStage.tsx, interaction/media.ts) ---
+   One picture makes the move; everything else only fades. The stage sits
+   under the cursor and above the header, the menu and dialogs. */
+.media-stage {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-transition) - 10);
+  color: var(--color-canvas);
+}
+.media-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--env-ground, #050605);
+  opacity: 0;
+  transition: opacity 0.7s var(--ease-cinema);
+}
+.media-stage[data-phase='enter'] .media-backdrop,
+.media-stage[data-phase='open'] .media-backdrop {
+  opacity: 1;
+}
+.media-stage[data-phase='leave'] .media-backdrop {
+  opacity: 0;
+  transition-duration: 0.6s;
+}
+.media-stage[data-kind='image'] .media-backdrop {
+  cursor: zoom-out;
+}
+.media-frame {
+  position: absolute;
+  /* Not clipped: on a tall screen the film's controls sit below the picture. The move's own crop is a clip-path. */
+  overflow: visible;
+  background: #000;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.media-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.media-film {
+  position: absolute;
+  inset: 0;
+}
+.media-film video::cue {
+  font-family: var(--font-sans);
+  font-size: clamp(0.95rem, 1.6vw, 1.35rem);
+  line-height: 1.35;
+  color: var(--color-canvas);
+  background: color-mix(in srgb, #000 55%, transparent);
+}
+/* Chrome: the title and the words arrive after the picture, and leave before it. */
+.media-chrome,
+.media-controls {
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.media-stage[data-phase='open'] .media-chrome,
+.media-stage[data-phase='open'] .media-controls {
+  opacity: 1;
+  transition: opacity 0.6s 0.05s;
+}
+.media-stage[data-phase='enter'] :is(.media-chrome, .media-controls) {
+  pointer-events: none;
+}
+.media-head {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.1rem clamp(16px, 3vw, 48px);
+  background: linear-gradient(to bottom, color-mix(in srgb, #000 55%, transparent), transparent);
+  pointer-events: none;
+}
+.media-head > * {
+  pointer-events: auto;
+}
+.media-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 300;
+  line-height: 1.1;
+}
+.media-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 60%, transparent);
+}
+.media-word {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
+  color: var(--color-canvas);
+  white-space: nowrap;
+}
+.media-word:focus-visible,
+.media-scrub:focus-visible + .media-line,
+.film-entry:focus-visible .film-entry-frame {
+  outline: 1px solid var(--env-line);
+  outline-offset: 4px;
+}
+.media-key {
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-canvas) 25%, transparent);
+  padding: 0 0.35rem;
+  border-radius: 2px;
+}
+.media-controls {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  padding: 2.5rem clamp(16px, 3vw, 48px) 0.9rem;
+  background: linear-gradient(to top, color-mix(in srgb, #000 60%, transparent), transparent);
+}
+.media-progress {
+  position: relative;
+  flex: 1;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+.media-line {
+  width: 100%;
+  height: 12px;
+  overflow: visible;
+  --draw: 0;
+}
+.media-line-track {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 28%, transparent);
+}
+.media-line-drawn {
+  --gl-stroke: var(--env-line);
+}
+.media-line-drawn .gl-path {
+  transition: none;
+}
+/* The keyboard's and the finger's handle on the line: invisible, the full height of the row. */
+.media-scrub {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.media-time {
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-canvas) 65%, transparent);
+}
+.media-caption {
+  position: absolute;
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+.media-caption a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* The origin stays laid out but is not drawn while its picture is on the stage, so the print appears to lift out of the page. */
+[data-media-origin] {
+  visibility: hidden;
+}
+/* A screen taller than the film: the controls move into the dark under the picture instead of over it. */
+@media (max-aspect-ratio: 4 / 3) {
+  .media-controls {
+    inset: 100% 0 auto 0;
+    padding: 0.75rem 16px 0;
+    background: none;
+  }
+}
+@media (max-width: 640px) {
+  .media-time,
+  .media-key {
+    display: none;
+  }
+  .media-controls {
+    gap: 0.75rem;
+  }
+}
+
+/* --- the way into the film (components/cinema/FilmEntry.tsx) --- */
+.film-entry {
+  --dx: 0;
+  --dy: 0;
+  --dh: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem 1.25rem;
+  width: min(100%, 30rem);
+  text-align: left;
+  color: var(--color-canvas);
+}
+.film-entry-frame {
+  --dx: 0;
+  --dy: 0;
+  --dh: 0;
+  position: relative;
+  grid-column: 1 / -1;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #070908;
+  /* Turns two degrees at most toward the hand: a print, not a card. */
+  transform: perspective(900px) rotateX(calc(var(--dy) * -3deg)) rotateY(calc(var(--dx) * 3deg));
+}
+.film-entry-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate(calc(var(--dx) * -10px), calc(var(--dy) * -6px)) scale(calc(1.04 + var(--dh) * 0.03));
+  transition: filter 0.6s;
+  filter: saturate(0.8) brightness(0.86);
+}
+.film-entry:hover .film-entry-poster,
+.film-entry:focus-visible .film-entry-poster {
+  filter: saturate(1) brightness(1);
+}
+/* The same crop marks a print gets, closing in as it is looked at. */
+.film-entry-marks {
+  --m: calc(18px - var(--dh) * 8px);
+  --c: color-mix(in srgb, var(--color-canvas) calc(30% + var(--dh) * 50%), transparent);
+  position: absolute;
+  inset: var(--m);
+  pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 12px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 0 / 1px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 12px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 1px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 12px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 1px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 12px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 1px 12px no-repeat;
+}
+.film-entry-meta {
+  display: contents;
+}
+.film-entry-eyebrow {
+  grid-column: 1;
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+.film-entry-title {
+  grid-column: 1;
+  margin-top: -0.6rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.3rem, 1.8vw, 1.65rem);
+  font-weight: 300;
+  line-height: 1.1;
+}
+.film-entry-runtime {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  align-self: end;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--color-canvas) 65%, transparent);
+}
+/* The route line under the print runs out on hover: the line that becomes the film's progress. */
+.film-entry-line {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 8px;
+  overflow: visible;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.9s var(--ease-cinema);
+}
+.film-entry:hover .film-entry-line,
+.film-entry:focus-visible .film-entry-line {
+  clip-path: inset(0 0 0 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-entry-frame,
+  .film-entry-poster {
+    transform: none;
+  }
+  .film-entry-line {
+    clip-path: none;
+    transition: none;
+  }
+}
+
+/* A print that opens full screen: the whole frame is the button. */
+.photo-expand {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+}
+.photo-expand:focus-visible {
+  outline: 1px solid var(--env-line);
+  outline-offset: -6px;
 }

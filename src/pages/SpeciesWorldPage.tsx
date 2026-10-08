@@ -166,7 +166,7 @@ function World({ species }: { species: Species }) {
             </dl>
           </div>
           <figure className="lg:col-span-7">
-            <Photo key={species.id} species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" shutter={!arrived} eager={arrived} />
+            <Photo key={species.id} species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" shutter={!arrived} eager={arrived} expand />
             <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
               <span className="text-label text-canvas/45">{species.image.alt}</span>
               <PhotoCredit species={species} />

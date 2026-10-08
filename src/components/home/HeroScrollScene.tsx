@@ -12,6 +12,8 @@ import { registerScene } from '../../world/sceneRegistry';
 import { onScrollVelocity } from '../../interaction/velocity';
 import { setWorld } from '../../world/worldState';
 import { camAt, INDIA_CAM } from '../../world/geoCamera';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
+import { onPointerExit, onPointerMove } from '../../interaction/pointer';
 
 /**
  * Scroll progress over which the twelve species are introduced.
@@ -283,9 +285,9 @@ export function HeroStage({
               update();
             });
         };
-        window.addEventListener('scroll', onScroll, { passive: true });
+        const offScroll = subscribeScroll(onScroll);
         cleanups.push(() => {
-          window.removeEventListener('scroll', onScroll);
+          offScroll();
           cancelAnimationFrame(raf);
         });
 
@@ -324,22 +326,24 @@ export function HeroStage({
           // The hand moves the camera a little (parallax) and surveys the
           // ground under it (the probe). No drag, no orbit: scroll stays the
           // way through the descent.
-          const onPointerMove = (event: PointerEvent) => {
-            if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
-            const [x, y] = frameXY(event);
-            scene?.setPointer(x, y);
-            scene?.setProbe(x, y);
-          };
-          const onPointerLeave = () => {
+          // Read from the site's one pointer tracker (interaction/pointer.ts), not a listener of its own.
+          let over = false;
+          const leave = () => {
+            if (!over) return;
+            over = false;
             scene?.setPointer(0, 0);
             scene?.setProbe(null, 0);
           };
-          stage.addEventListener('pointermove', onPointerMove);
-          stage.addEventListener('pointerleave', onPointerLeave);
-          cleanups.push(() => {
-            stage.removeEventListener('pointermove', onPointerMove);
-            stage.removeEventListener('pointerleave', onPointerLeave);
+          const offMove = onPointerMove((event) => {
+            if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+            if (!(event.target instanceof Node) || !stage.contains(event.target)) return leave();
+            over = true;
+            const [x, y] = frameXY(event);
+            scene?.setPointer(x, y);
+            scene?.setProbe(x, y);
           });
+          const offExit = onPointerExit(leave);
+          cleanups.push(offMove, offExit);
         } else {
           // Touch: a tap (not a scroll) sets the probe down where the finger
           // was, reads the ground there, and lifts it again.
@@ -412,7 +416,13 @@ export function HeroStage({
       ref={sectionRef}
       className={withPlates ? 'relative border-b border-forest-800 bg-forest-950 h-[250vh] lg:h-[310vh]' : 'relative bg-forest-950 h-[300vh] lg:h-[380vh]'}
     >
-      <div ref={stageRef} className="hero-stage sticky top-0 h-screen h-[100svh] overflow-hidden" style={{ ['--p' as string]: 0 }}>
+      <div
+        ref={stageRef}
+        className="hero-stage sticky top-0 h-screen h-[100svh] overflow-hidden"
+        style={{ ['--p' as string]: 0 }}
+        // The hand surveys the ground here: the reticle takes a fix (interaction/intent.ts) while the probe reads the place.
+        data-cursor-area={mode === 'live' ? 'Locate' : undefined}
+      >
         <canvas
           ref={canvasRef}
           aria-hidden="true"

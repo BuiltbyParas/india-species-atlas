@@ -103,3 +103,16 @@ export function springDriver(springs: readonly Spring[], render: () => void): ()
     schedule(task);
   };
 }
+
+/**
+ * Exponential smoothing that is the same at any frame rate: `current` closes
+ * on `target` at rate `lambda` per second. The per-frame `x += (t - x) * k`
+ * it replaces ran twice as fast on a 120 Hz screen; a per-frame `k` tuned at
+ * 60 Hz is `lambda = -ln(1 - k) * 60`.
+ */
+export function damp(current: number, target: number, lambda: number, dt: number): number {
+  return target + (current - target) * Math.exp(-lambda * dt);
+}
+
+/** `lambda` for `damp` from a per-frame factor tuned at 60 Hz. */
+export const perFrame = (k: number) => -Math.log(1 - k) * 60;

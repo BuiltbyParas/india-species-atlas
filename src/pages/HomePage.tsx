@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 import { holdScrollTrigger } from '../motion/gsap';
 import { SPECIES } from '../data/species';
-import { FEATURED } from '../content/featured';
+import { FEATURED, FEATURED_ENV } from '../content/featured';
 import { REGIONS } from '../data/regions';
 import { STATUS_INFO } from '../data/statusInfo';
 import { countByStatus } from '../utils/stats';
@@ -53,7 +53,7 @@ export function HomePage() {
       <BustardPrologue species={FEATURED[0]} />
 
       {FEATURED.map((s, i) => (
-        <div key={s.id} data-route-stop={i}>
+        <div key={s.id} data-route-stop={i} data-env={FEATURED_ENV[s.id]}>
           <SpeciesScene species={s} index={i} total={FEATURED.length} />
         </div>
       ))}
@@ -64,7 +64,9 @@ export function HomePage() {
         title="The selection"
         statement={`All ${SPECIES.length}, in the round. Turn the sphere; the bands above and below carry the places the atlas records them.`}
       />
-      <DomeGallery species={SPECIES} />
+      <div data-env="data">
+        <DomeGallery species={SPECIES} />
+      </div>
 
       <CurvedLoop
         className="py-6 lg:py-10"

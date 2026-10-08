@@ -9,6 +9,7 @@ import { useInView } from '../../motion/useInView';
 import { useInkBleed } from '../../interaction/ink';
 import { bindVelocity } from '../../interaction/velocity';
 import { photoContours, type ContourSet } from '../../interaction/photoContours';
+import { openMedia } from '../../interaction/media';
 import { useReducedMotion, useWideLayout } from '../../motion/preferences';
 import { photoSources } from '../../utils/photo';
 import { cn } from '../../utils/cn';
@@ -164,8 +165,11 @@ export function Photo({
   sizes,
   shutter,
   eager,
+  expand,
 }: {
   species: Species;
+  /** The print can be opened full screen, with its credit (interaction/media.ts). */
+  expand?: boolean;
   className?: string;
   imgRef?: React.Ref<HTMLImageElement>;
   /** Load at once rather than lazily (a journey is about to hand its photograph to this one). */
@@ -266,6 +270,31 @@ export function Photo({
       <span className="photo-grain" aria-hidden="true" />
       <span className="photo-marks" aria-hidden="true" />
       {shutter && <span className="photo-shutter-line" aria-hidden="true" />}
+      {expand && (
+        // PHOTOGRAPH → CINEMA: the print itself lifts out of the page and comes back to it.
+        <button
+          type="button"
+          className="photo-expand"
+          aria-label={`View the photograph of the ${species.commonName} full screen`}
+          data-cursor="Discover"
+          onClick={(e) => {
+            const img = frameRef.current?.querySelector('img') ?? null;
+            openMedia(
+              {
+                kind: 'image',
+                src: photo.src,
+                srcSet: photo.srcSet,
+                alt: species.image.alt,
+                width: photo.width ?? img?.naturalWidth ?? 1400,
+                height: photo.height ?? img?.naturalHeight ?? 933,
+                caption: <PhotoCredit species={species} />,
+              },
+              img,
+              e.currentTarget,
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
