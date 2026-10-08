@@ -3616,3 +3616,265 @@ body {
     transition: none;
   }
 }
+
+/* --- sources as a survey register (pages/SourcesPage.tsx) --- */
+.src-readout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 14%, transparent);
+}
+@media (min-width: 768px) {
+  .src-readout {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.src-readout dt {
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+}
+.src-readout dd {
+  margin-top: 0.4rem;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-canvas);
+}
+.src-readout .src-readout-dates {
+  font-size: var(--text-lede, 1.25rem);
+  line-height: 1.3;
+}
+.src-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+.src-table thead th {
+  padding: 0 1rem 0.6rem 0;
+  text-align: left;
+  font-weight: 400;
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+}
+.src-table tbody th,
+.src-table td {
+  padding: 0.85rem 1rem 0.85rem 0;
+  vertical-align: top;
+  text-align: left;
+  font-weight: 400;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+  color: color-mix(in srgb, var(--color-canvas) 72%, transparent);
+}
+.src-table tbody th {
+  width: 34%;
+  color: var(--color-canvas);
+}
+/* A change of kind is ruled more firmly, like a section break in a register. */
+.src-table tbody tr:not([data-kind='Red List']) + tr[data-kind='Red List'] th,
+.src-table tbody tr[data-kind='Red List'] + tr:not([data-kind='Red List']) > *,
+.src-table tbody tr[data-kind='Government of India'] + tr[data-kind='Research & conservation'] > * {
+  border-top-color: color-mix(in srgb, var(--color-canvas) 30%, transparent);
+}
+.src-kind {
+  white-space: nowrap;
+  color: var(--color-contour) !important;
+}
+.src-count {
+  display: inline-block;
+  min-width: 1.6rem;
+  color: var(--color-canvas);
+}
+.src-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
+}
+.src-tag {
+  position: relative;
+  padding-left: 0.8rem;
+  color: color-mix(in srgb, var(--color-canvas) 82%, transparent);
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+.src-tag::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--c);
+}
+.src-tag:hover {
+  color: var(--color-canvas);
+}
+.src-ref {
+  color: var(--color-canvas);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s var(--ease-out-expo);
+}
+.src-ref:hover,
+.src-ref:focus-visible {
+  background-size: 100% 1px;
+}
+.src-ref::after {
+  content: ' ↗';
+  font-size: 0.8em;
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+}
+.src-species {
+  display: grid;
+  gap: 0.75rem 2rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+}
+@media (min-width: 900px) {
+  .src-species {
+    grid-template-columns: 2.5rem 18rem 1fr;
+  }
+}
+.src-n {
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+  padding-top: 0.2rem;
+}
+.src-species .src-tag {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--color-canvas);
+}
+.src-species .src-tag::before {
+  top: 0.55em;
+}
+.src-list {
+  display: grid;
+  gap: 0.65rem;
+  font-size: var(--text-small);
+}
+
+/* --- the about page as a field notebook (pages/AboutPage.tsx) --- */
+.about-ch {
+  position: relative;
+  display: grid;
+  gap: 1.25rem 3rem;
+  padding: 2.75rem 0 3rem;
+}
+@media (min-width: 900px) {
+  .about-ch {
+    grid-template-columns: 15rem 1fr;
+  }
+}
+/* Each chapter is ruled in across the sheet as it is reached. */
+.about-ch::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-canvas) 16%, transparent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 1.4s var(--ease-cinema);
+}
+.about-ch.is-seen::before {
+  transform: scaleX(1);
+}
+.about-spine {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+@media (min-width: 900px) {
+  .about-spine {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}
+.about-n {
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  color: var(--color-contour);
+}
+.about-title {
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+.about-body {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 44rem;
+  font-size: var(--text-body, 1rem);
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-canvas) 75%, transparent);
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.9s var(--ease-out-expo) 0.2s,
+    transform 0.9s var(--ease-out-expo) 0.2s;
+}
+.about-ch.is-seen .about-body {
+  opacity: 1;
+  transform: none;
+}
+.about-body strong {
+  color: var(--color-canvas);
+  font-weight: 500;
+}
+.about-list {
+  display: grid;
+  gap: 0.85rem;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+.about-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.about-data dt {
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+}
+.about-data dd {
+  margin-top: 0.35rem;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-canvas);
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-ch::before,
+  .about-body {
+    transition: none;
+  }
+}
+.about-data > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
