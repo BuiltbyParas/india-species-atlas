@@ -25,7 +25,7 @@ export function HomePage() {
   const byStatus = countByStatus();
   return (
     <div className="documentary-page">
-      <CinematicHero />
+      <CinematicHero focus={FEATURED[0]} />
 
       <CurvedLoop
         className="-mt-px py-6 lg:py-10"

@@ -65,6 +65,14 @@ export interface HeroSceneOptions {
   /** Called after the first frame is on screen, for the fade-in. */
   onFirstFrame?: () => void;
   /**
+   * Where the descent ends. Without it the camera settles over the middle of
+   * the peninsula; with it, the last part of the journey turns towards this
+   * locality and comes down low over it — India, then the region, then the
+   * ground itself — so the hero hands the reader to the place the story
+   * starts.
+   */
+  endFocus?: { lng: number; lat: number };
+  /**
    * Called when the device cannot hold a usable frame rate even after the
    * scene has stepped its own quality all the way down. The caller should
    * unmount the scene and show the flat artwork instead.
@@ -108,6 +116,9 @@ const START_FOV = 30;
 const END_FOV = 46;
 const TARGET_START = new THREE.Vector3(0, 0.05, 0);
 const TARGET_END = new THREE.Vector3(-0.05, 0.55, 0.05);
+/** How close the camera comes, and how steeply it looks down, when the descent ends over a focus locality. */
+const FOCUS_DISTANCE = 1.3;
+const FOCUS_PITCH = 0.5;
 
 const CAMERA_NEAR = 0.25;
 const CAMERA_FAR = 120;
@@ -301,7 +312,7 @@ function makeRandom(seed: number) {
 }
 
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels } = options;
+  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, endFocus } = options;
 
   /* ---------------------------------------------------------------- renderer */
 
@@ -325,6 +336,16 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   /* ---------------------------------------------------------------- terrain */
 
   const terrain = buildTerrain(geojson, LAND_TOP_HEX, LAND_SIDE_HEX);
+  // The journey's last target: the focus locality if one is given, standing on
+  // the relief's surface, or the default point over the peninsula.
+  const focusTarget = TARGET_END.clone();
+  if (endFocus) {
+    const [fx, fy] = terrain.project(endFocus.lng, endFocus.lat);
+    focusTarget.set(fx, fy, TERRAIN_DEPTH);
+  }
+  const endDistance = endFocus ? FOCUS_DISTANCE : END_DISTANCE;
+  const endPitch = endFocus ? FOCUS_PITCH : END_PITCH;
+
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(START_FOV, 1, CAMERA_NEAR, CAMERA_FAR);
@@ -542,6 +563,27 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const stems = new THREE.LineSegments(stemGeometry, stemMaterial);
   stems.frustumCulled = false;
   scene.add(stems, markers, halos);
+
+  // A survey mark on the ground at the focus: two hairline rings that open as
+  // the camera arrives, so the place the story starts is unmistakable.
+  const focusRingGeometry = new THREE.RingGeometry(0.97, 1, 96);
+  const focusRingMaterial = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(BORDER_HEX),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const focusRings = [0.045, 0.085].map((r) => {
+    const ring = new THREE.Mesh(focusRingGeometry, focusRingMaterial);
+    ring.position.copy(focusTarget);
+    ring.position.z += 0.002;
+    ring.scale.setScalar(r);
+    ring.renderOrder = 2;
+    ring.visible = Boolean(endFocus);
+    scene.add(ring);
+    return { ring, r };
+  });
 
   /* ---------------------------------------------------------------- plates */
 
@@ -761,13 +803,23 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
     // Geometric interpolation: equal *ratios* of distance per unit of scroll,
     // so the descent feels like a constant rate rather than a rush and a crawl.
-    const distance = START_DISTANCE * Math.pow(END_DISTANCE / START_DISTANCE, j);
+    // A wide frame has room beside the copy, so the camera can come closer to the focus there.
+    const finalDistance = endFocus && viewWidth / viewHeight > 1.15 ? endDistance * 0.72 : endDistance;
+    const distance = START_DISTANCE * Math.pow(finalDistance / START_DISTANCE, j);
     const parallaxFalloff = 1 - 0.55 * j;
-    const pitch = lerp(START_PITCH, END_PITCH, j) + current.py * 0.09 * parallaxFalloff;
+    const pitch = lerp(START_PITCH, endPitch, j) + current.py * 0.09 * parallaxFalloff;
     const yaw = lerp(START_YAW, END_YAW, easeOutCubic(p)) + current.px * 0.12 * parallaxFalloff;
     const fov = lerp(START_FOV, END_FOV, j);
 
-    lookTarget.copy(TARGET_START).lerp(TARGET_END, j);
+    // Country first, region second: the target drifts towards the middle of the
+    // relief for the first part of the descent and only then turns for the
+    // focus, so the approach reads as narrowing in rather than a straight dive.
+    if (endFocus) {
+      const k = smoother(clamp((j - 0.45) / 0.55, 0, 1));
+      lookTarget.copy(TARGET_START).lerp(TARGET_END, Math.min(j / 0.45, 1) * (1 - k)).lerp(focusTarget, k);
+    } else {
+      lookTarget.copy(TARGET_START).lerp(TARGET_END, j);
+    }
 
     const cosPitch = Math.cos(pitch);
     cameraOffset.set(cosPitch * Math.cos(yaw), cosPitch * Math.sin(yaw), Math.sin(pitch));
@@ -823,6 +875,11 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
     applyMarkers(p);
     applyPlates(p);
+    if (endFocus) {
+      const open = smoother(clamp((p - 0.82) / 0.16, 0, 1));
+      focusRingMaterial.opacity = open * 0.8;
+      for (const { ring, r } of focusRings) ring.scale.setScalar(r * (0.4 + 0.6 * open));
+    }
 
     if (post) {
       tintColor.copy(TINT_SPACE).lerp(TINT_GROUND, j);
@@ -1028,6 +1085,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       frame = 0;
       terrain.land.dispose();
       terrain.borders.dispose();
+      focusRingGeometry.dispose();
+      focusRingMaterial.dispose();
       gridGeometry.dispose();
       seaGeometry.dispose();
       seaMaterial.dispose();

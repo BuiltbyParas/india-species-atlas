@@ -16,7 +16,13 @@ const MIN_LNG = 68;
 const MAX_LNG = 97.5;
 const MIN_LAT = 6.5;
 const MAX_LAT = 37.2;
-const LNG_SCALE = Math.cos((22 * Math.PI) / 180);
+/**
+ * The latitude the longitude axis is corrected at. Shared with the 3D relief
+ * (`utils/geoExtrude.ts`), so the flat maps and the relief draw the country
+ * in exactly the same proportions.
+ */
+export const PROJECTION_LAT = 22;
+const LNG_SCALE = Math.cos((PROJECTION_LAT * Math.PI) / 180);
 
 export const MAP_WIDTH = 1000;
 const K = MAP_WIDTH / ((MAX_LNG - MIN_LNG) * LNG_SCALE);

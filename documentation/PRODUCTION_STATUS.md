@@ -8,8 +8,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 1 — Foundation polish | **Done** (8 Oct 2026) | tag `atlas/premium-gate-1-foundation` |
 | 2 — Geographic line system | **Done** (8 Oct 2026) | tag `atlas/premium-gate-2-line-system` |
 | 3 — Species world | **Done** (8 Oct 2026) | tag `atlas/premium-gate-3-species-world` |
-| 4 — Spatial atlas | In progress | |
-| 5 — Atlas explorer | Not started; rivers, forests and protected areas need sourced datasets (see the upgrade plan, §6) | |
+| 4 — Spatial atlas | **Done** (8 Oct 2026) | tag `atlas/premium-gate-4-spatial-atlas` |
+| 5 — Atlas explorer | In progress | |
 | 6 — Cinematic intro | Not started | |
 | 7 — Bustard transition | Not started | |
 | 8 — Final polish | Not started | |
@@ -147,3 +147,35 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 - Unknown ids give "Page not found".
 - The accessibility tree has one `h1`, numbered `h2` chapters, a captioned table with row headers, and labelled `nav`s.
 - The keyboard test from Gate 1 still passes.
+
+## Gate 4 — Spatial atlas
+
+### What changed
+- **The 3D descent now has a destination.**
+  - **Before:** the camera fell from orbit to a generic low pass over the peninsula.
+  - **Now:** it narrows from the whole country to the north-west, then turns and comes down over the first species' anchor locality: Desert National Park, 26°50′N 70°43′E, where the bustard's scene and the route line both begin.
+  - The descent runs India → region → the ground, so the 3D sets up the documentary instead of decorating its opening.
+  - `HeroSceneOptions.endFocus` is generic; the home page passes the first featured species.
+- **A survey mark on the relief.** Two hairline rings open on the ground at the anchor as the camera arrives (progress 0.82–0.98).
+- **A landing caption.** It gives the place, its coordinates, and "The first line starts here, with the Great Indian Bustard". All of it is from the record.
+- **Framing per screen.**
+  - Wide screens come 28% closer at the end, since the copy sits beside the relief.
+  - Phones keep the copy above and the place below, with the rings full and central.
+  - The end pitch is steeper (0.5 rad), so the ground is looked down on rather than out across.
+- **One projection.** The flat maps and the 3D relief corrected longitude at 22° and 22.5° respectively; both now use `PROJECTION_LAT` (22°) from `geo/india.ts`. That is a 0.3% horizontal change to the relief, invisible on screen.
+- **Hardware WebGL for testing.** Headless Chromium can reach the laptop's AMD GPU (`--use-angle=gl-egl`). SwiftShader is so slow that the hero's own frame-rate guard sends it to the flat fallback, which hid the camera from earlier screenshots and inflated earlier TBT figures.
+
+### Performance (real GPU, lab)
+| Page | Profile | LCP before → now | TBT before → now |
+|---|---|---|---|
+| `/` | desktop | 840 → 616 ms | 388 → 423 ms |
+| `/` | phone (4× CPU) | 1624 → 1584 ms | 1996 → 2171 ms |
+| `/species` | desktop | 748 → 800 ms | 215 → 211 ms |
+| `/atlas` | phone | 2300 → 2380 ms | 645 → 581 ms |
+
+- On a 4×-slowed CPU the phone home page's TBT is dominated by building the relief from the boundary file, both before and after.
+- The new shared chunks (`india`, `regions`, `programmes`, `stateCounts`, `react`) are `modulepreload`ed in parallel by the entry. They are a different split of the same bytes, not a waterfall.
+
+### Looks worse, or is still open
+- Nothing visibly worse.
+- The relief build is CPU-heavy on slow phones (above). Candidates for Gate 8: building it in idle slices, or in a worker.

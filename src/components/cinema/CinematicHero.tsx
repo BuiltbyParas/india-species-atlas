@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { SPECIES } from '../../data/species';
+import type { DistributionPoint, Species } from '../../types';
 import { formatDeg, MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
 import { useChapter } from '../../motion/chapters';
 import { useIntroDone } from '../../motion/intro';
@@ -8,6 +9,20 @@ import { HeroStage } from '../home/HeroScrollScene';
 import { RevealText } from './RevealText';
 
 const LOCALITIES = SPECIES.reduce((n, s) => n + s.distributionPoints.length, 0);
+
+/**
+ * The last caption, as the camera comes down over the first species' anchor
+ * locality: the place, its coordinates and who lives there — all from the
+ * record.
+ */
+function landing(species: Species, at: DistributionPoint) {
+  return {
+    a: 0.9,
+    b: 1.2,
+    title: `${at.label.split(',')[0]}.`,
+    body: `${formatDeg(at.lat, 'lat')} ${formatDeg(at.lng, 'lng')}. The first line starts here, with the ${species.commonName}.`,
+  };
+}
 
 /**
  * Captions laid over the camera's descent. Each is visible between two points
@@ -23,14 +38,14 @@ const CAPTIONS = [
     body: 'Every map in this atlas is drawn from one file of state boundaries, so a place sits in the same spot wherever you meet it.',
   },
   {
-    a: 0.44,
-    b: 0.66,
+    a: 0.43,
+    b: 0.63,
     title: `${LOCALITIES} places.`,
     body: `Each light is an indicative locality for one of ${totalSpecies} species — a named reserve or landscape, not the edge of a range. Its colour is the species' IUCN category.`,
   },
   {
-    a: 0.68,
-    b: 0.9,
+    a: 0.66,
+    b: 0.86,
     title: `${conservationRegionCount} regions, ${statesCovered().length} states.`,
     body: 'From the Thar to the Brahmaputra floodplain. The selection was made for spread across the country, not for number.',
   },
@@ -49,21 +64,24 @@ function FlatIndia() {
   );
 }
 
-export function CinematicHero() {
+export function CinematicHero({ focus }: { focus?: Species }) {
   const ref = useRef<HTMLDivElement>(null);
   const ready = useIntroDone();
   const geo = useIndiaGeo();
   useChapter(ref, { index: 1, title: 'The map' });
   const ext = geo?.extent;
+  const anchor = focus?.distributionPoints[0];
+  const captions = anchor ? [...CAPTIONS, landing(focus!, anchor)] : CAPTIONS;
 
   return (
     <div ref={ref} id="atlas-top" data-chapter="1">
       <HeroStage
         withPlates={false}
+        endFocus={anchor ? { lng: anchor.lng, lat: anchor.lat } : undefined}
         flatArt={<FlatIndia />}
         overlay={
           <div className="hero-captions pointer-events-none absolute inset-0" aria-hidden="true">
-            {CAPTIONS.map((c) => (
+            {captions.map((c) => (
               <div
                 key={c.title}
                 className="hero-caption"
