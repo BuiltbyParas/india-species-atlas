@@ -10,6 +10,7 @@ import { SpeciesScene } from '../components/cinema/SpeciesScene';
 import { DomeGallery } from '../components/cinema/DomeGallery';
 import { ConservationChapter } from '../components/cinema/ConservationMap';
 import { FinalChapter } from '../components/cinema/FinalChapter';
+import { BustardPrologue } from '../components/cinema/BustardPrologue';
 import { GeoProgress } from '../components/cinema/GeoProgress';
 import { InteractiveStat } from '../components/cinema/InteractiveStat';
 
@@ -44,6 +45,8 @@ export function HomePage() {
           ))}
         </div>
       </ChapterIntro>
+
+      <BustardPrologue species={FEATURED[0]} />
 
       {FEATURED.map((s, i) => (
         <div key={s.id} data-route-stop={i}>

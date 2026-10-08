@@ -11,8 +11,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 4 — Spatial atlas | **Done** (8 Oct 2026) | tag `atlas/premium-gate-4-spatial-atlas` |
 | 5 — Atlas explorer | **Done** (8 Oct 2026); rivers, forests and protected-area polygons deliberately not drawn (no sourced dataset) | tag `atlas/premium-gate-5-explorer` |
 | 6 — Cinematic intro | **Done** (8 Oct 2026) | tag `atlas/premium-gate-6-intro` |
-| 7 — Bustard transition | In progress | |
-| 8 — Final polish | Not started | |
+| 7 — Bustard transition | **Done** (8 Oct 2026) | tag `atlas/premium-gate-7-bustard` |
+| 8 — Final polish | In progress | |
 
 ## Gate 0
 - Audit and baseline: [`PREMIUM_UPGRADE_PLAN.md`](PREMIUM_UPGRADE_PLAN.md).
@@ -246,3 +246,34 @@ The existing loader was evolved into the opening rather than given a second intr
 - Frame-by-frame captures at 0.6–7.2 s on desktop and phone, on real GPU WebGL. No page errors.
 - All Gate 2 line moments re-captured: scene thread, conservation, finale, route progress.
 - The keyboard test passes.
+
+## Gate 7 — The bustard's way in (signature transition)
+
+`components/cinema/BustardPrologue.tsx` is a 320vh pinned prologue before the Great Indian Bustard's scene, which is the first species after the hero's descent ends over Desert National Park.
+
+| Beat | Scroll | What happens |
+|---|---|---|
+| 1 | 0–0.25 | Rajasthan and Gujarat (the states of record) draw in. The anchor locality is ringed with its coordinates. Copy: "Where the line starts", with the habitat note. |
+| 2 | 0.26–0.58 | A transmission line is drawn across the Thar by its nib, pylon by pylon, labelled on the line "Schematic — not a mapped alignment". Copy: the record's own sentence, *"Collision with high-tension power lines crossing the Thar is now the single largest cause of mortality."* |
+| 3 | 0.6–0.8 | The line opens like a shutter into the photograph of the birds on the grassland. The shutter opens from the line's measured position, and the photograph sits exactly where the scene's own photograph does, so the hand-off is seamless. |
+| 4 | 0.82–1 | **Critically Endangered**, in its status colour, with the first action the record lists against the threat: *burying or re-routing power lines and installing bird diverters in priority bustard areas*. |
+
+### Data honesty
+- **The line is schematic.**
+  - It is straight, with evenly spaced pylons, labelled as schematic on the drawing, and explained in the copy: the dataset records the threat for the species, not the route of any line.
+  - It starts just inside Rajasthan's western border, so it never draws a line across the international boundary.
+- **Everything else is the record's:** the states, the anchor and its coordinates, the threat sentence, the status, the action, and the credited photograph.
+- **Only shown for a species whose record lists power-line collisions.**
+
+### Phone and reduced motion
+- Both get a still, composed version: the heading, the map with the line, the threat sentence and the schematic note, with nothing pinned.
+- On a phone with motion allowed, the still draws itself once as it comes into view: the states, then the line.
+
+### Also fixed
+- `GeoLine`'s reveal mask had the default `userSpaceOnUse` region, which is measured from the origin rather than the viewBox. On a cropped map (this one) it clipped the southern states. The region is now explicit.
+- Labels on a `GeoLine` accept a `dy`.
+
+### Verification
+- Desktop beats captured at seven scroll points on real GPU.
+- Phone (drawing over time) and reduced motion captured.
+- Full regression screenshot pass and keyboard test re-run: no errors.

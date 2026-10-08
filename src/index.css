@@ -2191,7 +2191,77 @@ body {
   background: color-mix(in srgb, var(--color-canvas) 30%, transparent);
 }
 
-/* --- species world (/species/:id) --- */
+/* --- the bustard's way in (signature transition) --- */
+.bustard-prologue.is-still {
+  --p0: 1;
+  --p1: 1;
+  --p2: 0;
+  --p3: 1;
+}
+/* On a phone with motion allowed, the still draws itself once: the states, then the line. */
+.bustard-prologue.is-animated:not(.is-seen) {
+  --p0: 0;
+  --p1: 0;
+}
+.bustard-prologue.is-animated.is-seen {
+  transition:
+    --p0 1.6s var(--ease-cinema),
+    --p1 1.8s cubic-bezier(0.45, 0, 0.55, 1) 1.2s;
+}
+@property --p0 {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --p1 {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+.bp-map {
+  overflow: visible;
+}
+.bp-states {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  --gl-w: 1px;
+}
+.bp-anchor {
+  opacity: clamp(0, (var(--p0) - 0.7) * 4, 1);
+}
+.bp-anchor-dot {
+  fill: var(--color-canvas);
+}
+.bp-anchor-ring {
+  fill: none;
+  stroke: var(--color-canvas);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.7;
+}
+.bp-anchor-label {
+  font-family: var(--font-sans);
+  font-size: 7px;
+  letter-spacing: 0.03em;
+  fill: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+.bp-pylons path {
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 1.2px;
+  vector-effect: non-scaling-stroke;
+  opacity: clamp(0, (var(--p1) - var(--k)) * 14, 1);
+}
+/* The line opens like a shutter into the photograph: from the line, outwards. */
+.bp-shutter {
+  --ly: 50%;
+  clip-path: inset(calc((1 - var(--p2)) * var(--ly)) 0 calc((1 - var(--p2)) * (100% - var(--ly))) 0);
+  visibility: visible;
+}
+.bp-shutter .photo-img {
+  scale: calc(1.12 - var(--p2) * 0.08);
+}
+
+
 .sw-wash {
   position: absolute;
   inset: -10%;

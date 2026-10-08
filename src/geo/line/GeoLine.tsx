@@ -51,7 +51,7 @@ export function GeoLine({
   draw?: string | number;
   /** Nib radius in the SVG's user units; omit for none. */
   nib?: number;
-  label?: { text: string; at?: number; size: number; side?: 'above' | 'below' };
+  label?: { text: string; at?: number; size: number; side?: 'above' | 'below'; dy?: number };
   className?: string;
   style?: CSSProperties;
   pathRef?: Ref<SVGPathElement>;
@@ -77,7 +77,8 @@ export function GeoLine({
         // map, its dash is measured along the path, and a draw of 0.5 is
         // exactly half the line, wherever the nib is.
         <>
-          <mask id={`${id}-m`} maskUnits="userSpaceOnUse">
+          {/* An explicit region: the default is measured from the origin, not the viewBox, and clips cropped maps. */}
+          <mask id={`${id}-m`} maskUnits="userSpaceOnUse" x={-1e4} y={-1e4} width={2e4} height={2e4}>
             <path d={d} pathLength={1} className="gl-reveal" style={reveal ? { strokeWidth: reveal } : undefined} />
           </mask>
           <path ref={pathRef} id={`${id}-p`} d={d} className={cls} mask={`url(#${id}-m)`} />
@@ -87,7 +88,7 @@ export function GeoLine({
         <circle r={nib} className="gl-nib" style={{ offsetPath: `path('${d}')` }} />
       )}
       {label && (
-        <text className="gl-label" style={{ fontSize: label.size }} dy={label.side === 'below' ? label.size * 1.15 : -label.size * 0.55}>
+        <text className="gl-label" style={{ fontSize: label.size }} dy={label.dy ?? (label.side === 'below' ? label.size * 1.15 : -label.size * 0.55)}>
           <textPath href={`#${id}-p`} startOffset={`${(label.at ?? 0.5) * 100}%`} textAnchor="middle">
             {label.text}
           </textPath>
