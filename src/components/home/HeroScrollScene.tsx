@@ -141,6 +141,8 @@ export function HeroStage({
     /** Document offset of the section's top edge. */
     let sectionTop = 0;
     let descended: boolean | null = null;
+    const focusLng = endFocus?.lng;
+    const focusLat = endFocus?.lat;
 
     const measure = () => {
       const rect = section.getBoundingClientRect();
@@ -167,7 +169,7 @@ export function HeroStage({
       const down = p > 0.8;
       if (down !== descended) {
         descended = down;
-        setWorld({ camera: down && endFocus ? camAt(endFocus.lng, endFocus.lat) : INDIA_CAM });
+        setWorld({ camera: down && focusLng !== undefined && focusLat !== undefined ? camAt(focusLng, focusLat) : INDIA_CAM });
       }
       const copy = copyRef.current;
       if (copy) {
