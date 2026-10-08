@@ -72,3 +72,41 @@ The plan proposed showing the flat India on narrow screens so phones would not d
   - the scene steps itself down at runtime and bails to flat if still too slow.
 
 This is revisited in Gate 4 (spatial atlas), where the camera's phone framing is redesigned anyway.
+
+## Final (Gate 8) — baseline → finished, on real GPU WebGL
+
+From Gate 4 on, Chromium could reach the laptop's AMD GPU (`--use-angle=gl-egl`), so the final comparison runs both builds on hardware WebGL. That makes it far more representative than SwiftShader. The method is otherwise unchanged: median of 3 runs; the phone run has 4× CPU slowdown and 9 Mbps / 60 ms.
+
+| Page | Profile | LCP | CLS | TBT |
+|---|---|---|---|---|
+| `/` | desktop | 840 → 836 ms | 0.008 → 0.008 | 388 → 442 ms |
+| `/` | phone | 1624 → 1564 ms | 0.008 → 0.008 | 1996 → 2047 ms |
+| `/atlas` | desktop | 1204 → 1228 ms | 0.049 → **0.000** | 53 → 46 ms |
+| `/atlas` | phone | 2300 → 2240 ms | 0.197 → **0.000** | 645 → 542 ms |
+| `/species` | desktop | 748 → 784 ms | 0.105 → **0.000** | 215 → 199 ms |
+| `/species` | phone | 1412 → 1384 ms | 0.162 → **0.000** | 1338 → 1266 ms |
+| `/conservation` | desktop | 800 → 800 ms | 0.210 → **0.011** | 83 → 66 ms |
+| `/conservation` | phone | 1644 → 1672 ms | 0.223 → **0.001** | 651 → 565 ms |
+
+### Scrolling the whole home page (real GPU, 40 px steps)
+| | p50 | p95 | p99 |
+|---|---|---|---|
+| Baseline, desktop | 16.7 ms | 16.8 ms | 16.8 ms |
+| Finished, desktop | 16.7 ms | 16.8 ms | — (≤ 1% of frames over 20 ms) |
+| Finished, phone | 16.7 ms | 16.8 ms | 33.4 ms |
+
+The finished page holds 60 fps through every section, including the new prologue, the species scenes, the dome and the finale.
+- **An intermediate regression, caught in Gate 8.** The Gate 6 masks dropped the species scenes to 9% slow frames and the finale to 33 ms frames.
+- **The fix.** It was replaced by scale-aware strokes in map units (`geo/line/scale.ts`), which cost almost nothing per frame.
+
+### Payload
+| | Baseline | Finished |
+|---|---|---|
+| Main JS (gzip) | 155.7 kB | 95.4 kB entry + parallel `modulepreload` chunks; same total within ±5 kB |
+| CSS (gzip) | 25.3 kB | 28.9 kB (tokens, line system, species pages, prologue) |
+| Species pages | — | 3.8 kB gzip lazy chunk |
+| Small-slot photographs | 2.68 MB JPG | 0.67 MB WebP |
+
+### Known costs, left on purpose
+- **Building the 3D relief** from the boundary file is the main long task on a slow phone (about 2 s TBT at 4× CPU slowdown), the same as before the upgrade. The next steps would be to build it in idle slices or a worker. Weak devices already get the flat map (`canRender3D`).
+- **The `/species` 3D gallery** still uses the 1400 px JPGs for its card faces, which need them.

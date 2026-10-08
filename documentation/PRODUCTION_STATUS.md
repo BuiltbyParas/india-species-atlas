@@ -12,7 +12,7 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 5 — Atlas explorer | **Done** (8 Oct 2026); rivers, forests and protected-area polygons deliberately not drawn (no sourced dataset) | tag `atlas/premium-gate-5-explorer` |
 | 6 — Cinematic intro | **Done** (8 Oct 2026) | tag `atlas/premium-gate-6-intro` |
 | 7 — Bustard transition | **Done** (8 Oct 2026) | tag `atlas/premium-gate-7-bustard` |
-| 8 — Final polish | In progress | |
+| 8 — Final polish | **Done** (8 Oct 2026) | tag `atlas/premium-gate-8-final-polish` |
 
 ## Gate 0
 - Audit and baseline: [`PREMIUM_UPGRADE_PLAN.md`](PREMIUM_UPGRADE_PLAN.md).
@@ -277,3 +277,60 @@ The existing loader was evolved into the opening rather than given a second intr
 - Desktop beats captured at seven scroll points on real GPU.
 - Phone (drawing over time) and reduced motion captured.
 - Full regression screenshot pass and keyboard test re-run: no errors.
+
+## Gate 8 — Final polish and audit
+
+### Fixes made in this gate
+- **Scroll performance:**
+  - **Problem:** the line system's reveal masks (Gate 6) cost a repaint per line per frame. 9% of species-scene frames and almost every finale frame ran at 33 ms.
+  - **Fix:** drawn lines now stroke in map units, divided by each SVG's measured screen scale (`geo/line/scale.ts`), so plain unit dashes are exact. Only the schematic keeps a mask.
+  - **Result:** the whole home page now scrolls at 16.7 / 16.8 ms (p50/p95) on desktop and phone, the same as the baseline.
+- **The `/species` 3D gallery's card faces** match the editorial system: near-square mounted plates with a hairline status border, a square status tag, and the name in light Newsreader.
+- **The profile panel:** the "Full page" link no longer wraps on phones, and the save and compare controls are 2 px, not pills.
+- **README:** documents the species pages and points to `documentation/`.
+
+### Audit against the quality bar (XIX3D Zeno as a benchmark, not a template)
+| Principle | Finding |
+|---|---|
+| **Visual hierarchy** | Ten named type steps. Every section has one focal element: a title, a map, a photograph or a line. The working pages now have a first and a second rank instead of equal bold boxes. |
+| **Typography** | Light Newsreader for everything that speaks, from the documentary to the working pages, the gallery faces and the species pages. Geist for data. Nothing is set under 11 px, except the pin glyphs, which mirror the map markers. |
+| **Spacing** | Shared gutters, wider sheet gutters, and hairlines instead of boxes. Body copy inside working-page sheets is still 14 px: deliberate for density, and a candidate for 15 px in a future pass. |
+| **Composition** | Wide layouts set the copy and the map in a 5/7 split throughout (scenes, prologue, species pages). On phones the map becomes a band, a still or an inline figure; it is not a shrunk desktop. |
+| **Motion** | Three named curves shared by CSS and GSAP. One orchestrated moment per section. Everything that is scrubbed can be reversed. The line leads. |
+| **Interaction** | A survey-reticle cursor with a seven-word vocabulary; magnetic primary links; hover and focus on every marker, threat row and tab. Keyboard: tabs, dialog trap, skip links. |
+| **Spatial depth** | The 3D descent now has a purpose: it ends on the first species' anchor, with survey rings. The dome and gallery keep their depth. The 2D and 3D maps share one projection. |
+| **Responsiveness** | Checked at 1920, 1440, 1024 and 390 px at every gate, with no horizontal overflow. |
+| **Performance** | CLS on the working pages went from 0.10–0.22 to 0.00–0.01. LCP is within noise. Scrolling holds 60 fps. See `PERFORMANCE.md`. |
+| **Accessibility** | Dialog focus management, WAI-ARIA tabs, landmarks on `/documentary`, a captioned locality table, and status never shown by colour alone (codes in markers, tags and gallery faces). Reduced motion lands every page in its final state. |
+| **Scientific credibility** | No number, range or alignment is invented. Every new mark is labelled: the sheet's centre, the convergence point, the schematic line, the threads, and the "not drawn" layers. |
+| **Consistency** | One line primitive, one cursor, one button, one tag, one sheet, one eyebrow. |
+| **Production value** | The opening, the descent to the Thar, the bustard's way in and the species pages read as one designed piece rather than parts assembled together. |
+
+### Final acceptance test
+- **Does it still feel like the original Atlas?** Yes. It keeps the same chapters, palette, typefaces, relief, scenes, dome, curved loops and finale. Someone who knew the site recognises it at once.
+- **Significantly more premium?** Yes:
+  - an authored opening;
+  - a 3D descent with a destination;
+  - a signature transition;
+  - species pages;
+  - one consistent line language;
+  - editorial working pages.
+- **A distinctive identity?** Yes. It is a toposheet printed at night, drawn by one pen. It does not resemble the benchmark.
+- **Does the line system feel like a signature?** Yes. The same line, with its nib, appears in the opening, the scene threads, the route progress, the bustard's schematic, the species pages' onward leg, the finale and the working map.
+- **Do the species experiences feel special?** The five scenes, the bustard's prologue and twelve species pages, each with its own atmosphere, its uncropped photograph and its locality register.
+- **Is the bustard transition memorable?** Its line opens into the photograph, and the record's own sentence names what kills the birds.
+- **Is the 3D purposeful?** It takes the reader from India to the Thar, where the story begins.
+- **Does mobile feel designed?** Yes:
+  - a recomposed loader;
+  - the map band on species pages;
+  - a still prologue that draws itself;
+  - a three-column phase key;
+  - compact map controls.
+- **Does it load reasonably fast?** LCP is unchanged. Layout shift has gone from the working pages. The main cost is the relief build on slow phones, which pre-dates the upgrade (see `PERFORMANCE.md`).
+- **Does reduced motion still look good?** Yes. Every page lands drawn and composed.
+- **Is the scientific content credible?** Yes. Everything shown is from the dataset, and every device is labelled.
+
+### Verification
+- The full screenshot pass at every viewport and under reduced motion: no errors, no overflow.
+- Keyboard tests pass. GPU vitals and per-section frame timing were measured for both builds.
+- `tsc -b` and `vite build` are clean. Oxlint shows only fast-refresh warnings (dev-only), from components that also export helpers.

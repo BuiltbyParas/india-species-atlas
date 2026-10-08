@@ -29,7 +29,13 @@ They now share one primitive, one vocabulary and one driver.
 
 - **Weights** are in screen pixels at any zoom (`vector-effect: non-scaling-stroke`). Emphasis is `--line-bold` (2.2 px).
 - **Caps and joins** are round.
-- **Drawing** happens through a reveal mask. The visible stroke is non-scaling and undashed. The mask's stroke is in map units, and its unit-`pathLength` dash is offset by `--draw`. Browsers measure a non-scaling stroke's dashes in screen pixels, so drawing the visible stroke directly would go wrong at any zoom other than 1:1 (see Gate 6 in PRODUCTION_STATUS). `still` lines skip the mask, and dash patterns on visible strokes are in screen pixels.
+- **Drawing** is a dash offset along a unit `pathLength`. That measures true only in map units, so a drawn line's stroke is in map units. Its pixel weight is divided by `--gl-k`, the SVG's screen scale, which `geo/line/scale.ts` measures once per SVG on resize, and by `--gl-z` where a map zooms (the species map). The line therefore stays the same width at any size, and `draw: 0.5` is exactly half the line, under its nib.
+- **Still lines** (`still`) are never drawn on. They keep a non-scaling stroke, so their dash patterns are in screen pixels (fragmentation, the route guide).
+- **The schematic role** keeps one reveal mask, because its own dash pattern is visible.
+- **History.**
+  - The first version (Gate 2) dashed non-scaling strokes, which browsers measure in screen pixels, so lines drew at the wrong rate off 1:1.
+  - The Gate 6 fix revealed every line through a mask, which was correct but cost a repaint per line per frame.
+  - Gate 8 replaced it with this.
 - **The nib** is a small mark at the drawing end of a line, shown only while `0 < draw < 1`, so a finished line is just a line. It is placed with CSS `offset-path`, at no JavaScript cost per frame, and it follows single-run paths only.
 - **Labels** set words along the line with `textPath` and fade in once the line is more than half drawn. This is ready for the species world and the bustard transition.
 

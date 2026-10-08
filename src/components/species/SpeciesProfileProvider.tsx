@@ -130,7 +130,7 @@ export function SpeciesProfileProvider({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-1">
                 <Link
                   to={`/species/${species.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-xs px-2.5 py-1.5 text-xs font-medium text-canvas/70 hover:bg-forest-800 hover:text-canvas"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xs px-2.5 py-1.5 text-xs font-medium text-canvas/70 hover:bg-forest-800 hover:text-canvas"
                 >
                   Full page
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

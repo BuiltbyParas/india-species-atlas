@@ -125,12 +125,12 @@ export function SpeciesProfile({ species }: { species: Species }) {
           <p className="italic text-canvas/60">{species.scientificName}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {species.endemicToIndia && (
-              <span className="rounded-full bg-forest-700/70 px-2 py-0.5 text-micro font-medium text-forest-100">
+              <span className="rounded-xs bg-forest-700/70 px-2 py-0.5 text-micro font-medium text-forest-100">
                 Endemic to India
               </span>
             )}
             {species.regions.map((r) => (
-              <span key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-micro text-canvas/70">
+              <span key={r} className="rounded-xs bg-forest-800 px-2 py-0.5 text-micro text-canvas/70">
                 {REGION_LABELS[r]}
               </span>
             ))}
@@ -140,7 +140,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
             <FavouriteButton species={species} withLabel />
             <Link
               to={`/compare?ids=${species.id}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-forest-700 px-2.5 py-1.5 text-xs font-medium text-canvas/65 transition-colors hover:border-forest-500 hover:text-canvas"
+              className="inline-flex items-center gap-1.5 rounded-xs border border-forest-700 px-2.5 py-1.5 text-xs font-medium text-canvas/65 transition-colors hover:border-forest-500 hover:text-canvas"
             >
               <GitCompareArrows className="h-4 w-4" aria-hidden="true" />
               Compare with another species
@@ -254,7 +254,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
             <Block title="Ecological regions">
               <ul className="flex flex-wrap gap-1.5">
                 {species.regions.map((r) => (
-                  <li key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-micro text-canvas/75">
+                  <li key={r} className="rounded-xs bg-forest-800 px-2 py-0.5 text-micro text-canvas/75">
                     {REGION_LABELS[r]}
                   </li>
                 ))}

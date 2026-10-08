@@ -109,6 +109,13 @@ project.
   photograph's credit). Tabs rather than one long column, so the sources sit one
   click from any claim instead of a scroll away; arrow keys move between them.
   Profiles are deep-linkable via `?species=<id>`.
+- **Species pages** (`/species/<id>`) — a page for each species. The opening sets
+  the species beside its uncropped photograph, with its survey facts. Below,
+  the map stays on screen while four chapters pass it and set its layers:
+  where it lives (with a locality register of every indicative locality and
+  its coordinates), what cuts through it, what protects it, and the Red List
+  record with sources. The page ends on a line drawn to the next species'
+  anchor. On a phone the map is held as a band under the header.
 - **Conservation & status page** — the IUCN category ladder explained, the
   "extinction risk ≠ population count" distinction, dependency-free charts
   computed from the dataset, a threats overview, a **timeline** and a programmes
@@ -579,3 +586,12 @@ replacement GeoJSON must expose a `state` property on each feature.
 - Basemap © Esri, Garmin, GEBCO, NOAA NGDC and other contributors (Esri World Ocean Base).
 - State boundary data: community open dataset (see Sources page).
 - Not affiliated with the IUCN or the Government of India.
+
+## Premium upgrade documentation
+
+The 2026 premium upgrade (Gates 0–8) is documented in `documentation/`:
+`PREMIUM_UPGRADE_PLAN.md` (audit and plan), `PREMIUM_DESIGN_SYSTEM.md` (type,
+layers, editorial furniture, cursor, photographs), `PREMIUM_MOTION_SYSTEM.md`
+(the `GeoLine` line system and motion tokens), `PERFORMANCE.md` and
+`PRODUCTION_STATUS.md` (what changed at each gate, with verification).
+

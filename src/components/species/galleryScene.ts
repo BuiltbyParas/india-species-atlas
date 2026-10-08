@@ -54,7 +54,8 @@ export interface Gallery {
 const CARD_W = 1.12;
 const CARD_H = 1.56;
 const CARD_DEPTH = 0.055;
-const CARD_RADIUS = 0.075;
+// Nearly square: a mounted plate, the way the rest of the atlas frames a photograph.
+const CARD_RADIUS = 0.014;
 /** Bevel on the slab's edge. It is what catches the key light as a card turns. */
 const CARD_BEVEL = 0.014;
 
@@ -200,13 +201,15 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   const codeWidth = ctx.measureText(card.statusCode).width;
   const chipW = codeWidth + 62;
   const chipH = 44;
-  ctx.fillStyle = 'rgba(6,15,10,0.66)';
-  path(ctx, chipX, chipY, chipW, chipH, chipH / 2);
+  ctx.fillStyle = 'rgba(6,15,10,0.72)';
+  path(ctx, chipX, chipY, chipW, chipH, 3);
   ctx.fill();
   ctx.strokeStyle = card.statusColor;
-  ctx.lineWidth = 2;
-  path(ctx, chipX + 1, chipY + 1, chipW - 2, chipH - 2, (chipH - 2) / 2);
+  ctx.globalAlpha = 0.6;
+  ctx.lineWidth = 1.5;
+  path(ctx, chipX + 0.75, chipY + 0.75, chipW - 1.5, chipH - 1.5, 3);
   ctx.stroke();
+  ctx.globalAlpha = 1;
   ctx.fillStyle = card.statusColor;
   ctx.beginPath();
   ctx.arc(chipX + 22, chipY + chipH / 2, 7, 0, Math.PI * 2);
@@ -218,12 +221,13 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // under it in italic, exactly as it is set everywhere else on the site.
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#f6f4ec';
-  ctx.font = '600 42px Geist, system-ui, sans-serif';
+  // The name in light Newsreader, as it is set in the documentary.
+  ctx.font = '300 54px Newsreader, Georgia, serif';
   const lines = wrap(ctx, card.commonName, FACE_W - 68);
-  let baseline = FACE_H - 66 - (lines.length - 1) * 50;
+  let baseline = FACE_H - 70 - (lines.length - 1) * 54;
   for (const line of lines) {
     ctx.fillText(line, 34, baseline);
-    baseline += 50;
+    baseline += 54;
   }
   ctx.fillStyle = 'rgba(195,226,211,0.82)';
   ctx.font = 'italic 400 27px Newsreader, Georgia, serif';
@@ -233,9 +237,9 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // A hairline of the status colour around the whole face, which is what makes
   // the card read as a mounted plate rather than a floating photograph.
   ctx.strokeStyle = card.statusColor;
-  ctx.globalAlpha = 0.85;
-  ctx.lineWidth = 6;
-  path(ctx, 3, 3, FACE_W - 6, FACE_H - 6, radius - 3);
+  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 3;
+  path(ctx, 1.5, 1.5, FACE_W - 3, FACE_H - 3, Math.max(radius - 1.5, 0));
   ctx.stroke();
   ctx.globalAlpha = 1;
 

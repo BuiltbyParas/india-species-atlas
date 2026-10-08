@@ -1162,20 +1162,30 @@ body {
 .gl-path {
   fill: none;
   stroke: var(--gl-stroke);
-  stroke-width: var(--gl-w);
+  /* Map units, so the unit dash below is exact; the pixel weight is divided by the SVG's scale (and a zoom, where a map has one). */
+  stroke-width: calc(var(--gl-w) / (var(--gl-k, 1) * var(--gl-z, 1)));
   stroke-opacity: var(--gl-alpha);
   stroke-linecap: round;
   stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--draw));
   transition:
     stroke-width 0.3s var(--ease-out-expo),
     stroke-opacity 0.3s;
 }
-.gl-dashes {
-  /* Screen pixels, deliberately: a schematic's dash is the same at any zoom. */
-  stroke-dasharray: 5 4;
+.gl-path.is-still {
+  /* Never drawn on: a non-scaling stroke, and any dash pattern is in screen pixels. */
+  vector-effect: non-scaling-stroke;
+  stroke-width: var(--gl-w);
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
 }
-/* The reveal: in map units, so its dash follows the path exactly. Butt ends, so nothing shows ahead of the nib. */
+.gl-dashes {
+  /* The same 5/4 px dash at any zoom. */
+  stroke-dasharray: calc(5px / var(--gl-k, 1)) calc(4px / var(--gl-k, 1));
+  stroke-dashoffset: 0;
+}
+/* The schematic's reveal: in map units, so its dash follows the path exactly. Butt ends, so nothing shows ahead of the nib. */
 .gl-reveal {
   fill: none;
   stroke: #fff;
@@ -1586,6 +1596,8 @@ body {
   mask-image: radial-gradient(75% 72% at 50% 50%, #000 62%, transparent 100%);
 }
 .sm-zoom {
+  /* The camera's zoom, for line weights inside (see .gl-path). */
+  --gl-z: calc(1 + var(--zoom) * (var(--zs) - 1));
   transform: translate(calc(var(--zoom) * var(--ztx)), calc(var(--zoom) * var(--zty)))
     scale(calc(1 + var(--zoom) * (var(--zs) - 1)));
   transform-origin: 0 0;
