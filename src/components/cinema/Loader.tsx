@@ -5,6 +5,7 @@ import { markIntroDone, whenFirstFrame } from '../../motion/intro';
 import { prefersReducedMotion } from '../../motion/preferences';
 import { lockScroll } from '../../motion/SmoothScroll';
 import { canRender3D } from '../../utils/canRender3D';
+import { GeoLine } from '../../geo/line/GeoLine';
 
 /**
  * The opening title sequence.
@@ -120,7 +121,10 @@ export function Loader({ onDone }: { onDone: () => void }) {
       aria-valuemax={100}
       aria-valuenow={pct}
     >
-      <div className="loader-rule" aria-hidden="true" />
+      {/* The survey line: the first line the atlas draws, ruled edge to edge. */}
+      <svg className="loader-rule" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true">
+        <GeoLine d="M0 1H100" role="survey" className="loader-rule-line" />
+      </svg>
 
       {ext && (
         <div className="loader-coords" aria-hidden="true">

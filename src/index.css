@@ -44,6 +44,8 @@
   /* The slower, longer curve used for cinematic reveals. */
   --ease-cinema: cubic-bezier(0.7, 0, 0.2, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* GSAP registers the same three curves (motion/gsap.ts), so a scrubbed move
+     and a CSS transition land the same way. */
 
   /* IUCN status colours */
   --color-status-cr: #d64545;
@@ -100,6 +102,12 @@
 */
 :root {
   color-scheme: dark;
+
+  /* Durations: a control answers, a reveal settles, a line is drawn, a scene moves. */
+  --dur-quick: 180ms;
+  --dur-reveal: 900ms;
+  --dur-draw: 1600ms;
+  --dur-cinema: 2400ms;
 
   --z-map-ui: 500; /* Leaflet controls and map captions */
   --z-progress: 900; /* the route-line progress map */
@@ -542,18 +550,22 @@ body {
 .loader-rule {
   position: absolute;
   left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  background: color-mix(in srgb, var(--color-canvas) 35%, transparent);
-  transform-origin: 0 50%;
-  animation:
-    loader-rule 1.3s var(--ease-cinema) both,
-    loader-fade 0.9s ease 1.9s forwards;
+  top: calc(50% - 1px);
+  width: 100%;
+  height: 2px;
+  overflow: visible;
+  animation: loader-fade 0.9s ease 1.9s forwards;
 }
-@keyframes loader-rule {
+.loader-rule-line {
+  animation: gl-draw 1.3s var(--ease-cinema) both;
+}
+/* Draws any GeoLine from nothing; the registered --draw makes this interpolate. */
+@keyframes gl-draw {
   from {
-    transform: scaleX(0);
+    --draw: 0;
+  }
+  to {
+    --draw: 1;
   }
 }
 @keyframes loader-fade {
@@ -1018,6 +1030,100 @@ body {
   background-size: 100% 1px;
 }
 
+/* ==========================================================================
+   The line system — one line, five roles (src/geo/line/GeoLine.tsx)
+   ========================================================================== */
+
+/*
+  How much of a line is drawn. Registered so it can be transitioned as well
+  as scrubbed, and inherited so one value on a map drives every line in it.
+  Unset, a line is fully drawn.
+*/
+@property --draw {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+:root {
+  /* Weights, in screen pixels at any zoom. */
+  --line-hair: 0.75px;
+  --line-fine: 1.1px;
+  --line-firm: 1.5px;
+  --line-bold: 2.2px;
+}
+
+.gl {
+  --gl-stroke: var(--color-canvas);
+  --gl-w: var(--line-fine);
+  --gl-alpha: 1;
+}
+.gl[data-role='survey'] {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 38%, transparent);
+  --gl-w: var(--line-hair);
+}
+.gl[data-role='thread'] {
+  --gl-stroke: var(--color-canvas);
+  --gl-w: var(--line-fine);
+  --gl-alpha: 0.72;
+}
+.gl[data-role='route'] {
+  --gl-stroke: var(--color-contour);
+  --gl-w: var(--line-firm);
+}
+.gl[data-role='protect'] {
+  --gl-stroke: var(--color-river);
+  --gl-w: var(--line-fine);
+}
+.gl[data-role='schematic'] {
+  --gl-stroke: var(--color-contour);
+  --gl-w: var(--line-firm);
+}
+.gl-path {
+  fill: none;
+  stroke: var(--gl-stroke);
+  stroke-width: var(--gl-w);
+  stroke-opacity: var(--gl-alpha);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--draw));
+  transition:
+    stroke-width 0.3s var(--ease-out-expo),
+    stroke-opacity 0.3s;
+}
+.gl-dashes {
+  stroke-dasharray: 5 4;
+  stroke-dashoffset: 0;
+}
+.gl-reveal {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 14px;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--draw));
+}
+/* The pen: visible only while the line is being drawn. */
+.gl-nib {
+  fill: var(--gl-stroke);
+  stroke: var(--color-forest-950);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  offset-distance: calc(var(--draw) * 100%);
+  offset-rotate: 0deg;
+  opacity: calc(clamp(0, var(--draw) * 30, 1) * clamp(0, (1 - var(--draw)) * 30, 1));
+  pointer-events: none;
+}
+.gl-label {
+  fill: color-mix(in srgb, var(--gl-stroke) 85%, var(--color-canvas));
+  font-family: var(--font-sans);
+  letter-spacing: 0.04em;
+  opacity: clamp(0, (var(--draw) - 0.55) * 4, 1);
+  pointer-events: none;
+}
+
 /* --- editorial furniture for the working pages ---
    The documentary's vocabulary, carried onto the map, directory and reference
    pages: a hairline instead of a box, a short rule before a label, small
@@ -1192,7 +1298,9 @@ body {
 .curved-loop-line {
   fill: none;
   stroke: color-mix(in srgb, var(--color-contour) 55%, transparent);
-  stroke-width: 1;
+  /* A survey hairline at every width: it used to scale down with the curve to a quarter-pixel on phones. */
+  stroke-width: var(--line-fine);
+  vector-effect: non-scaling-stroke;
 }
 .curved-loop-text {
   font-family: var(--font-serif);
@@ -1436,23 +1544,13 @@ body {
 .sm-hatch.is-dim {
   opacity: calc(var(--threat) * 0.12);
 }
+/* The protected outline and the thread are GeoLines; these set only their weight here. */
 .sm-protected {
-  fill: none;
-  stroke: var(--color-river);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--cons));
+  --gl-w: var(--line-bold);
   opacity: var(--cons);
 }
 .sm-thread {
-  fill: none;
-  stroke: var(--color-canvas);
-  stroke-width: 1.2;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--range));
-  opacity: calc(0.7 - var(--cons) * 0.2);
+  --gl-alpha: calc(0.72 - var(--cons) * 0.22);
 }
 .sm-point {
   opacity: clamp(0, (var(--range) - var(--k) * 0.6) * 4, 1);
@@ -1744,16 +1842,23 @@ body {
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
+/*
+  The national threads are GeoLines in the thread role, with two departures
+  the chapter needs: each takes its species' status colour, turning
+  water-blue as protection arrives, and under fragmentation the line breaks
+  into dashes — a drawing device for the recorded pressures, stated as one on
+  screen. It fades in with the map rather than drawing, since twelve lines
+  drawing at once would read as noise.
+*/
 .nm-thread {
-  fill: none;
-  stroke: color-mix(in srgb, var(--c) calc((1 - var(--prot)) * 100%), var(--color-river));
-  stroke-width: 1.4;
-  vector-effect: non-scaling-stroke;
+  --gl-stroke: color-mix(in srgb, var(--c) calc((1 - var(--prot)) * 100%), var(--color-river));
+  --gl-w: var(--line-firm);
+  --gl-alpha: calc(var(--draw) * 0.85);
+  transition: opacity 0.3s;
+}
+.nm-thread .gl-path {
   stroke-dasharray: calc(0.08 - var(--frag) * 0.062) calc(var(--frag) * 0.03);
-  opacity: calc(var(--draw) * 0.85);
-  transition:
-    stroke-width 0.3s,
-    opacity 0.3s;
+  stroke-dashoffset: 0;
 }
 .national-map.has-hl .nm-thread,
 .national-map.has-hl .nm-point {
@@ -1761,7 +1866,7 @@ body {
 }
 .national-map.has-hl .nm-thread.is-hl {
   opacity: 1;
-  stroke-width: 2.4;
+  --gl-w: var(--line-bold);
 }
 .national-map.has-hl .nm-point.is-hl {
   opacity: 1;
@@ -1815,24 +1920,23 @@ body {
 }
 
 /* --- final --- */
+/*
+  The finale's lines are GeoLines whose --draw is transitioned rather than
+  scrubbed: the outline first, then each species' line from its anchor, one
+  after another, each with its nib, meeting at the centre.
+*/
 .fm-country {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-canvas) 40%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+  --gl-w: var(--line-fine);
+  --draw: 0;
 }
 .fm-line {
-  fill: none;
-  stroke: var(--color-river);
-  stroke-width: 1.2;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  --gl-w: var(--line-fine);
+  --draw: 0;
 }
 .fm-dot,
-.fm-centre {
+.fm-centre,
+.fm-coord {
   fill: var(--color-canvas);
   opacity: 0;
   transition: opacity 0.8s;
@@ -1841,19 +1945,23 @@ body {
   fill: none;
   stroke: var(--color-river);
 }
+.fm-coord {
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+}
 .final.is-shown .fm-country {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 3.2s var(--ease-cinema);
+  --draw: 1;
+  transition: --draw 3.2s var(--ease-cinema);
 }
 .final.is-shown .fm-line {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 2.2s var(--ease-cinema) calc(1.2s + var(--i) * 0.09s);
+  --draw: 1;
+  transition: --draw 2.2s var(--ease-cinema) calc(1.2s + var(--i) * 0.09s);
 }
 .final.is-shown .fm-dot {
   opacity: 0.9;
   transition-delay: calc(0.8s + var(--i) * 0.09s);
 }
-.final.is-shown .fm-centre {
+.final.is-shown .fm-centre,
+.final.is-shown .fm-coord {
   opacity: 1;
   transition-delay: 3.4s;
 }
@@ -1878,7 +1986,7 @@ body {
 }
 .geo-progress {
   right: 3rem;
-  bottom: 2rem;
+  bottom: 5.25rem;
   width: 110px;
 }
 /* Only alongside the pinned, wide layout it was designed to sit beside. */
@@ -1893,23 +2001,11 @@ body {
   stroke-width: 0.6;
   vector-effect: non-scaling-stroke;
 }
-.gp-leg-base {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-canvas) 12%, transparent);
-  stroke-width: 1;
+/* The dotted guide under each leg: a survey line, the route still to come. */
+.gp-guide .gl-path {
   stroke-dasharray: 0.01 0.02;
-  vector-effect: non-scaling-stroke;
-}
-.gp-leg {
-  fill: none;
-  stroke: var(--color-contour);
-  stroke-width: 1.6;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.gp-leg-return {
-  stroke: var(--color-river);
+  stroke-dashoffset: 0;
+  stroke-opacity: 0.5;
 }
 .gp-stop {
   fill: var(--color-forest-950);
@@ -1921,12 +2017,29 @@ body {
 .gp-stop[data-passed='true'] {
   fill: var(--color-canvas);
 }
+/* The survey readout: chapter, the place the line last reached, its coordinates. */
 .gp-label {
-  margin-top: 0.5rem;
-  text-align: right;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  width: max-content;
+  margin-top: 0.6rem;
   font-size: var(--text-micro);
-  line-height: 1.3;
-  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.gp-chapter {
+  color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+}
+.gp-place {
+  color: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+}
+.gp-coord {
+  color: var(--color-contour);
+  letter-spacing: 0.02em;
 }
 
 /* --- documentary --- */
@@ -2010,13 +2123,16 @@ body {
     opacity: 1 !important;
     filter: none !important;
   }
-  .loader-map path,
-  .final .fm-country,
-  .final .fm-line {
+  .loader-map path {
     stroke-dashoffset: 0 !important;
   }
+  .final .fm-country,
+  .final .fm-line {
+    --draw: 1 !important;
+  }
   .final .fm-dot,
-  .final .fm-centre {
+  .final .fm-centre,
+  .final .fm-coord {
     opacity: 1;
   }
   .hero-meta {

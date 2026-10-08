@@ -3,7 +3,9 @@ import { SPECIES } from '../../data/species';
 import { STATUS_INFO } from '../../data/statusInfo';
 import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMMES } from '../../data/programmes';
-import { formatDeg, MAP_VIEWBOX, project, smoothPath, useIndiaGeo } from '../../geo/india';
+import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { bowedLeg } from '../../geo/line/paths';
 import { conservationRegionCount, statesCovered, threatChartData, totalSpecies } from '../../utils/stats';
 import { SpeciesMap } from '../cinema/SpeciesMap';
 import { NationalMap } from '../cinema/ConservationMap';
@@ -353,11 +355,10 @@ function CloseScene({ u }: { u: number }) {
             <path d={geo?.all ?? ''} className="doc-country is-drawn" />
             {SPECIES.map((s, i) => {
               const a = project(s.distributionPoints[0].lng, s.distributionPoints[0].lat);
-              const mid: [number, number] = [(a[0] + centre[0]) / 2 + (a[1] - centre[1]) * 0.18, (a[1] + centre[1]) / 2 - (a[0] - centre[0]) * 0.18];
               const k = easeInOut(seg(u, 11.5 + i * 0.25, 15 + i * 0.25));
               return (
                 <g key={s.id}>
-                  <path d={smoothPath([a, mid, centre], 0.8)} pathLength={1} fill="none" stroke="var(--color-river)" strokeWidth={1.5} strokeDasharray={1} strokeDashoffset={1 - k} vectorEffect="non-scaling-stroke" />
+                  <GeoLine d={bowedLeg(a, centre, 0.18)} role="protect" draw={k} nib={6} style={{ ['--gl-w' as string]: '1.5px' }} />
                   <circle cx={a[0]} cy={a[1]} r={5} fill={STATUS_INFO[s.status].hex} />
                 </g>
               );

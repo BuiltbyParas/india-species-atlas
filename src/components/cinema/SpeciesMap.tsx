@@ -1,7 +1,9 @@
 import { useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { DistributionPoint, Species, ThreatId } from '../../types';
 import { THREAT_LABELS } from '../../data/threats';
-import { formatDeg, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, smoothPath, useIndiaGeo } from '../../geo/india';
+import { formatDeg, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { chain, threadPath } from '../../geo/line/paths';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 import { programmeSitesFor } from '../map/programmeSites';
 import { cn } from '../../utils/cn';
@@ -40,55 +42,6 @@ const HATCH_ANGLE: Record<ThreatId, number> = {
   'human-wildlife-conflict': 67,
   bycatch: -67,
 };
-
-/**
- * The drawn thread: localities chained nearest-next from the anchor, then cut
- * wherever two consecutive localities are far apart. A line is only drawn
- * between places in the same landscape; two populations a thousand
- * kilometres apart are left unjoined, because a line between them would read
- * as a corridor the data does not record.
- */
-const MAX_JOIN_DEG = 5;
-
-export function threadPath(points: DistributionPoint[]): string {
-  const ordered = chain(points);
-  const runs: DistributionPoint[][] = [];
-  let run: DistributionPoint[] = [];
-  for (const p of ordered) {
-    const last = run[run.length - 1];
-    if (last && Math.hypot(p.lat - last.lat, p.lng - last.lng) > MAX_JOIN_DEG) {
-      runs.push(run);
-      run = [];
-    }
-    run.push(p);
-  }
-  runs.push(run);
-  return runs
-    .filter((r) => r.length > 1)
-    .map((r) => smoothPath(r.map((p) => project(p.lng, p.lat))))
-    .join('');
-}
-
-/** Order localities into a chain that starts at the anchor and takes the nearest next. */
-export function chain(points: DistributionPoint[]): DistributionPoint[] {
-  if (points.length < 3) return points;
-  const rest = points.slice(1);
-  const out = [points[0]];
-  while (rest.length) {
-    const last = out[out.length - 1];
-    let best = 0;
-    let bestD = Infinity;
-    rest.forEach((p, i) => {
-      const d = (p.lat - last.lat) ** 2 + (p.lng - last.lng) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    });
-    out.push(rest.splice(best, 1)[0]);
-  }
-  return out;
-}
 
 export interface SpeciesMapFrame {
   tx: number;
@@ -246,10 +199,10 @@ export function SpeciesMap({
           </g>
 
           {/* The protected outline: the same states, redrawn in water-blue once conservation enters. */}
-          <path d={occurrenceD} pathLength={1} className="sm-protected" />
+          <GeoLine d={occurrenceD} role="protect" draw="var(--cons)" className="sm-protected" />
 
-          {/* The thread through the localities. */}
-          <path d={thread} pathLength={1} className="sm-thread" />
+          {/* The thread through the localities, drawn by its nib as the range comes in. */}
+          <GeoLine d={thread} role="thread" draw="var(--range)" nib={3.6} className="sm-thread" />
 
           {/* Programme sites. */}
           {sites.map((site, i) => {

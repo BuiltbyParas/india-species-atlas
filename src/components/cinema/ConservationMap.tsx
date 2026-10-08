@@ -12,7 +12,8 @@ import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 import { programmeSitesFor, programmeStatesFor } from '../map/programmeSites';
 import { cn } from '../../utils/cn';
 import { RevealText } from './RevealText';
-import { threadPath } from './SpeciesMap';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { threadPath } from '../../geo/line/paths';
 
 /**
  * From fragmentation to protection: all twelve species on one map.
@@ -74,10 +75,10 @@ export function NationalMap({
         <path d={protectedD} className="nm-protected" />
         <g className="nm-threads">
           {threads.map(({ s, d }) => (
-            <path
+            <GeoLine
               key={s.id}
               d={d}
-              pathLength={1}
+              role="thread"
               className={cn('nm-thread', hlThreat && s.majorThreats.includes(hlThreat) && 'is-hl')}
               style={{ ['--c' as string]: STATUS_HEX[s.status] }}
             />
@@ -269,7 +270,7 @@ function StackedConservation() {
   useEffect(() => {
     const vars = phase === 'frag' ? { '--frag': 1, '--prot': 0, '--draw': 1 } : { '--frag': 0, '--prot': 1, '--draw': 1 };
     if (reduced) gsap.set(mapRef.current, vars);
-    else gsap.to(mapRef.current, { ...vars, duration: 1.4, ease: 'power3.inOut' });
+    else gsap.to(mapRef.current, { ...vars, duration: 1.4, ease: 'atlas.cinema' });
   }, [phase, reduced]);
 
   return (

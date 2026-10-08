@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { SPECIES } from '../../data/species';
-import { MAP_VIEWBOX, project, smoothPath, useIndiaGeo } from '../../geo/india';
+import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { bowedLeg } from '../../geo/line/paths';
 import { useChapter } from '../../motion/chapters';
 import { useInView } from '../../motion/useInView';
 import { cn } from '../../utils/cn';
@@ -11,9 +13,13 @@ import { RevealText } from './RevealText';
 /**
  * The return to India. Every species' thread is drawn from its anchor
  * locality towards the middle of the country and the outline closes around
- * them — the lines converge, and the map is what remains on screen.
+ * them — the lines converge, and the map is what remains on screen. The point
+ * they meet is a drawing device, not a place with a claim on it, so it is
+ * labelled with nothing but its coordinates.
  */
-const CENTRE = project(79.0, 22.5);
+const CENTRE_LNG = 79.0;
+const CENTRE_LAT = 22.5;
+const CENTRE = project(CENTRE_LNG, CENTRE_LAT);
 
 export function FinalChapter() {
   const ref = useRef<HTMLElement>(null);
@@ -23,8 +29,7 @@ export function FinalChapter() {
 
   const converge = SPECIES.map((s) => {
     const a = project(s.distributionPoints[0].lng, s.distributionPoints[0].lat);
-    const mid: [number, number] = [(a[0] + CENTRE[0]) / 2 + (a[1] - CENTRE[1]) * 0.18, (a[1] + CENTRE[1]) / 2 - (a[0] - CENTRE[0]) * 0.18];
-    return { id: s.id, d: smoothPath([a, mid, CENTRE], 0.8), a };
+    return { id: s.id, d: bowedLeg(a, CENTRE, 0.18), a };
   });
 
   return (
@@ -54,15 +59,22 @@ export function FinalChapter() {
         </div>
         <div className="relative lg:col-span-5">
           <svg viewBox={MAP_VIEWBOX} className="final-map mx-auto w-full max-w-[34rem]" aria-hidden="true">
-            <path d={geo?.all ?? ''} pathLength={1} className="fm-country" />
+            <GeoLine d={geo?.all ?? ''} role="survey" className="fm-country" />
             {converge.map((c, i) => (
               <g key={c.id} style={{ ['--i' as string]: i }}>
-                <path d={c.d} pathLength={1} className="fm-line" />
+                <GeoLine d={c.d} role="protect" nib={6} className="fm-line" />
                 <circle cx={c.a[0]} cy={c.a[1]} r="5" className="fm-dot" />
               </g>
             ))}
             <circle cx={CENTRE[0]} cy={CENTRE[1]} r="7" className="fm-centre" />
           </svg>
+          <p className="fm-coord mx-auto mt-4 max-w-[34rem] text-right text-micro">
+            Lines from each species&rsquo; anchor locality, meeting at{' '}
+            <span className="tabular-nums text-river">
+              {formatDeg(CENTRE_LAT, 'lat')} {formatDeg(CENTRE_LNG, 'lng')}
+            </span>
+            , a drawing point rather than a place.
+          </p>
         </div>
       </div>
     </section>

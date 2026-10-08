@@ -6,8 +6,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 |---|---|---|
 | 0 — Repository audit | **Done** (8 Oct 2026) | tag `atlas/premium-gate-0-audit` |
 | 1 — Foundation polish | **Done** (8 Oct 2026) | tag `atlas/premium-gate-1-foundation` |
-| 2 — Geographic line system | In progress | |
-| 3 — Species world | Not started | |
+| 2 — Geographic line system | **Done** (8 Oct 2026) | tag `atlas/premium-gate-2-line-system` |
+| 3 — Species world | In progress | |
 | 4 — Spatial atlas | Not started | |
 | 5 — Atlas explorer | Not started; rivers, forests and protected areas need sourced datasets (see the upgrade plan, §6) | |
 | 6 — Cinematic intro | Not started | |
@@ -77,3 +77,32 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
   - the loader on desktop and phone;
   - every working page and the profile dialog.
 - Keyboard test: the dialog trap holds after 60 Tab presses; Escape returns focus to the card that opened it; arrow, Home and End work on both tablists; `/documentary` has `main` and `nav`. No console errors on any route.
+
+## Gate 2 — Geographic line system
+
+### What changed
+- **One line primitive, `GeoLine`.** Five roles (survey, thread, route, protect, schematic), one stroke vocabulary, round caps, and non-scaling weights. Every line joining places on the site is now drawn by it. See [`PREMIUM_MOTION_SYSTEM.md`](PREMIUM_MOTION_SYSTEM.md).
+- **One driver.** `--draw` is a registered CSS property, so the same line can be scrubbed by scroll, transitioned, keyframed or set by the documentary clock.
+- **The nib.** Lines in progress are drawn by a visible pen mark that disappears once the line is complete: the species thread, the route-progress legs and the finale's twelve converging lines.
+- **Geometry moved to `src/geo/line/paths.ts`.** `chain`, `threadRuns`, `threadPath` and `bowedLeg` live there; three duplicated copies of the bow maths are gone. Ready for the species world (Gate 3) and the bustard transition (Gate 7, `schematic` role with mask reveal and labels).
+- **Route progress:** a survey readout gives the last anchor locality reached and its coordinates. The return leg is river blue. The map steps aside when the finale's own map arrives.
+- **Finale:** the convergence point is captioned with its coordinates and stated to be a drawing point rather than a place.
+- **Phones:** the species thread now draws, with its nib, when the map comes into view.
+- **The curved loops' hairline** stays one pixel on phones; it used to fall to about a quarter of a pixel.
+- **Motion tokens:**
+  - GSAP and CSS now share three named easing curves through a small solver instead of the CustomEase plugin (saving 3.5 kB);
+  - four duration tokens.
+
+### Preserved
+- Every line still means what it meant, and is drawn where it was drawn. Threads still break at 5°, and fragmentation is still labelled as a drawing device.
+- Scene timings and scroll choreography are unchanged.
+
+### Looks worse, or is still open
+- Nothing found that reads worse. The finale caption needed a second pass: a coordinate label inside the map collided with the converging lines, so it moved to a caption below.
+- Main JS is +2.1 kB gzip over Gate 1 (the line primitive and helpers).
+
+### Verification
+- `tsc -b`, `vite build` clean.
+- Full screenshot pass (1440, 1920, 1024, 390, reduced motion on desktop and phone): no console errors and no horizontal overflow.
+- Line moments captured mid-draw (nibs), settled, and under reduced motion (fully drawn, no nibs).
+- The keyboard test from Gate 1 re-run: passes.

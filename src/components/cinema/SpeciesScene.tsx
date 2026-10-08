@@ -4,6 +4,7 @@ import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
 import { gsap, ScrollTrigger } from '../../motion/gsap';
 import { scrollToTarget } from '../../motion/SmoothScroll';
+import { useInView } from '../../motion/useInView';
 import { hasFinePointer, prefersReducedMotion, useReducedMotion, useWideLayout } from '../../motion/preferences';
 import { photoSources } from '../../utils/photo';
 import { cn } from '../../utils/cn';
@@ -33,7 +34,7 @@ export const PHASE_VARS: Record<Phase, { range: number; threat: number; cons: nu
 function setVars(el: HTMLElement | null, v: { range: number; threat: number; cons: number; zoom: number }, animate: boolean) {
   if (!el) return;
   const vars = { '--range': v.range, '--threat': v.threat, '--cons': v.cons, '--zoom': v.zoom };
-  if (animate) gsap.to(el, { ...vars, duration: 1.4, ease: 'power3.inOut', overwrite: true });
+  if (animate) gsap.to(el, { ...vars, duration: 1.4, ease: 'atlas.cinema', overwrite: true });
   else gsap.set(el, vars);
 }
 
@@ -352,11 +353,19 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
   const [hlSites, setHlSites] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const mapSeen = useInView(mapRef, { rootMargin: '0px 0px -25% 0px' });
   const { open } = useSpeciesProfile();
 
+  // The map waits, blank but for the country, until it is properly on screen;
+  // then the range comes in and the thread is drawn by its nib, as it is in
+  // the pinned scene. With reduced motion everything is simply there.
   useEffect(() => {
+    if (!mapSeen && !reduced) {
+      setVars(mapRef.current, { range: 0, threat: 0, cons: 0, zoom: 1 }, false);
+      return;
+    }
     setVars(mapRef.current, PHASE_VARS[phase], !reduced);
-  }, [phase, reduced]);
+  }, [phase, reduced, mapSeen]);
 
   return (
     <section className="species-scene relative px-4 py-20 sm:px-8 sm:py-28" aria-labelledby={`scene-${species.id}`}>
