@@ -7,7 +7,7 @@ import { cubicBezier } from '../motion/gsap';
 import { describeRoute } from '../interaction/routeCaption';
 import { GEOJSON_STATE_ALIASES } from '../utils/stateCounts';
 import { photoSources } from '../utils/photo';
-import { camPath, viewBoxOf, type GeoCam } from './geoCamera';
+import { camPath, type GeoCam } from './geoCamera';
 import { atlasLanding, type Journey } from './journeys';
 import { setWorld } from './worldState';
 import './world.css';
@@ -36,10 +36,18 @@ import './world.css';
  * and in reverse to the atlas (PHOTOGRAPH → LINE → POINT → CAMERA → MAP),
  * landing inside the map's own frame.
  *
+ * Rendering: the sheet under the moving camera is a 2D canvas — the country
+ * and the states of record are `Path2D`s in map units, and a frame is one
+ * transform and a few strokes. (An SVG whose viewBox changes every frame is
+ * re-rasterised whole, which cost 30–50 ms a frame at full screen.) The
+ * lifted layers are drawn once, into canvases the size of the states of
+ * record, and from then on only their 3D transforms change, which the
+ * compositor does alone. The 3D scenes are paused while a journey plays
+ * (`sceneRegistry.ts`).
+ *
  * Nothing here runs when the reader prefers reduced motion (the page turn
  * fades instead), and a click or key press during a journey hurries it to its
- * end. All moving parts are transforms, opacity and one SVG viewBox; the 3D
- * scenes are paused while it plays (`sceneRegistry.ts`).
+ * end.
  */
 export interface JourneyHandle {
   play: (journey: Journey, go: () => void, ready: () => Promise<void>) => Promise<void>;
@@ -50,8 +58,10 @@ const outExpo = cubicBezier(0.16, 1, 0.3, 1);
 const emphasis = cubicBezier(0.2, 0.75, 0.25, 1);
 const linear = (t: number) => t;
 
-/** Extruded copies of the states of record. Fewer on small screens, where each layer costs more of the budget. */
+/** Lifted copies of the states of record. Fewer on small screens. */
 const layerCount = () => (window.innerWidth < 700 ? 4 : 6);
+/** Pixel density for the moving sheet: sharp, but never more than twice the CSS pixels. */
+const density = () => Math.min(window.devicePixelRatio || 1, 2);
 
 let speed = 1;
 
@@ -104,7 +114,7 @@ function scaleBar(cam: GeoCam): { px: number; label: string } {
   return { px: km / kmPerPx, label: km >= 1 ? `${Math.round(km).toLocaleString('en-GB')} km` : `${Math.round(km * 1000)} m` };
 }
 
-/** Sample a path so a partial line can be drawn at any viewBox (dashes would not measure true there). */
+/** Sample a path, so a partial line can be drawn at any scale. */
 function sample(d: string, n = 64): Array<[number, number]> {
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', d);
@@ -115,6 +125,34 @@ function sample(d: string, n = 64): Array<[number, number]> {
   });
 }
 
+/** `#rrggbb` (or any CSS colour the page resolves) at an alpha. */
+function alpha(color: string, a: number): string {
+  const c = color.trim();
+  if (/^#[0-9a-f]{6}$/i.test(c)) {
+    const n = parseInt(c.slice(1), 16);
+    return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+  }
+  return c;
+}
+
+interface Ink {
+  canvas: string;
+  contour: string;
+  river: string;
+  ground: string;
+  status: string;
+}
+
+interface Sheet {
+  country: Path2D;
+  record: Path2D | null;
+  /** The states of record's extent, in map units. */
+  recordBox: [number, number, number, number] | null;
+  legPts: Array<[number, number]> | null;
+  origin: [number, number] | null;
+  ink: Ink;
+}
+
 export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
   const [j, setJ] = useState<Journey | null>(null);
   const [geo, setGeo] = useState<IndiaGeo | null>(null);
@@ -122,19 +160,17 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
-  const svgs = useRef<SVGSVGElement[]>([]);
-  const legRef = useRef<SVGPathElement>(null);
-  const nibRef = useRef<SVGCircleElement>(null);
-  const ringsRef = useRef<SVGGElement>(null);
-  const originRef = useRef<SVGGElement>(null);
+  const baseRef = useRef<HTMLCanvasElement>(null);
+  const layerRefs = useRef<HTMLCanvasElement[]>([]);
+  const ringsRef = useRef<HTMLDivElement>(null);
   const readRef = useRef<HTMLParagraphElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
   const barLabelRef = useRef<HTMLSpanElement>(null);
-  const ruleRef = useRef<HTMLDivElement>(null);
   const photoRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const captionRef = useRef<HTMLDivElement>(null);
   const mounted = useRef<(() => void) | null>(null);
+  const camRef = useRef<GeoCam>({ x: 0, y: 0, w: 1 });
+  const sheetRef = useRef<Sheet | null>(null);
 
   useEffect(() => {
     // The boundary file is shared with every map; by the time anyone can
@@ -178,6 +214,8 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
           return;
         }
         if (!geo) setGeo(g);
+        sheetRef.current = prepare(g, journey);
+        layerRefs.current = [];
         setLayers(layerCount());
         await new Promise<void>((r) => {
           mounted.current = r;
@@ -190,25 +228,164 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
         window.removeEventListener('keydown', hurry, { capture: true });
         root.dataset.state = 'idle';
         root.removeAttribute('style');
+        delete root.dataset.closing;
+        sheetRef.current = null;
         setJ(null);
         speed = 1;
       }
     },
   }));
 
-  /* ------------------------------------------------------------- the frames */
+  /* ------------------------------------------------------------- the sheet */
 
-  const camRef = useRef<GeoCam>({ x: 0, y: 0, w: 1 });
+  function prepare(g: IndiaGeo, journey: Journey): Sheet {
+    const css = getComputedStyle(document.documentElement);
+    const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+    const species = journey.species;
+    let record: Path2D | null = null;
+    let recordBox: Sheet['recordBox'] = null;
+    if (species) {
+      const names = new Set(species.states.map((s) => GEOJSON_STATE_ALIASES[s] ?? s));
+      const states = g.states.filter((s) => names.has(s.name));
+      if (states.length) {
+        record = new Path2D(states.map((s) => s.d).join(''));
+        recordBox = states.reduce<[number, number, number, number]>(
+          (b, s) => [Math.min(b[0], s.bounds[0]), Math.min(b[1], s.bounds[1]), Math.max(b[2], s.bounds[2]), Math.max(b[3], s.bounds[3])],
+          [Infinity, Infinity, -Infinity, -Infinity],
+        );
+      }
+    }
+    return {
+      country: new Path2D(g.all),
+      record,
+      recordBox,
+      legPts: journey.leg ? sample(bowedLeg(journey.leg[0], journey.leg[1], 0.2, { max: 160 })) : null,
+      origin: journey.origin ? project(journey.origin.lng, journey.origin.lat) : null,
+      ink: {
+        canvas: v('--color-canvas', '#e8e1cf'),
+        contour: v('--color-contour', '#b07a52'),
+        river: v('--color-river', '#7ea3b5'),
+        ground: v('--color-forest-950', '#0e1411'),
+        status: species ? STATUS_INFO[species.status].hex : v('--color-contour', '#b07a52'),
+      },
+    };
+  }
 
-  function setCam(next: GeoCam) {
+  /** Size a canvas to a CSS box at the sheet's density, and return its context with map units mapped in. */
+  function frame(c: HTMLCanvasElement, cssW: number, cssH: number, cam: GeoCam, offX = 0, offY = 0) {
+    const d = density();
+    const w = Math.round(cssW * d);
+    const h = Math.round(cssH * d);
+    if (c.width !== w || c.height !== h) {
+      c.width = w;
+      c.height = h;
+    }
+    const ctx = c.getContext('2d')!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const k = (W / cam.w) * d;
+    // Screen point of map (x, y): W/2 + (x - cam.x) * W/cam.w, offset by the canvas' own position.
+    ctx.setTransform(k, 0, 0, k, (W / 2 - offX) * d - cam.x * k, (H / 2 - offY) * d - cam.y * k);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    /** A line width in CSS pixels, in map units. */
+    const px = (n: number) => (n * d) / k;
+    return { ctx, px };
+  }
+
+  /** One frame of the moving sheet. */
+  function drawBase(cam: GeoCam, fly: number, legT: number, kind: Journey['kind']) {
+    const c = baseRef.current;
+    const s = sheetRef.current;
+    if (!c || !s) return;
+    const { ctx, px } = frame(c, window.innerWidth, window.innerHeight, cam);
+    const { ink } = s;
+    ctx.strokeStyle = alpha(ink.canvas, 0.34);
+    ctx.lineWidth = px(0.8);
+    ctx.stroke(s.country);
+    if (s.record) {
+      // The states of record warm as the camera arrives over them; on the way out, they cool.
+      const warm = kind === 'ascend' ? 1 - fly : fly;
+      ctx.fillStyle = alpha(ink.status, warm * 0.07);
+      ctx.fill(s.record);
+      ctx.strokeStyle = alpha(ink.status, 0.3 + warm * 0.4);
+      ctx.lineWidth = px(1.1);
+      ctx.stroke(s.record);
+    }
+    if (s.legPts && legT > 0) {
+      const n = Math.max(1, Math.round(legT * (s.legPts.length - 1)));
+      ctx.beginPath();
+      ctx.moveTo(s.legPts[0][0], s.legPts[0][1]);
+      for (let i = 1; i <= n; i++) ctx.lineTo(s.legPts[i][0], s.legPts[i][1]);
+      ctx.strokeStyle = ink.river;
+      ctx.lineWidth = px(1.6);
+      ctx.stroke();
+      if (legT < 1) {
+        const [x, y] = s.legPts[n];
+        ctx.beginPath();
+        ctx.arc(x, y, px(3.5), 0, Math.PI * 2);
+        ctx.fillStyle = ink.contour;
+        ctx.fill();
+      }
+    }
+    if (s.origin) {
+      const a = 1 - fly * 0.7;
+      const [x, y] = s.origin;
+      ctx.beginPath();
+      ctx.arc(x, y, px(4), 0, Math.PI * 2);
+      ctx.fillStyle = alpha(ink.contour, a);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, px(14), 0, Math.PI * 2);
+      ctx.strokeStyle = alpha(ink.contour, a);
+      ctx.lineWidth = px(1);
+      ctx.stroke();
+    }
+  }
+
+  /**
+   * The lifted layers: drawn once, at the camera's final framing, into
+   * canvases cut to the states of record. After this only their transforms move.
+   */
+  function drawLayers(cam: GeoCam) {
+    const s = sheetRef.current;
+    if (!s?.record || !s.recordBox) return;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const k = W / cam.w;
+    const pad = 4;
+    const left = Math.max(-W * 0.25, W / 2 + (s.recordBox[0] - cam.x) * k - pad);
+    const top = Math.max(-H * 0.25, H / 2 + (s.recordBox[1] - cam.y) * k - pad);
+    const right = Math.min(W * 1.25, W / 2 + (s.recordBox[2] - cam.x) * k + pad);
+    const bottom = Math.min(H * 1.25, H / 2 + (s.recordBox[3] - cam.y) * k + pad);
+    const w = Math.max(1, right - left);
+    const h = Math.max(1, bottom - top);
+    const { ink } = s;
+    layerRefs.current.forEach((c, i) => {
+      if (!c) return;
+      Object.assign(c.style, { left: `${left}px`, top: `${top}px`, width: `${w}px`, height: `${h}px` });
+      const { ctx, px } = frame(c, w, h, cam, left, top);
+      const isTop = i === layerRefs.current.length - 1;
+      if (isTop) {
+        ctx.fillStyle = ink.ground;
+        ctx.fill(s.record!);
+        ctx.fillStyle = alpha(ink.status, 0.08);
+        ctx.fill(s.record!);
+        ctx.strokeStyle = alpha(ink.canvas, 0.72);
+        ctx.lineWidth = px(1.1);
+      } else {
+        ctx.strokeStyle = alpha(ink.status, 0.26);
+        ctx.lineWidth = px(0.9);
+      }
+      ctx.stroke(s.record!);
+    });
+  }
+
+  function setCam(next: GeoCam, fly: number, legT: number, kind: Journey['kind']) {
     camRef.current = next;
-    // Marks that stay the same size on screen whatever the camera's scale.
-    const u = next.w / window.innerWidth;
-    nibRef.current?.setAttribute('r', (3.5 * u).toFixed(3));
-    originRef.current?.children[0]?.setAttribute('r', (4 * u).toFixed(3));
-    originRef.current?.children[1]?.setAttribute('r', (14 * u).toFixed(3));
-    const vb = viewBoxOf(next, window.innerWidth / window.innerHeight);
-    for (const s of svgs.current) s?.setAttribute('viewBox', vb);
+    drawBase(next, fly, legT, kind);
     const [lng, lat] = unproject(next.x, next.y);
     if (readRef.current) readRef.current.textContent = `${formatDeg(lat, 'lat')}  ${formatDeg(lng, 'lng')}`;
     const bar = scaleBar(next);
@@ -216,8 +393,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     if (barLabelRef.current && barLabelRef.current.textContent !== bar.label) barLabelRef.current.textContent = bar.label;
   }
 
-  /** Map units for a size in screen pixels at the current camera. */
-  const px = (n: number) => (n * camRef.current.w) / window.innerWidth;
+  /* ------------------------------------------------------------- the frames */
 
   async function run(journey: Journey, navigate: () => void, ready: () => Promise<void>) {
     const root = rootRef.current!;
@@ -228,17 +404,10 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     const wide = W >= 700;
 
     const start = journey.fromBox ? fullscreenOf(journey.from, journey.fromBox) : journey.from;
-    setCam(start);
+    setCam(start, 0, 0, journey.kind);
     view.style.clipPath = insetOf(journey.fromBox, 0);
     root.dataset.state = 'on';
     root.dataset.kind = journey.kind;
-
-    const ring = (r: SVGGElement | null, at: { lng: number; lat: number } | null) => {
-      if (!r || !at) return;
-      const [x, y] = project(at.lng, at.lat);
-      r.setAttribute('transform', `translate(${x} ${y})`);
-    };
-    ring(originRef.current, journey.origin);
 
     if (journey.kind === 'ascend') return ascend(journey, navigate, ready);
 
@@ -254,40 +423,25 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     if (ps) img.src = ps.src;
     const decoded = img.decode().catch(() => undefined);
 
-    // The leg, sampled once; drawn by hand each frame as the camera follows it.
-    const legPts = journey.leg ? sample(bowedLeg(journey.leg[0], journey.leg[1], 0.2, { max: 160 })) : null;
-    const drawLeg = (t: number) => {
-      if (!legPts || !legRef.current) return;
-      const n = Math.max(1, Math.round(t * (legPts.length - 1)));
-      legRef.current.setAttribute('d', `M${legPts.slice(0, n + 1).map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('L')}`);
-      const tip = legPts[n];
-      nibRef.current?.setAttribute('transform', `translate(${tip[0]} ${tip[1]})`);
-    };
-
     // 1. The sheet comes up over the page; the chosen place is ringed.
     await tween(360, (e) => root.style.setProperty('--in', e.toFixed(3)), outExpo);
 
-    // 2. The camera travels. Over the atlas, the view grows out of the map's panel as it goes.
+    // 2. The camera travels, drawing the leg as it follows it. Over the atlas,
+    //    the view grows out of the map's panel as it goes.
     await tween(
       flight,
       (e) => {
-        setCam(path(e));
+        setCam(path(e), e, e, journey.kind);
         if (journey.fromBox) view.style.clipPath = insetOf(journey.fromBox, Math.min(1, e * 2.2));
         root.style.setProperty('--fly', e.toFixed(3));
-        drawLeg(e);
       },
       cinema,
     );
-    setCam(to);
+    setCam(to, 1, 1, journey.kind);
     view.style.clipPath = 'inset(0px)';
 
     // 3. The ground gains depth: the states of record lift, the survey rings rise.
-    const rings = ringsRef.current;
-    if (rings) {
-      const [x, y] = project(species.distributionPoints[0].lng, species.distributionPoints[0].lat);
-      rings.setAttribute('transform', `translate(${x} ${y})`);
-      rings.querySelectorAll('circle').forEach((c, i) => c.setAttribute('r', String(px([5, 26, 54, 92][i] ?? 92))));
-    }
+    drawLayers(to);
     const tilt = wide ? 52 : 44;
     const lift = wide ? 7 : 5;
     await tween(
@@ -311,10 +465,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     const tw = Math.min(W * (wide ? 0.46 : 0.84), H * 0.62 * aspect);
     const th = tw / aspect;
     const photo = photoRef.current!;
-    photo.style.width = `${tw}px`;
-    photo.style.height = `${th}px`;
-    photo.style.left = `${(W - tw) / 2}px`;
-    photo.style.top = `${(H - th) / 2}px`;
+    Object.assign(photo.style, { width: `${tw}px`, height: `${th}px`, left: `${(W - tw) / 2}px`, top: `${(H - th) / 2}px` });
     await Promise.race([decoded, after(500)]);
     await tween(560, (e) => root.style.setProperty('--open', e.toFixed(3)), cinema);
 
@@ -339,6 +490,8 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
       await tween(420, (e) => root.style.setProperty('--out', e.toFixed(3)), outExpo);
     }
     await tween(160, (e) => root.style.setProperty('--gone', e.toFixed(3)), linear);
+    photo.removeAttribute('style');
+    world.removeAttribute('style');
   }
 
   async function ascend(journey: Journey, navigate: () => void, ready: () => Promise<void>) {
@@ -383,7 +536,7 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     await tween(
       flight,
       (e) => {
-        setCam(path(e));
+        setCam(path(e), e, 0, 'ascend');
         view.style.clipPath = insetOf(box, Math.max(0, (e - 0.45) / 0.55));
         root.style.setProperty('--fly', e.toFixed(3));
       },
@@ -393,24 +546,15 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     // Leaflet's own drawing is underneath now; the sheet lifts off it.
     await tween(420, (e) => root.style.setProperty('--out', e.toFixed(3)), outExpo);
     await tween(160, (e) => root.style.setProperty('--gone', e.toFixed(3)), linear);
+    photo.removeAttribute('style');
   }
 
   /* --------------------------------------------------------------- skeleton */
 
   const species = j?.species ?? null;
-  const record = (() => {
-    if (!geo || !species) return '';
-    const names = new Set(species.states.map((s) => GEOJSON_STATE_ALIASES[s] ?? s));
-    return geo.states
-      .filter((s) => names.has(s.name))
-      .map((s) => s.d)
-      .join('');
-  })();
   const caption = j ? describeRoute(j.kind === 'ascend' ? '/atlas' : `/species/${species?.id ?? ''}`) : null;
   const status = species ? STATUS_INFO[species.status] : null;
-  const keep = (i: number) => (node: SVGSVGElement | null) => {
-    if (node) svgs.current[i] = node;
-  };
+  const lifted = Boolean(j && j.kind !== 'ascend' && sheetRef.current?.record);
 
   return (
     <div
@@ -426,41 +570,28 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
           <div ref={viewRef} className="wj-view">
             <div className="wj-persp">
               <div ref={worldRef} className="wj-world">
-                <svg ref={keep(0)} className="wj-map" preserveAspectRatio="none">
-                  <path d={geo.all} className="wj-country" />
-                  {record && <path d={record} className="wj-record" />}
-                  {j.leg && (
-                    <>
-                      <path ref={legRef} className="wj-leg" />
-                      <circle ref={nibRef} className="wj-nib" />
-                    </>
-                  )}
-                  <g ref={originRef} className="wj-origin">
-                    <circle />
-                    <circle className="wj-origin-ring" />
-                  </g>
-                </svg>
-                {record &&
-                  j.kind !== 'ascend' &&
+                <canvas ref={baseRef} className="wj-map" />
+                {lifted &&
                   Array.from({ length: layers }, (_, i) => (
-                    <svg
+                    <canvas
                       key={i}
-                      ref={keep(i + 1)}
-                      className="wj-map wj-layer"
-                      preserveAspectRatio="none"
+                      ref={(node) => {
+                        if (node) layerRefs.current[i] = node;
+                      }}
+                      className="wj-layer"
                       style={{ ['--i' as string]: i + 1 } as CSSProperties}
-                    >
-                      <path d={record} className={i === layers - 1 ? 'wj-top' : 'wj-wall'} />
-                      {i === layers - 1 && (
-                        <g ref={ringsRef} className="wj-rings">
-                          <circle className="wj-anchor" />
-                          <circle />
-                          <circle />
-                          <circle />
-                        </g>
-                      )}
-                    </svg>
+                    />
                   ))}
+                {lifted && (
+                  <div ref={ringsRef} className="wj-rings" style={{ ['--i' as string]: layers + 0.5 } as CSSProperties}>
+                    <svg viewBox="-110 -110 220 220">
+                      <circle r="5" />
+                      <circle r="26" />
+                      <circle r="54" />
+                      <circle r="92" />
+                    </svg>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -472,19 +603,17 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
             </p>
           </div>
           {caption && (
-            <div ref={captionRef} className="wj-caption">
+            <div className="wj-caption">
               <span className="wj-eyebrow">{caption.eyebrow}</span>
               <span className="wj-title">{caption.title}</span>
               <span className="wj-note">
                 {caption.note}
                 {status && j.kind !== 'ascend' && <span className="wj-status"> · {status.name}</span>}
               </span>
-              {record && j.kind !== 'ascend' && (
-                <span className="wj-disclaimer">States of record, lifted for legibility — not elevation</span>
-              )}
+              {lifted && <span className="wj-disclaimer">States of record, lifted for legibility — not elevation</span>}
             </div>
           )}
-          <div ref={ruleRef} className="wj-rule">
+          <div className="wj-rule">
             <span />
           </div>
           <div ref={photoRef} className="wj-photo">
@@ -495,7 +624,6 @@ export function WorldJourney({ ref }: { ref?: Ref<JourneyHandle> }) {
     </div>
   );
 }
-
 
 async function waitFor(selector: string, ms: number): Promise<Element | null> {
   const start = performance.now();

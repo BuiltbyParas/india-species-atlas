@@ -36,6 +36,8 @@
 .wj-sheet {
   position: absolute;
   inset: 0;
+  /* Its own layer: the sheet only fades, and must not be re-rastered with the map every frame. */
+  will-change: opacity;
   background-color: var(--color-forest-950);
   background-image:
     linear-gradient(color-mix(in srgb, var(--color-canvas) 3.5%, transparent) 1px, transparent 1px),
@@ -48,6 +50,9 @@
 .wj-view {
   position: absolute;
   inset: 0;
+  /* The sheet beneath takes the pointer; hit-testing into the map's paths on every move is not free. */
+  pointer-events: none;
+  will-change: opacity;
   opacity: calc(var(--in) * (1 - var(--out)));
 }
 .wj-persp {
@@ -67,44 +72,26 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  overflow: visible;
 }
-.wj-map path,
-.wj-map circle {
-  vector-effect: non-scaling-stroke;
-}
+/* The lifted layers are cut to the states of record (positioned by the journey) and only ever move in 3D. */
 .wj-layer {
+  position: absolute;
   transform: translateZ(calc(var(--i) * var(--lift)));
   opacity: var(--depth);
 }
-.wj-country {
-  fill: color-mix(in srgb, var(--color-canvas) 3%, transparent);
-  stroke: color-mix(in srgb, var(--color-canvas) 34%, transparent);
-  stroke-width: 0.8;
-  stroke-linejoin: round;
+.wj-rings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  transform: translateZ(calc(var(--i) * var(--lift)));
 }
-/* The states of record warm as the camera arrives over them, in the species' status colour. */
-.wj-record {
-  fill: color-mix(in srgb, var(--status) calc(var(--fly) * 7%), transparent);
-  stroke: color-mix(in srgb, var(--status) calc(30% + var(--fly) * 40%), transparent);
-  stroke-width: 1.1;
-  stroke-linejoin: round;
-}
-.wj[data-kind='ascend'] .wj-record {
-  fill: color-mix(in srgb, var(--status) calc((1 - var(--fly)) * 5%), transparent);
-  stroke: color-mix(in srgb, var(--status) calc((1 - var(--fly)) * 55%), transparent);
-}
-.wj-wall {
-  fill: none;
-  stroke: color-mix(in srgb, var(--status) 26%, transparent);
-  stroke-width: 0.9;
-  stroke-linejoin: round;
-}
-.wj-top {
-  fill: color-mix(in srgb, var(--status) 7%, var(--color-forest-950));
-  stroke: color-mix(in srgb, var(--color-canvas) 72%, transparent);
-  stroke-width: 1.1;
-  stroke-linejoin: round;
+.wj-rings svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 .wj-rings circle {
   fill: none;
@@ -126,32 +113,10 @@
 .wj-rings circle:nth-child(3) { opacity: clamp(0, calc(var(--depth) * 3 - 1.4), 0.55); transform: scale(clamp(0.6, calc(0.2 + var(--depth) * 0.85), 1)); }
 .wj-rings circle:nth-child(4) { opacity: clamp(0, calc(var(--depth) * 3 - 2), 0.3); transform: scale(clamp(0.6, var(--depth), 1)); }
 
-.wj-leg {
-  fill: none;
-  stroke: var(--color-river);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.wj-nib {
-  fill: var(--color-contour);
-  opacity: calc(1 - var(--depth));
-}
-.wj-origin circle:first-child {
-  fill: var(--color-contour);
-}
-.wj-origin-ring {
-  fill: none;
-  stroke: var(--color-contour);
-  stroke-width: 1;
-}
-.wj-origin {
-  opacity: calc(1 - var(--fly) * 0.7);
-}
-
 /* Survey instruments: where the camera is centred, and at what scale. */
 .wj-instruments {
   position: absolute;
+  will-change: opacity;
   right: var(--gutter);
   bottom: calc(var(--gutter) + 0.25rem);
   display: grid;
@@ -181,6 +146,7 @@
 /* The destination, named on the sheet — every word from the dataset. */
 .wj-caption {
   position: absolute;
+  will-change: opacity, transform;
   left: var(--gutter);
   right: var(--gutter);
   top: clamp(5.5rem, 14vh, 9rem);
