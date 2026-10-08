@@ -98,6 +98,7 @@ export function HeroStage({
   overlay,
   flatArt,
   endFocus,
+  atmosphere,
 }: {
   children: ReactNode;
   /** The silhouette plates. The documentary page introduces species itself, so it turns them off. */
@@ -108,6 +109,8 @@ export function HeroStage({
   flatArt?: ReactNode;
   /** The locality the camera's descent ends over (see `HeroSceneOptions.endFocus`). */
   endFocus?: { lng: number; lat: number };
+  /** The air over the end focus (see `HeroSceneOptions.atmosphere`). */
+  atmosphere?: 'dust' | 'snow';
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -204,6 +207,7 @@ export function HeroStage({
           },
           plates: withPlates ? PLATES : [],
           endFocus,
+          atmosphere,
           // Captions are moved by writing transforms straight onto the nodes,
           // for the same reason the scroll handler avoids React: twelve state
           // updates per animation frame would cost more than the scene does.
@@ -306,7 +310,7 @@ export function HeroStage({
       for (const cleanup of cleanups) cleanup();
       scene?.dispose();
     };
-  }, [withPlates, endFocus?.lng, endFocus?.lat]);
+  }, [withPlates, endFocus?.lng, endFocus?.lat, atmosphere]);
 
   // The flat hero is plain SVG: it is ready as soon as it has painted once.
   useEffect(() => {

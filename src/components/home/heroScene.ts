@@ -73,6 +73,13 @@ export interface HeroSceneOptions {
    */
   endFocus?: { lng: number; lat: number };
   /**
+   * The air over the end focus, from the species' habitat: fine dust over
+   * desert grassland, falling snow over mountains. A few hundred points hung
+   * low over the locality only; they move with the descent (scroll), never on
+   * their own, so the scene still renders only when something changes.
+   */
+  atmosphere?: 'dust' | 'snow';
+  /**
    * Called when the device cannot hold a usable frame rate even after the
    * scene has stepped its own quality all the way down. The caller should
    * unmount the scene and show the flat artwork instead.
@@ -312,7 +319,7 @@ function makeRandom(seed: number) {
 }
 
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, endFocus } = options;
+  const { canvas, geojson, points, plates, onFirstFrame, onTooSlow, onLabels, endFocus, atmosphere } = options;
 
   /* ---------------------------------------------------------------- renderer */
 
@@ -585,6 +592,28 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     return { ring, r };
   });
 
+  /* ------------------------------------------------------ habitat atmosphere */
+  // Only where the descent ends, and only as much as reads at the last frames.
+  const AIR_COUNT = endFocus && atmosphere ? 420 : 0;
+  const airPositions = new Float32Array(AIR_COUNT * 3);
+  const airSizes = new Float32Array(AIR_COUNT);
+  const airAlphas = new Float32Array(AIR_COUNT);
+  for (let i = 0; i < AIR_COUNT; i++) {
+    const a = random() * Math.PI * 2;
+    const r = Math.sqrt(random()) * 0.42;
+    airPositions[i * 3] = focusTarget.x + Math.cos(a) * r;
+    airPositions[i * 3 + 1] = focusTarget.y + Math.sin(a) * r;
+    // Dust hangs near the ground; snow fills the column.
+    const h = atmosphere === 'dust' ? random() ** 2.2 * 0.2 : random() * 0.34;
+    airPositions[i * 3 + 2] = focusTarget.z + 0.004 + h;
+    airSizes[i] = atmosphere === 'dust' ? 1.8 + random() * 2.6 : 1.6 + random() * 2.2;
+    airAlphas[i] = 0.25 + random() * 0.5;
+  }
+  const air = makePointCloud(airPositions, airSizes, airAlphas, atmosphere === 'snow' ? '#eef3f6' : '#d8b98d', dpr);
+  air.points.visible = AIR_COUNT > 0;
+  air.material.uniforms.uOpacity.value = 0;
+  scene.add(air.points);
+
   /* ---------------------------------------------------------------- plates */
 
   const plateCount = plates.length;
@@ -785,6 +814,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     post?.setSize(viewWidth, viewHeight, ratio);
     stars.material.uniforms.uPixelRatio.value = ratio;
     motes.material.uniforms.uPixelRatio.value = ratio;
+    air.material.uniforms.uPixelRatio.value = ratio;
     camera.aspect = viewWidth / viewHeight;
     camera.updateProjectionMatrix();
   }
@@ -879,6 +909,14 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       const open = smoother(clamp((p - 0.82) / 0.16, 0, 1));
       focusRingMaterial.opacity = open * 0.8;
       for (const { ring, r } of focusRings) ring.scale.setScalar(r * (0.4 + 0.6 * open));
+      if (AIR_COUNT) {
+        const k = clamp((p - 0.78) / 0.17, 0, 1);
+        air.material.uniforms.uOpacity.value = smoother(k) * (atmosphere === 'dust' ? 0.6 : 0.7);
+        // Carried a little by the descent itself: dust drifts across, snow settles.
+        const drift = clamp((p - 0.78) / 0.22, 0, 1);
+        if (atmosphere === 'dust') air.points.position.set(drift * 0.07, drift * 0.02, 0);
+        else air.points.position.set(drift * 0.015, 0, -drift * 0.12);
+      }
     }
 
     if (post) {
@@ -1098,6 +1136,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       stars.material.dispose();
       motes.geometry.dispose();
       motes.material.dispose();
+      air.geometry.dispose();
+      air.material.dispose();
       landMaterial.dispose();
       borderMaterial.dispose();
       gridMaterial.dispose();

@@ -64,6 +64,13 @@ function FlatIndia() {
   );
 }
 
+/** The air the descent ends in, from the record's habitats and regions — nothing is added where neither applies. */
+function airOf(s: Species): 'dust' | 'snow' | undefined {
+  if (s.regions.includes('desert')) return 'dust';
+  if (s.habitats.includes('mountain') && s.regions.includes('himalayas')) return 'snow';
+  return undefined;
+}
+
 export function CinematicHero({ focus }: { focus?: Species }) {
   const ref = useRef<HTMLDivElement>(null);
   const ready = useIntroDone();
@@ -78,6 +85,7 @@ export function CinematicHero({ focus }: { focus?: Species }) {
       <HeroStage
         withPlates={false}
         endFocus={anchor ? { lng: anchor.lng, lat: anchor.lat } : undefined}
+        atmosphere={focus ? airOf(focus) : undefined}
         flatArt={<FlatIndia />}
         overlay={
           <div className="hero-captions pointer-events-none absolute inset-0" aria-hidden="true">
