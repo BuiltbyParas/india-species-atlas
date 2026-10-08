@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { prefersReducedMotion } from '../motion/preferences';
 import { emit } from './events';
 import { describeRoute, type Caption } from './routeCaption';
+import { planJourney } from '../world/journeys';
+import { WorldJourney, type JourneyHandle } from '../world/WorldJourney';
+import type { GeoOrigin } from '../world/worldState';
 
 /**
  * Moving between pages as one sheet.
@@ -64,6 +67,14 @@ function linkFrom(e: MouseEvent): HTMLAnchorElement | null {
   return a;
 }
 
+/** A link that stands for a place carries it: `data-geo="lng,lat"`, and what it is in `data-geo-kind`. */
+function originOf(a: HTMLAnchorElement): GeoOrigin | null {
+  const [lng, lat] = (a.dataset.geo ?? '').split(',').map(Number);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+  const kind = a.dataset.geoKind;
+  return { lng, lat, kind: kind === 'marker' || kind === 'card' || kind === 'leg' ? kind : 'link' };
+}
+
 export function RouteTransition() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -75,6 +86,7 @@ export function RouteTransition() {
   const busy = useRef(false);
   const ours = useRef(false);
   const lastPath = useRef(pathname);
+  const journeyRef = useRef<JourneyHandle>(null);
 
   // Intercept plain link clicks that change the path.
   useEffect(() => {
@@ -91,14 +103,38 @@ export function RouteTransition() {
       // A keyboard "click" has no position; draw from the link itself.
       const x = e.detail === 0 || (e.clientX === 0 && e.clientY === 0) ? r.left + r.width / 2 : e.clientX;
       const y = e.detail === 0 || (e.clientX === 0 && e.clientY === 0) ? r.top + r.height / 2 : e.clientY;
-      void run(to, x, y);
+      void run(to, x, y, originOf(a));
     };
 
-    const run = async (to: string, x: number, y: number) => {
+    const run = async (to: string, x: number, y: number, origin: GeoOrigin | null) => {
       busy.current = true;
       ours.current = true;
-      const from = window.location.pathname;
+      const from = (base && window.location.pathname.startsWith(base) ? window.location.pathname.slice(base.length) || '/' : window.location.pathname);
       const calm = prefersReducedMotion();
+      // Between two views of the geography the page change is a journey on
+      // the shared sheet (world/WorldJourney.tsx); elsewhere it is the page turn.
+      const journey = calm ? null : planJourney(from, to, origin);
+      if (journey && journeyRef.current) {
+        emit('navigation:start', { from, to });
+        document.documentElement.classList.add('is-travelling');
+        try {
+          await journeyRef.current.play(
+            journey,
+            () => {
+              document.documentElement.classList.add('is-turning');
+              navigate(to);
+            },
+            async () => {
+              await pageReady();
+              document.documentElement.classList.remove('is-turning');
+            },
+          );
+        } finally {
+          document.documentElement.classList.remove('is-travelling', 'is-turning');
+          busy.current = false;
+        }
+        return;
+      }
       const root = rootRef.current;
       if (root) {
         const vh = window.innerHeight;
@@ -171,6 +207,7 @@ export function RouteTransition() {
           <span className="sheet-note">{caption.note}</span>
         </div>
       </div>
+      <WorldJourney ref={journeyRef} />
       <p ref={announceRef} className="sr-only" aria-live="polite" />
     </>
   );

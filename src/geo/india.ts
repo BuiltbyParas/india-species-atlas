@@ -35,6 +35,19 @@ export function project(lng: number, lat: number): [number, number] {
   return [(lng - MIN_LNG) * LNG_SCALE * K, (MAX_LAT - lat) * K];
 }
 
+/** The inverse of `project`: a sheet point back to [lng, lat]. */
+export function unproject(x: number, y: number): [number, number] {
+  return [MIN_LNG + x / (LNG_SCALE * K), MAX_LAT - y / K];
+}
+
+/**
+ * Kilometres per sheet unit. The projection keeps north–south distances true
+ * (one degree of latitude ≈ 111.32 km) and corrects east–west ones at 22°, so
+ * near that latitude a sheet unit is the same distance in either direction.
+ * It is the scale a survey bar on a sheet view is drawn from.
+ */
+export const KM_PER_UNIT = 111.32 / K;
+
 export interface StatePath {
   name: string;
   d: string;

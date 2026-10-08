@@ -8,6 +8,9 @@ import { loadIndiaGeoJson } from '../../geo/india';
 import { markFirstFrame } from '../../motion/intro';
 import { hasFinePointer } from '../../motion/preferences';
 import type { GeoCollection, HeroPlate, HeroPoint, HeroScene } from './heroScene';
+import { registerScene } from '../../world/sceneRegistry';
+import { setWorld } from '../../world/worldState';
+import { camAt, INDIA_CAM } from '../../world/geoCamera';
 
 /**
  * Scroll progress over which the twelve species are introduced.
@@ -137,6 +140,7 @@ export function HeroStage({
     let runway = 1;
     /** Document offset of the section's top edge. */
     let sectionTop = 0;
+    let descended: boolean | null = null;
 
     const measure = () => {
       const rect = section.getBoundingClientRect();
@@ -158,6 +162,13 @@ export function HeroStage({
       const p = Math.min(1, Math.max(0, (window.scrollY - sectionTop) / runway));
       scene?.setProgress(p);
       stage.style.setProperty('--p', p.toFixed(4));
+      // The world remembers where the descent has brought the reader: over the
+      // first anchor once the camera has come down, the whole country before.
+      const down = p > 0.8;
+      if (down !== descended) {
+        descended = down;
+        setWorld({ camera: down && endFocus ? camAt(endFocus.lng, endFocus.lat) : INDIA_CAM });
+      }
       const copy = copyRef.current;
       if (copy) {
         const fade = 1 - Math.min(1, Math.max(0, (p - COPY_FADE_FROM) / (COPY_FADE_TO - COPY_FADE_FROM)));
@@ -255,16 +266,8 @@ export function HeroStage({
 
         // Pause the render loop whenever the hero is off-screen or the tab is
         // in the background — a static scene costs nothing to leave mounted.
-        let onScreen = true;
-        const sync = () => scene?.setActive(onScreen && !document.hidden);
-        const intersectionObserver = new IntersectionObserver((entries) => {
-          onScreen = entries.some((entry) => entry.isIntersecting);
-          sync();
-        });
-        intersectionObserver.observe(stage);
-        cleanups.push(() => intersectionObserver.disconnect());
-        document.addEventListener('visibilitychange', sync);
-        cleanups.push(() => document.removeEventListener('visibilitychange', sync));
+        // (world/sceneRegistry.ts, which also holds it still while a journey covers the screen.)
+        cleanups.push(registerScene('hero', { setActive: (a) => scene?.setActive(a) }, stage));
 
         if (hasFinePointer()) {
           const onPointerMove = (event: PointerEvent) => {

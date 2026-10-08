@@ -8,8 +8,10 @@ import {
   Polyline,
   Popup,
   TileLayer,
+  Tooltip,
   useMap,
 } from 'react-leaflet';
+import { Link } from 'react-router-dom';
 import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
 import { countSpeciesByState, recordedInDrawnState, densityOpacity, densityStep } from '../../utils/stateCounts';
@@ -18,6 +20,9 @@ import { formatDeg, loadIndiaGeoJson } from '../../geo/india';
 import { threadRuns } from '../../geo/line/paths';
 import { hasFinePointer } from '../../motion/preferences';
 import { STATUS_INFO } from '../../data/statusInfo';
+import { SPECIES } from '../../data/species';
+import { project } from '../../geo/india';
+import { getWorld, setWorld, useWorld } from '../../world/worldState';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
 const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
@@ -52,8 +57,62 @@ function FitIndia() {
     map.invalidateSize();
     const zoom = map.getBoundsZoom(INDIA_BOUNDS, false, L.point(FIT_PADDING));
     map.setMinZoom(Math.min(4, zoom));
-    map.fitBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
+    // Back on the map, the reader is where they left it (world/worldState.ts).
+    const view = getWorld().atlasView;
+    if (view) map.setView([view.lat, view.lng], Math.max(view.zoom, map.getMinZoom()), { animate: false });
+    else map.fitBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
   }, [map]);
+  return null;
+}
+
+/**
+ * The map writes where it is looking into the world, in the sheet's own
+ * units, so the journey to a species starts from this exact framing and a
+ * return to the map lands on it.
+ */
+function WorldSync() {
+  const map = useMap();
+  useEffect(() => {
+    const write = () => {
+      const b = map.getBounds();
+      const [x0, y0] = project(b.getWest(), b.getNorth());
+      const [x1, y1] = project(b.getEast(), b.getSouth());
+      const c = map.getCenter();
+      setWorld({
+        camera: { x: (x0 + x1) / 2, y: (y0 + y1) / 2, w: x1 - x0 },
+        atlasView: { lat: c.lat, lng: c.lng, zoom: map.getZoom() },
+      });
+    };
+    map.on('moveend', write);
+    // The first framing is set before this listens; record it too.
+    map.whenReady(() => requestAnimationFrame(write));
+    return () => {
+      map.off('moveend', write);
+    };
+  }, [map]);
+  return null;
+}
+
+/**
+ * When the filters change, the map breathes to the localities that remain —
+ * a slow fit, never closer than a region — rather than leaving the reader
+ * looking at faded marks. It does not move on first paint, or while a state
+ * is selected (the state is then what the reader is looking at).
+ */
+function Breathe({ points, selectedState }: { points: Array<{ lat: number; lng: number }>; selectedState: string | null }) {
+  const map = useMap();
+  const first = useRef(true);
+  const key = points.map((p) => `${p.lat},${p.lng}`).join('|');
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (selectedState || points.length === 0) return;
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as L.LatLngTuple));
+    map.flyToBounds(bounds.pad(0.35), { maxZoom: 6, duration: 1.2, easeLinearity: 0.2 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
   return null;
 }
 
@@ -147,34 +206,54 @@ export function AtlasMap({
     };
   }, []);
 
-  const points = useMemo<MapPoint[]>(() => {
-    const list: MapPoint[] = [];
-    for (const s of results) {
-      const relevant = selectedState
-        ? recordedInDrawnState(s, selectedState)
-        : true;
-      if (!relevant) continue;
-      for (const p of s.distributionPoints) {
-        list.push({ species: s, lat: p.lat, lng: p.lng, label: p.label, note: p.note });
-      }
+  // Every locality keeps its marker; the filters decide which are in view.
+  // A filtered-out marker fades and shrinks away rather than being removed,
+  // so narrowing the atlas reads as the map changing, not being replaced.
+  const shown = useMemo(
+    () => new Set(results.filter((s) => !selectedState || recordedInDrawnState(s, selectedState)).map((s) => s.id)),
+    [results, selectedState],
+  );
+  const points = useMemo<MapPoint[]>(
+    () =>
+      SPECIES.flatMap((s) =>
+        s.distributionPoints.map((p) => ({ species: s, lat: p.lat, lng: p.lng, label: p.label, note: p.note })),
+      ),
+    [],
+  );
+  const inView = useMemo(() => points.filter((p) => shown.has(p.species.id)), [points, shown]);
+  const visited = useWorld((w) => w.visited);
+  const [hot, setHot] = useState<string | null>(null);
+  const markerEls = useRef(new Map<string, L.Marker>());
+
+  useEffect(() => {
+    for (const [key, marker] of markerEls.current) {
+      const el = marker.getElement();
+      if (!el) continue;
+      const id = key.slice(0, key.lastIndexOf('-'));
+      const out = !shown.has(id);
+      el.classList.toggle('is-out', out);
+      el.classList.toggle('is-surveyed', visited.includes(id));
+      el.classList.toggle('is-kin', hot !== null && hot === id);
+      el.classList.toggle('is-quiet', hot !== null && hot !== id && !out);
+      if (out) el.setAttribute('tabindex', '-1');
+      else el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-hidden', out ? 'true' : 'false');
     }
-    return list;
-  }, [results, selectedState]);
+  }, [shown, visited, hot, mode]);
 
   // The documentary's threads, on the working map: the same chained localities,
   // broken where they are too far apart to join, in each species' status colour.
   const threads = useMemo(
     () =>
-      results
-        .filter((s) => !selectedState || recordedInDrawnState(s, selectedState))
-        .flatMap((s) =>
-          threadRuns(s.distributionPoints).map((run, i) => ({
-            key: `${s.id}-${i}`,
-            color: STATUS_INFO[s.status].hex,
-            positions: run.map((p) => [p.lat, p.lng] as L.LatLngTuple),
-          })),
-        ),
-    [results, selectedState],
+      SPECIES.flatMap((s) =>
+        threadRuns(s.distributionPoints).map((run, i) => ({
+          key: `${s.id}-${i}`,
+          id: s.id,
+          color: STATUS_INFO[s.status].hex,
+          positions: run.map((p) => [p.lat, p.lng] as L.LatLngTuple),
+        })),
+      ),
+    [],
   );
 
   const counts = useMemo(() => countSpeciesByState(results), [results]);
@@ -267,18 +346,43 @@ export function AtlasMap({
               key={t.key}
               positions={t.positions}
               interactive={false}
-              pathOptions={{ color: t.color, weight: 1.4, opacity: 0.75, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={{
+                color: t.color,
+                // A hovered marker's species line activates; the others step back.
+                weight: hot === t.id ? 2.6 : 1.4,
+                opacity: !shown.has(t.id) ? 0 : hot === null ? 0.75 : hot === t.id ? 1 : 0.25,
+                lineCap: 'round',
+                lineJoin: 'round',
+                className: 'atlas-thread',
+              }}
             />
           ))}
 
         {points.map((p, i) => (
           <Marker
             key={`${p.species.id}-${i}`}
+            ref={(m) => {
+              const k = `${p.species.id}-${i}`;
+              if (m) markerEls.current.set(k, m);
+              else markerEls.current.delete(k);
+            }}
             position={[p.lat, p.lng]}
             icon={iconForSpecies(p.species, mode)}
-            eventHandlers={{ keydown: () => undefined }}
+            eventHandlers={{
+              mouseover: () => setHot(p.species.id),
+              mouseout: () => setHot(null),
+            }}
             title={`${p.species.commonName} — ${p.label}`}
           >
+            {/* The preview: the marker names itself and its place before it is opened. */}
+            <Tooltip direction="top" offset={[0, -12]} opacity={1} className="marker-preview">
+              <span className="mp-name">{p.species.commonName}</span>
+              <span className="mp-meta">
+                <span style={{ color: STATUS_INFO[p.species.status].colorVar }}>{p.species.status}</span> ·{' '}
+                {formatDeg(p.lat, 'lat')} {formatDeg(p.lng, 'lng')}
+              </span>
+              <span className="mp-place">{p.label}</span>
+            </Tooltip>
             <Popup>
               <div className="min-w-[200px]">
                 <p className="font-serif text-lg font-normal tracking-tight text-canvas">{p.species.commonName}</p>
@@ -299,12 +403,22 @@ export function AtlasMap({
                     Programmes: {p.species.conservationProgrammes.length}
                   </p>
                 )}
+                {/* The way in: a journey from this marker down to the species' ground. */}
+                <Link
+                  to={`/species/${p.species.id}`}
+                  data-geo={`${p.lng},${p.lat}`}
+                  data-geo-kind="marker"
+                  data-cursor="Enter"
+                  className="mt-2.5 flex w-full items-center justify-between rounded-xs bg-canvas px-2.5 py-1.5 text-xs font-medium text-ink! no-underline hover:bg-parchment"
+                >
+                  Enter its world <span aria-hidden="true">→</span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => open(p.species.id)}
-                  className="mt-2 w-full rounded-xs bg-canvas px-2 py-1.5 text-xs font-medium text-ink hover:bg-parchment"
+                  className="mt-1.5 w-full rounded-xs border border-canvas/25 px-2 py-1.5 text-xs text-canvas/80 hover:border-canvas/60 hover:text-canvas"
                 >
-                  Open full profile
+                  Quick profile
                 </button>
               </div>
             </Popup>
@@ -312,6 +426,8 @@ export function AtlasMap({
         ))}
 
         <FitIndia />
+        <WorldSync />
+        <Breathe points={inView} selectedState={selectedState} />
         <Instruments />
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>

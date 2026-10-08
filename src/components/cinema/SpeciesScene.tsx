@@ -161,10 +161,13 @@ export function Photo({
   imgRef,
   sizes,
   shutter,
+  eager,
 }: {
   species: Species;
   className?: string;
   imgRef?: React.Ref<HTMLImageElement>;
+  /** Load at once rather than lazily (a journey is about to hand its photograph to this one). */
+  eager?: boolean;
   /** Open from a ruled line the first time it comes into view. */
   shutter?: boolean;
   /** The slot's width, so the browser can choose between the WebP and the master. */
@@ -188,7 +191,7 @@ export function Photo({
         width={photo.width}
         height={photo.height}
         alt={species.image.alt}
-        loading="lazy"
+        loading={eager ? 'eager' : 'lazy'}
         decoding="async"
         className="photo-img"
       />

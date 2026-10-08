@@ -9,6 +9,7 @@ import { PhotoCredit } from '../ui/PhotoCredit';
 import { StatusBadge } from '../ui/StatusBadge';
 import { useSpeciesProfile } from './SpeciesProfileProvider';
 import type { Gallery, GalleryCard } from './galleryScene';
+import { registerScene } from '../../world/sceneRegistry';
 
 /**
  * The species gallery: photographic cards mounted in real 3D space.
@@ -117,16 +118,7 @@ export function SpeciesGallery({
           instance.resize(Math.round(rect.width), Math.round(rect.height));
 
           // Idle whenever it is off-screen or the tab is in the background.
-          let onScreen = true;
-          const sync = () => instance.setActive(onScreen && !document.hidden);
-          const visibility = new IntersectionObserver((entries) => {
-            onScreen = entries.some((e) => e.isIntersecting);
-            sync();
-          });
-          visibility.observe(stage);
-          cleanups.push(() => visibility.disconnect());
-          document.addEventListener('visibilitychange', sync);
-          cleanups.push(() => document.removeEventListener('visibilitychange', sync));
+          cleanups.push(registerScene('gallery', instance, stage));
 
           // The ring tips a little as the section travels the viewport, which
           // ties it to the page instead of leaving it floating in a box.

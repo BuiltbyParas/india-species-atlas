@@ -9,6 +9,7 @@ import { ProgrammeShape } from './ProgrammeShape';
 import { programmeSitesFor, programmeStatesFor, type ProgrammeSite } from './programmeSites';
 import type { ConservationScene, SceneSite } from './conservationScene';
 import { loadIndiaGeoJson } from '../../geo/india';
+import { registerScene } from '../../world/sceneRegistry';
 
 /**
  * The opt-in 3D companion to the Conservation map mode.
@@ -127,16 +128,7 @@ export function ConservationView({
         instance.resize(Math.round(rect.width), Math.round(rect.height));
 
         // Idle whenever it is off-screen or the tab is in the background.
-        let onScreen = true;
-        const sync = () => instance.setActive(onScreen && !document.hidden);
-        const visibility = new IntersectionObserver((entries) => {
-          onScreen = entries.some((e) => e.isIntersecting);
-          sync();
-        });
-        visibility.observe(stage);
-        cleanups.push(() => visibility.disconnect());
-        document.addEventListener('visibilitychange', sync);
-        cleanups.push(() => document.removeEventListener('visibilitychange', sync));
+        cleanups.push(registerScene('conservation', instance, stage));
 
         const lost = () => onUnavailable('slow');
         canvas.addEventListener('webglcontextlost', lost);

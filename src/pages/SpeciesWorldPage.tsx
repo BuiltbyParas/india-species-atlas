@@ -19,6 +19,8 @@ import { StatusIndicator } from '../components/cinema/StatusIndicator';
 import { LineTitle } from '../components/cinema/LineTitle';
 import { useParallax } from '../interaction/parallax';
 import { emit } from '../interaction/events';
+import { enterSpecies, takeArrival } from '../world/worldState';
+import { camAt } from '../world/geoCamera';
 import { PhotoCredit } from '../components/ui/PhotoCredit';
 import { NotFoundPage } from './NotFoundPage';
 
@@ -69,7 +71,11 @@ function World({ species }: { species: Species }) {
   const prev = SPECIES[(order - 1 + SPECIES.length) % SPECIES.length];
   const backdrop = photoSources(species)?.small;
 
+  // Delivered by a journey, the photograph is already open: the journey opened it.
+  const [arrived] = useState(() => takeArrival(species.id));
+
   useEffect(() => {
+    enterSpecies(species.id, camAt(anchor.lng, anchor.lat));
     emit('species:enter', { id: species.id });
     return () => emit('species:exit', { id: species.id });
   }, [species.id]);
@@ -157,7 +163,7 @@ function World({ species }: { species: Species }) {
             </dl>
           </div>
           <figure className="lg:col-span-7">
-            <Photo key={species.id} species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" shutter />
+            <Photo key={species.id} species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" shutter={!arrived} eager={arrived} />
             <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
               <span className="text-label text-canvas/45">{species.image.alt}</span>
               <PhotoCredit species={species} />

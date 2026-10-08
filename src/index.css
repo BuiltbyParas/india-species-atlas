@@ -306,6 +306,82 @@ select,
     0 0 0 3px var(--color-canvas),
     0 8px 18px -6px rgb(0 0 0 / 0.8);
 }
+/*
+  Filtering transforms the map rather than replacing it: a marker the filters
+  leave out fades and draws in to its point; one that returns grows back.
+  (The icon element carries Leaflet's own position transform, so only the
+  disc inside it moves.)
+*/
+.leaflet-marker-icon {
+  transition: opacity 0.6s var(--ease-out-expo);
+}
+.leaflet-marker-icon.is-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.leaflet-marker-icon.is-out .species-pin {
+  transform: scale(0.35);
+}
+/* Hovering a marker activates its species: kin markers step forward, the rest back. */
+.leaflet-marker-icon.is-quiet {
+  opacity: 0.4;
+}
+.leaflet-marker-icon.is-kin .species-pin {
+  transform: scale(1.18);
+}
+/* Species already visited this session carry a fine survey ring. */
+.leaflet-marker-icon.is-surveyed .species-pin::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-contour) 80%, transparent);
+}
+.species-pin {
+  position: relative;
+}
+.atlas-thread {
+  transition:
+    stroke-opacity 0.6s var(--ease-out-expo),
+    stroke-width 0.35s var(--ease-out-expo);
+}
+/* The marker's preview: name, status and coordinates, before it is opened. */
+.marker-preview {
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px 7px;
+  background: color-mix(in srgb, var(--color-forest-950) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-canvas) 18%, transparent);
+  border-radius: 2px;
+  color: var(--color-canvas);
+  box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.7);
+  white-space: nowrap;
+}
+.marker-preview::before {
+  display: none;
+}
+.marker-preview .mp-name {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+.marker-preview .mp-meta {
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+.marker-preview .mp-place {
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-marker-icon,
+  .atlas-thread {
+    transition: none;
+  }
+}
 .region-label {
   background: color-mix(in srgb, var(--color-forest-950) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-canvas) 16%, transparent);
