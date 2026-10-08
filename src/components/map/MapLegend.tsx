@@ -1,10 +1,10 @@
 import type { ConservationMode } from '../../types';
 import { statusLegend, threatLegend } from './markerLegends';
 
-export function MapLegend({ mode }: { mode: ConservationMode }) {
+export function MapLegend({ mode, threads = false }: { mode: ConservationMode; threads?: boolean }) {
   return (
-    <div className="rounded-xs border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
-      <p className="mb-2 caps">Legend</p>
+    <div className="sheet text-xs">
+      <p className="mb-3 caps">Legend</p>
 
       {mode === 'species' && (
         <ul className="space-y-1.5">
@@ -22,9 +22,10 @@ export function MapLegend({ mode }: { mode: ConservationMode }) {
               </span>
             </li>
           ))}
-          <li className="pt-1 text-canvas/50">Each pin is an indicative location within a known range.</li>
+          <li className="pt-1 text-canvas/50">Each marker is an indicative locality within a known range.</li>
         </ul>
       )}
+
 
       {mode === 'threats' && (
         <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -63,6 +64,23 @@ export function MapLegend({ mode }: { mode: ConservationMode }) {
           <li className="pt-1 text-canvas/50">Open a profile to see specific programmes and protected areas.</li>
         </ul>
       )}
+
+      {threads && (
+        <p className="mt-3 flex items-start gap-2 text-canvas/60">
+          <svg viewBox="0 0 24 8" className="mt-1 h-2 w-6 shrink-0" aria-hidden="true">
+            <path d="M1 6 C 8 1, 15 7, 23 2" fill="none" stroke="var(--color-canvas)" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <span>
+            Threads join one species&rsquo; localities, in its status colour, and break where they are more than 5°
+            apart. A reading device, not a range or a corridor.
+          </span>
+        </p>
+      )}
+
+      <p className="mt-3 border-t border-canvas/[0.08] pt-3 text-canvas/45">
+        Not drawn: protected-area boundaries, forest cover and transmission lines. The atlas holds no openly licensed,
+        sourced dataset for them yet; programme sites are marked at species&rsquo; anchor localities instead.
+      </p>
     </div>
   );
 }

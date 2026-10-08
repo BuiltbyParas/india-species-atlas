@@ -5,6 +5,7 @@ import {
   GeoJSON,
   MapContainer,
   Marker,
+  Polyline,
   Popup,
   TileLayer,
   useMap,
@@ -13,7 +14,10 @@ import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
 import { countSpeciesByState, recordedInDrawnState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
-import { loadIndiaGeoJson } from '../../geo/india';
+import { formatDeg, loadIndiaGeoJson } from '../../geo/india';
+import { threadRuns } from '../../geo/line/paths';
+import { hasFinePointer } from '../../motion/preferences';
+import { STATUS_INFO } from '../../data/statusInfo';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
 const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
@@ -53,6 +57,43 @@ function FitIndia() {
   return null;
 }
 
+/**
+ * Survey furniture: a metric scale bar, and — on a mouse — the coordinates
+ * under the pointer, written straight into the readout rather than through
+ * React, since it changes on every move.
+ */
+function Instruments() {
+  const map = useMap();
+  const readout = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const scale = L.control.scale({ metric: true, imperial: false, position: 'bottomright', maxWidth: 120 }).addTo(map);
+    const el = readout.current;
+    const fine = hasFinePointer();
+    const onMove = (e: L.LeafletMouseEvent) => {
+      if (el) el.textContent = `${formatDeg(e.latlng.lat, 'lat')}  ${formatDeg(e.latlng.lng, 'lng')}`;
+    };
+    const onOut = () => {
+      if (el) el.textContent = '';
+    };
+    if (fine) {
+      map.on('mousemove', onMove);
+      map.on('mouseout', onOut);
+    }
+    return () => {
+      scale.remove();
+      map.off('mousemove', onMove);
+      map.off('mouseout', onOut);
+    };
+  }, [map]);
+  return (
+    <p
+      ref={readout}
+      aria-hidden="true"
+      className="map-readout pointer-events-none absolute bottom-9 right-2.5 z-(--z-map-ui) empty:hidden"
+    />
+  );
+}
+
 function ResetView({ onReset }: { onReset: () => void }) {
   const map = useMap();
   return (
@@ -62,7 +103,7 @@ function ResetView({ onReset }: { onReset: () => void }) {
         map.flyToBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
         onReset();
       }}
-      className="absolute right-3 top-3 z-(--z-map-ui) inline-flex min-h-11 items-center rounded-xs border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800 sm:min-h-0"
+      className="absolute right-3 top-3 z-(--z-map-ui) inline-flex min-h-11 items-center rounded-xs border border-canvas/20 bg-forest-950/85 px-3 py-1.5 text-xs text-canvas shadow-lg hover:border-canvas/50 sm:min-h-0"
     >
       Reset to India view
     </button>
@@ -75,6 +116,7 @@ export function AtlasMap({
   selectedState,
   onSelectState,
   shadeByCount = false,
+  showThreads = false,
 }: {
   results: Species[];
   mode: ConservationMode;
@@ -82,6 +124,8 @@ export function AtlasMap({
   onSelectState: (state: string | null) => void;
   /** Shade each state by how many of the selected species occur in it. */
   shadeByCount?: boolean;
+  /** Draw each species' thread through its localities. */
+  showThreads?: boolean;
 }) {
   const { open } = useSpeciesProfile();
   const [statesGeo, setStatesGeo] = useState<GeoJsonObject | null>(null);
@@ -116,6 +160,22 @@ export function AtlasMap({
     }
     return list;
   }, [results, selectedState]);
+
+  // The documentary's threads, on the working map: the same chained localities,
+  // broken where they are too far apart to join, in each species' status colour.
+  const threads = useMemo(
+    () =>
+      results
+        .filter((s) => !selectedState || recordedInDrawnState(s, selectedState))
+        .flatMap((s) =>
+          threadRuns(s.distributionPoints).map((run, i) => ({
+            key: `${s.id}-${i}`,
+            color: STATUS_INFO[s.status].hex,
+            positions: run.map((p) => [p.lat, p.lng] as L.LatLngTuple),
+          })),
+        ),
+    [results, selectedState],
+  );
 
   const counts = useMemo(() => countSpeciesByState(results), [results]);
   const maxCount = useMemo(() => Math.max(0, ...counts.values()), [counts]);
@@ -201,6 +261,16 @@ export function AtlasMap({
           />
         )}
 
+        {showThreads &&
+          threads.map((t) => (
+            <Polyline
+              key={t.key}
+              positions={t.positions}
+              interactive={false}
+              pathOptions={{ color: t.color, weight: 1.4, opacity: 0.75, lineCap: 'round', lineJoin: 'round' }}
+            />
+          ))}
+
         {points.map((p, i) => (
           <Marker
             key={`${p.species.id}-${i}`}
@@ -242,10 +312,11 @@ export function AtlasMap({
         ))}
 
         <FitIndia />
+        <Instruments />
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>
 
-      <p className="pointer-events-none absolute bottom-12 left-1 z-(--z-map-ui) max-w-[70%] sm:bottom-1 rounded bg-forest-950/70 px-2 py-1 text-micro leading-tight text-canvas/55">
+      <p className="pointer-events-none absolute bottom-12 left-1 z-(--z-map-ui) max-w-[70%] bg-forest-950/75 px-2 py-1 text-micro leading-tight text-canvas/55 sm:bottom-1">
         Map locations are simplified educational representations and should not be interpreted as exact
         population boundaries.
       </p>

@@ -9,8 +9,8 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 | 2 — Geographic line system | **Done** (8 Oct 2026) | tag `atlas/premium-gate-2-line-system` |
 | 3 — Species world | **Done** (8 Oct 2026) | tag `atlas/premium-gate-3-species-world` |
 | 4 — Spatial atlas | **Done** (8 Oct 2026) | tag `atlas/premium-gate-4-spatial-atlas` |
-| 5 — Atlas explorer | In progress | |
-| 6 — Cinematic intro | Not started | |
+| 5 — Atlas explorer | **Done** (8 Oct 2026); rivers, forests and protected-area polygons deliberately not drawn (no sourced dataset) | tag `atlas/premium-gate-5-explorer` |
+| 6 — Cinematic intro | In progress | |
 | 7 — Bustard transition | Not started | |
 | 8 — Final polish | Not started | |
 
@@ -179,3 +179,39 @@ Branch: `atlas/premium` (worktree `../india-species-atlas-premium`), branched fr
 ### Looks worse, or is still open
 - Nothing visibly worse.
 - The relief build is CPU-heavy on slow phones (above). Candidates for Gate 8: building it in idle slices, or in a worker.
+
+## Gate 5 — Atlas explorer (`/atlas`)
+
+### What changed
+- **Survey markers** replace the bright teardrop pins:
+  - each is a 20 px disc centred exactly on the locality, in the layer's colour;
+  - it has a dark collar and a canvas hairline;
+  - its code stays inside as text (CR/EN/VU, the threat abbreviation, ✦), so colour is never the only signal;
+  - it scales on hover and focus.
+  The legend already used discs; markers and legend now match.
+- **A thread layer.** This is the documentary's line on the working map. It is on by default and can be switched off with the **Threads** toggle.
+  - Each species' localities are joined in its status colour, using the same `threadRuns` geometry, so they break at 5° exactly as on the home page.
+  - The legend states that a thread is a reading device, not a range or a corridor.
+- **Survey instruments:**
+  - a metric scale bar;
+  - on a mouse, a live coordinate readout under the pointer, written straight to the DOM rather than through React.
+- **Editorial voice:**
+  - the page header has an eyebrow and a light serif title;
+  - the toggles are hairline;
+  - the active segment is buff;
+  - legends and the state panel are sheets;
+  - the state tooltip is a 2 px label rather than a pill;
+  - "Reset to India view" is restyled.
+- **Phone:** the explanatory paragraph is hidden and the shading toggle reads "Shade by count", so both toggles share a row and the map starts about 75 px higher.
+
+### Data limits (not fabricated)
+- The legend now says it plainly:
+  - **Not drawn:** protected-area boundaries, forest cover and transmission lines.
+  - **Why:** the atlas holds no openly licensed, sourced dataset for them yet.
+  - **Instead:** programme sites are marked at species' anchor localities.
+- The basemap already shows relief and rivers, so the atlas does not claim to draw those itself.
+- Candidate datasets are listed in the upgrade plan (§6). Adding them is the owner's call: WDPA's licence restricts redistribution.
+
+### Verification
+- Screenshots on desktop (Species and Threats modes, legends) and phone. No page errors.
+- The arrow-key tablist test and the profile dialog test still pass.

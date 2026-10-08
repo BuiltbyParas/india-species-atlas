@@ -15,7 +15,7 @@ export function StatePanel({
   const list = SPECIES.filter((s) => recordedInDrawnState(s, state));
 
   return (
-    <div className="rounded-xs border border-forest-700/70 bg-forest-900 p-4">
+    <div className="sheet">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="flex items-center gap-1.5 caps">

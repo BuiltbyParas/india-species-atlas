@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Boxes, Layers, Map as MapIcon, SlidersHorizontal } from 'lucide-react';
+import { Boxes, Layers, Map as MapIcon, SlidersHorizontal, Spline } from 'lucide-react';
 import type { ConservationMode } from '../types';
 
 const MODES: ConservationMode[] = ['species', 'threats', 'conservation'];
@@ -48,6 +48,9 @@ export function AtlasPage() {
   // it answers "where are these species concentrated?" without taking away
   // the pins that answer "which species, and where exactly?".
   const [shadeByCount, setShadeByCount] = useState(false);
+  // The threads are the documentary's line, carried onto the working map. On
+  // by default: they say "these places belong to one species" at a glance.
+  const [showThreads, setShowThreads] = useState(true);
 
   // The 3D view is a companion to the Conservation mode, never the default:
   // the flat map is what the reader evaluates the data on, and it is what
@@ -73,11 +76,14 @@ export function AtlasPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:py-8">
-      <div className="mb-5">
-        <h1 className="font-serif text-3xl font-light tracking-tight text-canvas sm:text-3xl">Interactive map</h1>
-        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-canvas/65">
-          Pan and zoom the map, click a state to list its species, click a pin to open a profile, and switch
-          between Species, Threats and Conservation views. Use the filters to narrow the selection.
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
+        <div>
+          <p className="eyebrow">The working map</p>
+          <h1 className="mt-3 font-serif text-heading font-light text-canvas">Interactive map</h1>
+        </div>
+        <p className="hidden max-w-xl text-small text-canvas/60 sm:block">
+          Pan and zoom, click a state to list its species, click a marker to open a profile, and switch between
+          Species, Threats and Conservation. The filters narrow every view at once.
         </p>
       </div>
 
@@ -116,7 +122,7 @@ export function AtlasPage() {
                 <div
                   role="group"
                   aria-label="Conservation view"
-                  className="inline-flex rounded-xs border border-forest-700 bg-forest-900 p-1"
+                  className="inline-flex rounded-xs border border-canvas/15 p-1"
                 >
                   <button
                     type="button"
@@ -124,7 +130,7 @@ export function AtlasPage() {
                     onClick={() => setWants3D(false)}
                     className={cn(
                       'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
-                      show3D ? 'text-canvas/65 hover:text-canvas' : 'bg-forest-600 text-white',
+                      show3D ? 'text-canvas/65 hover:text-canvas' : 'bg-canvas text-ink',
                     )}
                   >
                     <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -139,7 +145,7 @@ export function AtlasPage() {
                     }}
                     className={cn(
                       'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
-                      show3D ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
+                      show3D ? 'bg-canvas text-ink' : 'text-canvas/65 hover:text-canvas',
                     )}
                   >
                     <Boxes className="h-3.5 w-3.5" aria-hidden="true" />
@@ -148,15 +154,28 @@ export function AtlasPage() {
                 </div>
               )}
               {!show3D && (
-                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xs border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas sm:min-h-0">
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xs border border-canvas/15 px-2.5 py-1.5 text-xs text-canvas/75 hover:border-canvas/40 hover:text-canvas sm:min-h-0">
+                  <input
+                    type="checkbox"
+                    checked={showThreads}
+                    onChange={(e) => setShowThreads(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-contour)]"
+                  />
+                  <Spline className="h-3.5 w-3.5" aria-hidden="true" />
+                  Threads
+                </label>
+              )}
+              {!show3D && (
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xs border border-canvas/15 px-2.5 py-1.5 text-xs text-canvas/75 hover:border-canvas/40 hover:text-canvas sm:min-h-0">
                   <input
                     type="checkbox"
                     checked={shadeByCount}
                     onChange={(e) => setShadeByCount(e.target.checked)}
-                    className="h-4 w-4 rounded border-forest-600 bg-forest-900 accent-forest-500"
+                    className="h-4 w-4 accent-[var(--color-contour)]"
                   />
                   <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-                  Shade states by species count
+                  <span className="sm:hidden">Shade by count</span>
+                  <span className="hidden sm:inline">Shade states by species count</span>
                 </label>
               )}
               <p className="text-sm text-canvas/60" aria-live="polite">
@@ -185,32 +204,33 @@ export function AtlasPage() {
                   selectedState={selectedState}
                   onSelectState={setSelectedState}
                   shadeByCount={shadeByCount}
+                  showThreads={showThreads}
                 />
               )}
             </Suspense>
           </div>
 
           {mode === 'conservation' && wants3D && unavailable && (
-            <p className="mt-2 rounded-xs border border-dashed border-forest-700/70 bg-forest-900/50 px-3 py-2 text-xs text-canvas/60">
+            <p className="callout mt-3 text-xs text-canvas/60">
               {unavailable === 'unsupported'
                 ? 'The 3D view needs WebGL and is turned off where reduced motion is requested, so the map is shown instead. Everything it would show is in the map and in the species profiles.'
                 : 'The 3D view was running too slowly on this device to be worth the battery, so the map is shown instead.'}
             </p>
           )}
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
             {show3D ? (
               <ProgrammeLegend results={filters.results} />
             ) : shadeByCount ? (
               <StateDensityLegend max={maxStateCount} />
             ) : (
-              <MapLegend mode={mode} />
+              <MapLegend mode={mode} threads={showThreads} />
             )}
             {selectedState ? (
               <StatePanel state={selectedState} onClear={() => setSelectedState(null)} />
             ) : (
-              <div className="rounded-xs border border-dashed border-forest-700/70 bg-forest-900/50 p-4 text-sm text-canvas/55">
-                <p className="font-medium text-canvas/75">No state selected</p>
+              <div className="sheet text-sm text-canvas/55">
+                <p className="text-canvas/80">No state selected</p>
                 <p className="mt-1">
                   Click any state on the map to see which of the atlas&rsquo; species occur there and open their
                   profiles.

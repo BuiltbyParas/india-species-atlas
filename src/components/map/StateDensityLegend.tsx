@@ -5,7 +5,7 @@ export function StateDensityLegend({ max }: { max: number }) {
   const steps = Array.from({ length: DENSITY_STEPS }, (_, i) => i + 1);
 
   return (
-    <div className="rounded-xs border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
+    <div className="sheet text-xs">
       <p className="mb-2 caps">
         Atlas species per state
       </p>

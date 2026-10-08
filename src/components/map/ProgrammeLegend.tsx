@@ -31,7 +31,7 @@ export function ProgrammeLegend({ results }: { results: Species[] }) {
   }, [results]);
 
   return (
-    <div className="rounded-xs border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
+    <div className="sheet text-xs">
       <p className="mb-2 caps">Legend</p>
       {rows.length === 0 ? (
         <p className="text-canvas/55">

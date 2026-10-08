@@ -3,13 +3,19 @@ import type { ConservationMode, Species } from '../../types';
 import { STATUS_INFO } from '../../data/statusInfo';
 import { THREAT_ABBR, THREAT_COLOR } from './markerLegends';
 
-function pin(color: string, text: string, size = 30) {
+/**
+ * A survey marker: a disc centred exactly on the locality, in the layer's
+ * colour, carrying its code as text so the colour is never the only signal.
+ * Centred rather than a teardrop, so the point is where the mark is, as on the
+ * documentary's maps and the legend beside this one.
+ */
+function pin(color: string, text: string, size = 20) {
   return L.divIcon({
     className: '',
-    html: `<div class="species-pin" style="background:${color}"><span>${text}</span></div>`,
+    html: `<div class="species-pin" style="--pin:${color}"><span>${text}</span></div>`,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size + 4],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2 - 2],
   });
 }
 
