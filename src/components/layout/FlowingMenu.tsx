@@ -97,6 +97,8 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
   useEffect(() => {
     if (!open) return;
     const panel = panelRef.current;
+    // Whatever opened the menu (the Menu button) takes focus back when it closes.
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const first = panel?.querySelector<HTMLElement>('a, button');
     const focusTimer = window.setTimeout(() => first?.focus({ preventScroll: true }), 380);
     const onKey = (e: KeyboardEvent) => {
@@ -121,6 +123,10 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener('keydown', onKey);
+      // Closing makes the panel inert, which drops its focus to <body>. A route change moves
+      // focus to the new page itself afterwards, so restoring here never fights it.
+      const lost = document.activeElement === document.body || panel?.contains(document.activeElement);
+      if (lost && opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
