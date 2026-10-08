@@ -13,6 +13,7 @@ import type { ConservationMode, Species } from '../../types';
 import { iconForSpecies } from './markerIcons';
 import { countSpeciesByState, recordedInDrawnState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
+import { loadIndiaGeoJson } from '../../geo/india';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
 const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
@@ -61,7 +62,7 @@ function ResetView({ onReset }: { onReset: () => void }) {
         map.flyToBounds(INDIA_BOUNDS, { padding: FIT_PADDING });
         onReset();
       }}
-      className="absolute right-3 top-3 z-[500] inline-flex min-h-11 items-center rounded-md border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800 sm:min-h-0"
+      className="absolute right-3 top-3 z-(--z-map-ui) inline-flex min-h-11 items-center rounded-xs border border-forest-700 bg-forest-900/90 px-3 py-1.5 text-xs font-medium text-canvas shadow-lg hover:bg-forest-800 sm:min-h-0"
     >
       Reset to India view
     </button>
@@ -88,10 +89,11 @@ export function AtlasMap({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}india-states.geojson`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('geojson unavailable'))))
+    // The same shared request every map on the site uses, so the file is
+    // fetched once per visit rather than once per component.
+    loadIndiaGeoJson()
       .then((data) => {
-        if (!cancelled) setStatesGeo(data);
+        if (!cancelled) setStatesGeo(data as unknown as GeoJsonObject);
       })
       .catch(() => {
         /* Map still works without the boundary layer. */
@@ -209,7 +211,7 @@ export function AtlasMap({
           >
             <Popup>
               <div className="min-w-[200px]">
-                <p className="font-serif text-base font-semibold text-canvas">{p.species.commonName}</p>
+                <p className="font-serif text-lg font-normal tracking-tight text-canvas">{p.species.commonName}</p>
                 <p className="text-xs italic text-canvas/60">{p.species.scientificName}</p>
                 <p className="mt-1 text-xs text-canvas/70">
                   <span className="font-semibold" style={{ color: 'var(--color-forest-300)' }}>
@@ -230,7 +232,7 @@ export function AtlasMap({
                 <button
                   type="button"
                   onClick={() => open(p.species.id)}
-                  className="mt-2 w-full rounded-md bg-forest-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-forest-500"
+                  className="mt-2 w-full rounded-xs bg-canvas px-2 py-1.5 text-xs font-medium text-ink hover:bg-parchment"
                 >
                   Open full profile
                 </button>
@@ -243,7 +245,7 @@ export function AtlasMap({
         <ResetView onReset={() => onSelectState(null)} />
       </MapContainer>
 
-      <p className="pointer-events-none absolute bottom-12 left-1 z-[500] max-w-[70%] sm:bottom-1 rounded bg-forest-950/70 px-2 py-1 text-[10px] leading-tight text-canvas/55">
+      <p className="pointer-events-none absolute bottom-12 left-1 z-(--z-map-ui) max-w-[70%] sm:bottom-1 rounded bg-forest-950/70 px-2 py-1 text-micro leading-tight text-canvas/55">
         Map locations are simplified educational representations and should not be interpreted as exact
         population boundaries.
       </p>

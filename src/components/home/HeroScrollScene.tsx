@@ -5,6 +5,8 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { HeroArt } from './HeroArt';
 import { canRender3D } from '../../utils/canRender3D';
 import { loadIndiaGeoJson } from '../../geo/india';
+import { markFirstFrame } from '../../motion/intro';
+import { hasFinePointer } from '../../motion/preferences';
 import type { GeoCollection, HeroPlate, HeroPoint, HeroScene } from './heroScene';
 
 /**
@@ -180,7 +182,9 @@ export function HeroStage({
           geojson,
           points: POINTS,
           onFirstFrame: () => {
-            if (!cancelled) setVisible(true);
+            if (cancelled) return;
+            setVisible(true);
+            markFirstFrame();
           },
           plates: withPlates ? PLATES : [],
           // Captions are moved by writing transforms straight onto the nodes,
@@ -225,8 +229,20 @@ export function HeroStage({
         setMode('live');
         measure();
 
-        window.addEventListener('scroll', update, { passive: true });
-        cleanups.push(() => window.removeEventListener('scroll', update));
+        // One update per animation frame, however many scroll events arrive.
+        let raf = 0;
+        const onScroll = () => {
+          if (!raf)
+            raf = requestAnimationFrame(() => {
+              raf = 0;
+              update();
+            });
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        cleanups.push(() => {
+          window.removeEventListener('scroll', onScroll);
+          cancelAnimationFrame(raf);
+        });
 
         const resizeObserver = new ResizeObserver(measure);
         resizeObserver.observe(stage);
@@ -246,7 +262,7 @@ export function HeroStage({
         document.addEventListener('visibilitychange', sync);
         cleanups.push(() => document.removeEventListener('visibilitychange', sync));
 
-        if (window.matchMedia('(pointer: fine)').matches) {
+        if (hasFinePointer()) {
           const onPointerMove = (event: PointerEvent) => {
             const rect = stage.getBoundingClientRect();
             scene?.setPointer(
@@ -283,6 +299,13 @@ export function HeroStage({
     };
   }, [withPlates]);
 
+  // The flat hero is plain SVG: it is ready as soon as it has painted once.
+  useEffect(() => {
+    if (mode !== 'flat') return;
+    const id = requestAnimationFrame(() => markFirstFrame());
+    return () => cancelAnimationFrame(id);
+  }, [mode]);
+
   if (mode === 'flat') {
     return (
       <section className="relative overflow-hidden bg-forest-950">
@@ -296,7 +319,7 @@ export function HeroStage({
         ) : (
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
             <div>{children}</div>
-            <div className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-2xl border border-forest-800 bg-forest-900/40 p-2">
+            <div className="relative mx-auto aspect-[200/230] w-full max-w-sm rounded-xs border border-forest-800 bg-forest-900/40 p-2">
               <HeroArt />
             </div>
           </div>
@@ -345,10 +368,10 @@ export function HeroStage({
                 style={{ visibility: 'hidden', opacity: 0 }}
               >
                 <div className="-translate-x-1/2 translate-y-3.5 text-center">
-                  <div className="whitespace-nowrap text-[13px] font-semibold tracking-wide text-canvas drop-shadow-[0_1px_6px_rgba(5,12,8,0.9)]">
+                  <div className="whitespace-nowrap text-small font-semibold tracking-wide text-canvas drop-shadow-[0_1px_6px_rgba(5,12,8,0.9)]">
                     {entry.species.commonName}
                   </div>
-                  <div className="whitespace-nowrap text-[11px] italic text-forest-300 drop-shadow-[0_1px_6px_rgba(5,12,8,0.9)]">
+                  <div className="whitespace-nowrap text-micro italic text-forest-300 drop-shadow-[0_1px_6px_rgba(5,12,8,0.9)]">
                     {entry.species.scientificName}
                   </div>
                   <StatusBadge status={entry.species.status} size="sm" className="mt-1.5 bg-forest-950/70" />
@@ -374,7 +397,7 @@ export function HeroStage({
         {mode === 'live' && withPlates && (
           <p
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-3 right-4 max-w-[13rem] text-right text-[10px] leading-snug text-forest-300/50"
+            className="pointer-events-none absolute bottom-3 right-4 max-w-[13rem] text-right text-micro leading-snug text-forest-300/50"
           >
             Species drawn as schematic silhouettes — outlines, not photographs.
           </p>

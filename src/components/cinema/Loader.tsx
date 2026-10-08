@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SPECIES } from '../../data/species';
 import { formatDeg, loadIndiaGeo, MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
-import { markIntroDone } from '../../motion/intro';
+import { markIntroDone, whenFirstFrame } from '../../motion/intro';
 import { prefersReducedMotion } from '../../motion/preferences';
 import { lockScroll } from '../../motion/SmoothScroll';
 import { canRender3D } from '../../utils/canRender3D';
@@ -15,16 +15,19 @@ import { canRender3D } from '../../utils/canRender3D';
  *
  * The counter is honest: each of the five steps is real work the page needs
  * before the documentary can start — the typefaces, the boundary file, the
- * species records, the 3D relief's code, and the first frame — and a step is
+ * species records, the hero's map (the 3D relief's code, or the flat map
+ * where there is no 3D), and the hero's first painted frame — and a step is
  * only ticked when that work has finished. A minimum running time keeps the
- * sequence from flashing past on a fast connection; nothing is faked beyond
+ * sequence from flashing past on a fast connection, and a ceiling keeps a
+ * slow GPU from holding the visitor on the sheet; nothing is faked beyond
  * that.
  *
- * Shown once per session, on the documentary page only. Reduced motion skips
- * it entirely.
+ * Shown once per session, when a visit starts on the home page. Reduced
+ * motion skips it entirely.
  */
-const STEPS = ['Typefaces', 'State boundaries', 'Species records', 'Relief', 'Sheet ready'] as const;
 const MIN_MS = 2900;
+/** The longest the sequence will wait for the hero's first frame. */
+const FRAME_CEILING_MS = 6000;
 const SEEN_KEY = 'isa-intro-seen';
 
 function alreadySeen(): boolean {
@@ -41,6 +44,13 @@ export function shouldShowLoader(): boolean {
 
 export function Loader({ onDone }: { onDone: () => void }) {
   const geo = useIndiaGeo();
+  const [steps] = useState(() => [
+    'Typefaces',
+    'State boundaries',
+    'Species records',
+    canRender3D() ? 'Relief model' : 'Flat map',
+    'First frame',
+  ]);
   const [step, setStep] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -64,6 +74,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
 
     relief
       .catch(() => undefined)
+      .then(() => Promise.race([whenFirstFrame(), new Promise((r) => setTimeout(r, FRAME_CEILING_MS))]))
       .then(() => new Promise((r) => setTimeout(r, Math.max(0, MIN_MS - (performance.now() - started)))))
       .then(() => {
         if (!live) return;
@@ -96,7 +107,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
     };
   }, [leaving, onDone]);
 
-  const pct = Math.round((step / STEPS.length) * 100);
+  const pct = Math.round((step / steps.length) * 100);
   const ext = geo?.extent;
 
   return (
@@ -127,16 +138,16 @@ export function Loader({ onDone }: { onDone: () => void }) {
       </svg>
 
       <div className="loader-title">
-        <p className="font-serif text-[clamp(1.4rem,2.4vw,2rem)] font-light leading-none text-canvas">
+        <p className="font-serif text-[clamp(1.6rem,2.6vw,2.4rem)] font-light leading-none tracking-tight text-canvas">
           India Species Atlas
         </p>
-        <p className="mt-2 max-w-[22rem] text-[13px] leading-snug text-canvas/50">
+        <p className="mt-3 max-w-[22rem] text-small text-canvas/50">
           {SPECIES.length} threatened species, drawn onto the map of the country they depend on.
         </p>
       </div>
 
       <ol className="loader-steps" aria-hidden="true">
-        {STEPS.map((label, i) => (
+        {steps.map((label, i) => (
           <li key={label} data-state={i < step ? 'done' : i === step ? 'current' : 'todo'}>
             <span className="tabular-nums">{String(i + 1).padStart(2, '0')}</span>
             <span>{label}</span>

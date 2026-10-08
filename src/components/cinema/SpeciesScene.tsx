@@ -4,7 +4,8 @@ import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
 import { gsap, ScrollTrigger } from '../../motion/gsap';
 import { scrollToTarget } from '../../motion/SmoothScroll';
-import { useReducedMotion, useWideLayout } from '../../motion/preferences';
+import { hasFinePointer, prefersReducedMotion, useReducedMotion, useWideLayout } from '../../motion/preferences';
+import { photoSources } from '../../utils/photo';
 import { cn } from '../../utils/cn';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 import { PhotoCredit } from '../ui/PhotoCredit';
@@ -61,10 +62,10 @@ export function SpeciesScene({ species, index, total }: { species: Species; inde
 function Header({ species, index, total, play }: { species: Species; index: number; total: number; play?: boolean }) {
   return (
     <div>
-      <p className="scene-count text-[13px] tabular-nums text-canvas/45">
+      <p className="scene-count text-small tabular-nums text-canvas/45">
         {index + 1} of {total}
       </p>
-      <h3 className="mt-4 font-serif text-[clamp(3rem,5.4vw,6.4rem)] font-light leading-[0.9] tracking-[-0.035em] text-canvas">
+      <h3 className="mt-4 font-serif text-title font-light text-canvas">
         <RevealText text={species.commonName} play={play} stagger={0.08} />
       </h3>
       <p className="mt-4 font-serif text-xl italic text-canvas/65 sm:text-2xl">
@@ -79,7 +80,7 @@ function RangeFacts({ species, play, brief }: { species: Species; play?: boolean
   const states = new Set(species.states.map((s) => GEOJSON_STATE_ALIASES[s] ?? s)).size;
   return (
     <div>
-      <p className="max-w-md font-serif text-[1.18rem] font-light leading-[1.5] text-canvas/90">{species.habitatNote}</p>
+      <p className="max-w-md font-serif text-lede font-light text-canvas/90">{species.habitatNote}</p>
       <div className="mt-6 grid max-w-md grid-cols-3 gap-6">
         <InteractiveStat size="md" value={species.states.length} label="States and UTs" note={states !== species.states.length ? "Ladakh counted with J&K" : "where it is recorded"} play={play} />
         <InteractiveStat size="md" value={species.distributionPoints.length} label="Localities" note="indicative, on the map" play={play} />
@@ -91,7 +92,7 @@ function RangeFacts({ species, play, brief }: { species: Species; play?: boolean
           <p className="mt-1 text-xs text-canvas/45">year of the cited IUCN assessment</p>
         </div>
       </div>
-      <p className="mt-6 max-w-md text-[13px] leading-relaxed text-canvas/55">
+      <p className="mt-6 max-w-md text-small leading-relaxed text-canvas/55">
         {brief ? species.indianDistribution.split(/(?<=\.)\s/)[0] : species.indianDistribution}
       </p>
     </div>
@@ -121,7 +122,7 @@ function ThreatFacts({ species, onHover }: { species: Species; onHover: (t: Thre
           </li>
         ))}
       </ul>
-      <p className="mt-5 max-w-md text-[13px] leading-relaxed text-canvas/60">{species.threatNote}</p>
+      <p className="mt-5 max-w-md text-small leading-relaxed text-canvas/60">{species.threatNote}</p>
     </div>
   );
 }
@@ -131,19 +132,19 @@ function ConservationFacts({ species, onHover }: { species: Species; onHover: (o
     <div onPointerEnter={() => onHover(true)} onPointerLeave={() => onHover(false)}>
       <ul className="max-w-md space-y-2.5">
         {species.conservationActions.map((a) => (
-          <li key={a} className="cons-row text-[14px] leading-snug text-canvas/85">
+          <li key={a} className="cons-row text-sm leading-snug text-canvas/85">
             {a}
           </li>
         ))}
       </ul>
       {species.conservationProgrammes.length > 0 && (
-        <p className="mt-5 max-w-md text-[13px] leading-relaxed text-canvas/55">
+        <p className="mt-5 max-w-md text-small leading-relaxed text-canvas/55">
           Programmes:{' '}
           {species.conservationProgrammes.map((id) => PROGRAMME_BY_ID[id]?.name ?? id).join('; ')}.
         </p>
       )}
       {species.protectedAreas.length > 0 && (
-        <p className="mt-2 max-w-md text-[13px] leading-relaxed text-canvas/55">
+        <p className="mt-2 max-w-md text-small leading-relaxed text-canvas/55">
           Protected areas: {species.protectedAreas.join('; ')}.
         </p>
       )}
@@ -151,12 +152,23 @@ function ConservationFacts({ species, onHover }: { species: Species; onHover: (o
   );
 }
 
-function Photo({ species, className, imgRef }: { species: Species; className?: string; imgRef?: React.Ref<HTMLImageElement> }) {
+function Photo({
+  species,
+  className,
+  imgRef,
+  sizes,
+}: {
+  species: Species;
+  className?: string;
+  imgRef?: React.Ref<HTMLImageElement>;
+  /** The slot's width, so the browser can choose between the WebP and the master. */
+  sizes: string;
+}) {
+  const photo = photoSources(species);
   const frameRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!el || !hasFinePointer() || prefersReducedMotion()) return;
     const onMove = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width - 0.5;
@@ -175,12 +187,16 @@ function Photo({ species, className, imgRef }: { species: Species; className?: s
       el.removeEventListener('pointerleave', onLeave);
     };
   }, []);
-  if (!species.image.src) return null;
+  if (!photo) return null;
   return (
     <div ref={frameRef} className={cn('photo-frame', className)}>
       <img
         ref={imgRef}
-        src={species.image.src}
+        src={photo.src}
+        srcSet={photo.srcSet}
+        sizes={sizes}
+        width={photo.width}
+        height={photo.height}
         alt={species.image.alt}
         loading="lazy"
         decoding="async"
@@ -211,6 +227,7 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
     const img = imgRef.current;
     if (!section || !map || !mapWrap || !photo) return;
 
+    let last: Phase | null = null;
     const ctx = gsap.context(() => {
       gsap.set(map, { '--range': 0, '--threat': 0, '--cons': 0, '--zoom': 0 });
       const tl = gsap.timeline({ defaults: { ease: 'none' } });
@@ -235,7 +252,9 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
         animation: tl,
         onUpdate: (self) => {
           const p = self.progress;
-          setPhase(p < 0.2 ? null : p < 0.48 ? 'range' : p < 0.72 ? 'threats' : 'conservation');
+          const next = p < 0.2 ? null : p < 0.48 ? 'range' : p < 0.72 ? 'threats' : 'conservation';
+          // Only reach React when the phase changes, not on every scrubbed frame.
+          if (next !== last) setPhase((last = next));
         },
         onEnter: () => setEntered(true),
       });
@@ -277,12 +296,12 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
                 <ConservationFacts species={species} onHover={setHlSites} />
               </div>
               <div className={cn('phase-panel', phase === null && 'is-current')}>
-                <p className="max-w-md font-serif text-[1.3rem] font-light leading-[1.5] text-canvas/85">{species.summary}</p>
+                <p className="max-w-md font-serif text-lede font-light text-canvas/85">{species.summary}</p>
               </div>
             </div>
 
             <div className="flex flex-col items-start gap-4">
-              <nav aria-label={`${species.commonName}: map layers`} className="phase-nav flex-nowrap">
+              <nav aria-label={`${species.commonName}: map layers`} className="phase-nav">
                 {PHASES.map((p, i) => (
                   <button
                     key={p.id}
@@ -297,7 +316,7 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
                 ))}
               </nav>
               <Magnetic>
-                <button type="button" className="text-link whitespace-nowrap" onClick={() => open(species.id)} data-cursor="Open">
+                <button type="button" className="text-link whitespace-nowrap" onClick={() => open(species.id)} data-cursor="Discover">
                   Full profile and sources
                 </button>
               </Magnetic>
@@ -306,12 +325,20 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
 
           <div className="relative col-span-7">
             <div ref={mapWrapRef} className="invisible absolute inset-0">
-              <SpeciesMap ref={mapRef} species={species} highlightThreat={hlThreat} highlightSites={hlSites} className="h-full w-full" align="left" />
+              <SpeciesMap
+                ref={mapRef}
+                species={species}
+                highlightThreat={hlThreat}
+                highlightSites={hlSites}
+                className="h-full w-full"
+                align="left"
+                legendPhase={phase ?? 'range'}
+              />
             </div>
             <div ref={photoRef} className="photo-stage absolute inset-0 origin-top-right" style={{ clipPath: 'inset(18% 0% 18% 30%)' }}>
-              <Photo species={species} className="h-full w-full" imgRef={imgRef} />
+              <Photo species={species} className="h-full w-full" imgRef={imgRef} sizes="58vw" />
             </div>
-            <PhotoCredit species={species} className="absolute -top-7 right-0 text-right" />
+            <PhotoCredit species={species} className="absolute -bottom-7 right-0 text-right" />
           </div>
         </div>
       </div>
@@ -338,10 +365,10 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
           <Header species={species} index={index} total={total} />
         </div>
         <Reveal className="mt-10" direction="up">
-          <Photo species={species} className="aspect-[4/3] w-full" />
+          <Photo species={species} className="aspect-[4/3] w-full" sizes="(min-width: 800px) 768px, calc(100vw - 2rem)" />
           <PhotoCredit species={species} className="mt-2" />
         </Reveal>
-        <p className="mt-10 font-serif text-[1.2rem] font-light leading-[1.55] text-canvas/85">{species.summary}</p>
+        <p className="mt-10 font-serif text-lede font-light text-canvas/85">{species.summary}</p>
 
         <div className="mt-12">
           <div className="phase-nav" role="group" aria-label={`${species.commonName}: map layers`}>
@@ -358,10 +385,11 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
               </button>
             ))}
           </div>
-          <div className="mt-4">
+          {/* Never taller than the screen: on a landscape tablet the whole map stays in view. */}
+          <div className="mx-auto mt-4" style={{ width: 'min(100%, calc(78svh * 1000 / 1105))' }}>
             <SpeciesMap ref={mapRef} species={species} highlightThreat={hlThreat} highlightSites={hlSites} className="aspect-[1000/1105] w-full" showLegend={false} />
           </div>
-          <p className="mt-3 text-[12px] leading-snug text-canvas/45">
+          <p className="mt-3 text-label leading-snug text-canvas/45">
             {phase === 'range' && 'Shaded: states of record. Points: indicative localities, not a range boundary.'}
             {phase === 'threats' && 'Each hatch is one recorded threat. Threats are recorded for the species, not mapped by place.'}
             {phase === 'conservation' && 'Rings mark programme sites the dataset links to this species, at its anchor locality.'}

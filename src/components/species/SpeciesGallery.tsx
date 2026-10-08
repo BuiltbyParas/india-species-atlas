@@ -196,7 +196,7 @@ export function SpeciesGallery({
         tabIndex={0}
         aria-label="Species gallery. Use the left and right arrow keys to turn the ring, and Enter to open the species in front."
         onKeyDown={onKeyDown}
-        className="relative isolate h-[26rem] overflow-hidden rounded-2xl border border-forest-800 bg-[radial-gradient(120%_100%_at_50%_0%,var(--color-forest-900),var(--color-forest-950)_70%)] outline-none ring-forest-500/70 transition-shadow focus-visible:ring-2 sm:h-[32rem] lg:h-[36rem]"
+        className="relative isolate h-[26rem] overflow-hidden rounded-xs border border-forest-800 bg-[radial-gradient(120%_100%_at_50%_0%,var(--color-forest-900),var(--color-forest-950)_70%)] outline-none ring-forest-500/70 transition-shadow focus-visible:ring-2 sm:h-[32rem] lg:h-[36rem]"
       >
         <canvas
           ref={canvasRef}
@@ -211,11 +211,11 @@ export function SpeciesGallery({
           </p>
         )}
 
-        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[15rem] text-right text-[10px] leading-snug text-forest-300/45">
+        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[15rem] text-right text-micro leading-snug text-forest-300/45">
           Photographs mounted in a 3D frame — the cards are modelled, the animals are not.
         </p>
 
-        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-[10px] text-forest-300/45 sm:flex">
+        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-micro text-forest-300/45 sm:flex">
           <Move3d className="h-3.5 w-3.5" aria-hidden="true" />
           Drag to turn · click a card to bring it forward
         </p>
@@ -231,7 +231,7 @@ export function SpeciesGallery({
               {index + 1} / {species.length}
             </span>
           </div>
-          <h3 className="mt-2 font-serif text-2xl font-semibold leading-tight text-canvas">
+          <h3 className="mt-2 font-serif text-3xl font-light tracking-tight leading-tight text-canvas">
             {current.commonName}
           </h3>
           <p className="text-sm italic text-canvas/55">{current.scientificName}</p>

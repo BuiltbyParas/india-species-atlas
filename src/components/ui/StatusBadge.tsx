@@ -21,20 +21,20 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border font-semibold uppercase tracking-wide',
-        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs',
+        'inline-flex items-center gap-1.5 rounded-xs border font-medium tracking-[0.06em]',
+        size === 'sm' ? 'px-1.5 py-px text-micro' : 'px-2 py-0.5 text-label',
         className,
       )}
-      style={{ borderColor: info.colorVar, color: info.colorVar }}
+      style={{ borderColor: `color-mix(in srgb, ${info.colorVar} 55%, transparent)`, color: info.colorVar }}
       title={`${info.code} — ${info.name}`}
     >
       <span
         aria-hidden="true"
-        className="inline-block h-2 w-2 rounded-full"
+        className="inline-block h-1.5 w-1.5 rounded-full"
         style={{ backgroundColor: info.colorVar }}
       />
       <span>{info.code}</span>
-      {showName && <span className="font-medium normal-case tracking-normal text-canvas/85">{info.name}</span>}
+      {showName && <span className="font-normal tracking-normal text-canvas/85">{info.name}</span>}
     </span>
   );
 }

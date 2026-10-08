@@ -38,7 +38,7 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          'site-header z-[1500] w-full',
+          'site-header z-(--z-header) w-full',
           home ? 'fixed inset-x-0 top-0' : 'sticky top-0',
           !home && 'border-b border-canvas/[0.07] bg-forest-950/85 backdrop-blur-md',
           home && scrolled && !open && 'is-scrolled',
@@ -53,7 +53,7 @@ export function Navbar() {
           </Link>
 
           {home && (
-            <p className="chapter-title hidden text-[13px] text-canvas/60 md:block" aria-live="polite">
+            <p className="chapter-title hidden text-small text-canvas/60 md:block" aria-live="polite">
               <span className={cn('chapter-title-inner', chapter && 'is-shown')} key={chapter?.index ?? -1}>
                 {chapter ? (
                   <>

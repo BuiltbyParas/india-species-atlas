@@ -15,20 +15,20 @@ export function StatePanel({
   const list = SPECIES.filter((s) => recordedInDrawnState(s, state));
 
   return (
-    <div className="rounded-lg border border-forest-700/70 bg-forest-900 p-4">
+    <div className="rounded-xs border border-forest-700/70 bg-forest-900 p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
+          <p className="flex items-center gap-1.5 caps">
             <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
             Selected state / UT
           </p>
-          <h3 className="font-serif text-xl font-semibold text-canvas">{state}</h3>
+          <h3 className="font-serif text-2xl font-light tracking-tight text-canvas">{state}</h3>
           {state === 'Jammu and Kashmir' && <p className="text-xs text-canvas/55">Including Ladakh, as on India&rsquo;s political map</p>}
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="rounded-md p-1 text-canvas/60 hover:bg-forest-800 hover:text-canvas"
+          className="rounded-xs p-1 text-canvas/60 hover:bg-forest-800 hover:text-canvas"
           aria-label="Clear state selection"
         >
           <X className="h-4 w-4" aria-hidden="true" />

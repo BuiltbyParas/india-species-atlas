@@ -7,6 +7,7 @@ import { prefersReducedMotion } from '../../motion/preferences';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { PhotoCredit } from '../ui/PhotoCredit';
 import { cn } from '../../utils/cn';
+import { photoSources } from '../../utils/photo';
 
 /**
  * The twelve species on the outside of a sphere, the one facing you brought
@@ -281,6 +282,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
   };
 
   const focus = species[center];
+  const focusPhoto = photoSources(focus);
   const info = STATUS_INFO[focus.status];
   const tileW = Math.round(((2 * Math.PI * radius) / count) * 0.8);
   const tileH = Math.round(tileW * 1.18);
@@ -289,7 +291,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
   return (
     <div className="dome" style={{ ['--status' as string]: info.hex }}>
       <div className="dome-atmos" aria-hidden="true">
-        {focus.image.src && <img key={focus.id} src={focus.image.src} alt="" className="dome-atmos-img" />}
+        {focusPhoto && <img key={focus.id} src={focusPhoto.small} alt="" className="dome-atmos-img" />}
       </div>
 
       <div
@@ -306,6 +308,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
         <div ref={sphereRef} className="dome-sphere">
           {tiles.map((t, i) => {
             const speciesIndex = species.indexOf(t.species);
+            const tilePhoto = t.kind === 'photo' ? photoSources(t.species) : null;
             return (
               <div
                 key={t.key}
@@ -327,11 +330,19 @@ export function DomeGallery({ species }: { species: Species[] }) {
                     tabIndex={-1}
                     className="dome-card"
                     onClick={() => (speciesIndex === center ? open(t.species.id) : goTo(speciesIndex))}
-                    data-cursor={speciesIndex === center ? 'Open' : 'Turn'}
+                    data-cursor={speciesIndex === center ? 'Discover' : 'Turn'}
                     aria-hidden="true"
                   >
-                    {t.species.image.src && (
-                      <img src={t.species.image.src} alt="" loading="lazy" decoding="async" draggable={false} />
+                    {tilePhoto && (
+                      <img
+                        src={tilePhoto.small}
+                        width={tilePhoto.width}
+                        height={tilePhoto.height}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                      />
                     )}
                     <span className="dome-card-name font-serif">{t.species.commonName}</span>
                   </button>
@@ -355,14 +366,14 @@ export function DomeGallery({ species }: { species: Species[] }) {
 
       <div className="dome-caption" aria-live="polite">
         <div key={focus.id} className="dome-caption-inner">
-          <p className="text-[13px] tabular-nums text-canvas/45">
+          <p className="text-small tabular-nums text-canvas/45">
             {center + 1} / {count}
           </p>
           <p className="mt-2 font-serif text-[clamp(2rem,4vw,3.4rem)] font-light leading-none tracking-[-0.025em] text-canvas">
             {focus.commonName}
           </p>
           <p className="mt-2 font-serif italic text-canvas/60">{focus.scientificName}</p>
-          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-canvas/65">
+          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-small text-canvas/65">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: info.colorVar }} aria-hidden="true" />
               {info.name}
@@ -378,7 +389,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
           <button type="button" className="dome-arrow" onClick={() => goTo((center + 1) % count)} aria-label="Next species" data-cursor="Turn">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button type="button" className="text-link ml-4" onClick={() => open(focus.id)} data-cursor="Open">
+          <button type="button" className="text-link ml-4" onClick={() => open(focus.id)} data-cursor="Discover">
             Open profile
           </button>
         </div>

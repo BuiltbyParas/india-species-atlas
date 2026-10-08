@@ -3,8 +3,8 @@ import { statusLegend, threatLegend } from './markerLegends';
 
 export function MapLegend({ mode }: { mode: ConservationMode }) {
   return (
-    <div className="rounded-lg border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
-      <p className="mb-2 font-semibold uppercase tracking-[0.14em] text-forest-300">Legend</p>
+    <div className="rounded-xs border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
+      <p className="mb-2 caps">Legend</p>
 
       {mode === 'species' && (
         <ul className="space-y-1.5">

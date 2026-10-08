@@ -49,7 +49,7 @@ export function StatusIndicator({ status, className }: { status: IucnStatus; cla
           open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
         )}
       >
-        <p className="max-w-sm overflow-hidden pl-6 text-[13px] leading-relaxed text-canvas/65">
+        <p className="max-w-sm overflow-hidden pl-6 text-small leading-relaxed text-canvas/65">
           <span className="block pt-2">{info.definition}</span>
         </p>
       </div>

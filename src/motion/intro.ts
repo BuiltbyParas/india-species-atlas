@@ -30,3 +30,25 @@ export function useIntroDone(): boolean {
     () => true,
   );
 }
+
+/**
+ * Whether the hero has painted. The loader's last step waits on this, so
+ * "First frame" is ticked by the frame itself rather than by a timer: the
+ * relief's first rendered frame, or the flat map mounting where there is no
+ * 3D. Resolves once and stays resolved.
+ */
+let firstFrame = false;
+let resolveFirstFrame: () => void = () => undefined;
+const firstFramePromise = new Promise<void>((r) => {
+  resolveFirstFrame = r;
+});
+
+export function markFirstFrame() {
+  if (firstFrame) return;
+  firstFrame = true;
+  resolveFirstFrame();
+}
+
+export function whenFirstFrame(): Promise<void> {
+  return firstFramePromise;
+}

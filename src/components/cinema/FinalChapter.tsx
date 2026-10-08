@@ -31,7 +31,7 @@ export function FinalChapter() {
     <section ref={ref} data-route-stop="5" className={cn('final relative overflow-hidden', seen && 'is-shown')} aria-labelledby="final-title">
       <div className="mx-auto grid min-h-[100svh] max-w-[1600px] items-center gap-12 px-4 py-28 sm:px-8 lg:grid-cols-12 lg:px-12">
         <div className="relative lg:col-span-7">
-          <h2 id="final-title" className="font-serif text-[clamp(3.2rem,9vw,10rem)] font-light leading-[0.86] tracking-[-0.045em] text-canvas">
+          <h2 id="final-title" className="font-serif text-display font-light text-canvas">
             <RevealText text="India Species" play={seen} className="block" />
             <RevealText text="Atlas" play={seen} delay={0.2} className="block" />
           </h2>
@@ -42,7 +42,7 @@ export function FinalChapter() {
           </div>
           <div className="final-links mt-14 flex flex-wrap items-center gap-x-10 gap-y-4">
             <Magnetic>
-              <Link to="/atlas" className="cta" data-cursor="Open">
+              <Link to="/atlas" className="cta" data-cursor="Enter">
                 <span>Open the map</span>
                 <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line"><path d="M0 5 C 12 1, 26 9, 40 5" /></svg>
               </Link>

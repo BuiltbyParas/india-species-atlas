@@ -31,8 +31,8 @@ export function ProgrammeLegend({ results }: { results: Species[] }) {
   }, [results]);
 
   return (
-    <div className="rounded-lg border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
-      <p className="mb-2 font-semibold uppercase tracking-[0.14em] text-forest-300">Legend</p>
+    <div className="rounded-xs border border-forest-700/70 bg-forest-900/95 p-3 text-xs">
+      <p className="mb-2 caps">Legend</p>
       {rows.length === 0 ? (
         <p className="text-canvas/55">
           No species in the current selection is linked to a conservation programme.

@@ -11,7 +11,7 @@ function SourceLink({ label, publisher, url }: { label: string; publisher: strin
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-start gap-2 rounded-md px-1 py-1 text-sm hover:bg-forest-800/50"
+      className="group flex items-start gap-2 rounded-xs px-1 py-1 text-sm hover:bg-forest-800/50"
     >
       <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-forest-300" aria-hidden="true" />
       <span>
@@ -36,11 +36,11 @@ export function SourcesPage() {
       />
 
       <section className="mt-10">
-        <h2 className="font-serif text-xl font-semibold text-canvas">General references</h2>
+        <h2 className="font-serif text-2xl font-light tracking-tight text-canvas">General references</h2>
         <div className="mt-4 grid gap-6 sm:grid-cols-2">
           {BIBLIOGRAPHY.map((group) => (
             <div key={group.category}>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
+              <h3 className="caps">
                 {group.category}
               </h3>
               <div className="mt-1.5 space-y-0.5">
@@ -54,18 +54,18 @@ export function SourcesPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-serif text-xl font-semibold text-canvas">Per-species sources</h2>
+        <h2 className="font-serif text-2xl font-light tracking-tight text-canvas">Per-species sources</h2>
         <p className="mt-1 text-sm text-canvas/60">
           Every species entry is backed by the sources listed below and states the date it was last checked.
         </p>
         <div className="mt-4 space-y-4">
           {SPECIES.map((s) => (
-            <article key={s.id} className="rounded-xl border border-forest-700/70 bg-forest-900 p-4">
+            <article key={s.id} className="sheet">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => open(s.id)}
-                  className="text-left font-serif text-base font-semibold text-canvas hover:text-forest-200"
+                  className="text-left font-serif text-lg font-normal tracking-tight text-canvas hover:text-forest-200"
                 >
                   {s.commonName} <span className="font-sans text-sm font-normal italic text-canvas/55">{s.scientificName}</span>
                 </button>

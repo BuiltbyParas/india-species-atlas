@@ -4,16 +4,18 @@ import type { Species } from '../../types';
 import { STATUS_INFO } from '../../data/statusInfo';
 import { PALETTE } from '../../theme';
 import { cn } from '../../utils/cn';
+import { photoSources } from '../../utils/photo';
 
 /**
  * Species imagery.
  *
- * The project ships with no bundled photographs: instead of using an
- * uncredited copyrighted image, each species is shown with a tasteful,
- * generated placeholder tinted by IUCN status and marked with its animal
- * group. If a legally-usable image URL is added to a species' `image.src`
- * (e.g. a Wikimedia Commons file), it is used and falls back to the
- * placeholder if it fails to load. See the README for how to add photos.
+ * Every species has a bundled, credited photograph (see `src/data/species.ts`
+ * and `scripts/images/`). It is served responsively — a 720 px WebP for small
+ * slots, the 1400 px master where the slot is large — with its intrinsic size
+ * set so the box is reserved before it loads. If a photograph is missing or
+ * fails to load, a placeholder tinted by IUCN status and marked with the
+ * animal group stands in; it never pretends to be a picture of the animal.
+ * Credits are rendered beside the image by `PhotoCredit`.
  */
 
 const GROUP_ICON = {
@@ -68,23 +70,30 @@ export function SpeciesImage({
   species,
   className,
   imgClassName,
+  sizes = '(min-width: 1024px) 33vw, 100vw',
 }: {
   species: Species;
   className?: string;
   imgClassName?: string;
+  /** How wide the slot is, so the browser can choose between the WebP and the master. */
+  sizes?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const { src, alt } = species.image;
+  const photo = photoSources(species);
 
-  if (!src || failed) {
+  if (!photo || failed) {
     return <Placeholder species={species} className={className} />;
   }
 
   return (
     <div className={cn('relative overflow-hidden bg-forest-800', className)}>
       <img
-        src={src}
-        alt={alt}
+        src={photo.src}
+        srcSet={photo.srcSet}
+        sizes={sizes}
+        width={photo.width}
+        height={photo.height}
+        alt={species.image.alt}
         loading="lazy"
         decoding="async"
         onError={() => setFailed(true)}

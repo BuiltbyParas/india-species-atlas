@@ -10,6 +10,7 @@ import { SpeciesCard } from '../components/species/SpeciesCard';
 import { SpeciesGallery } from '../components/species/SpeciesGallery';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { buttonClasses } from '../components/ui/buttonClasses';
+import { useTabKeys } from '../components/ui/useTabKeys';
 import { cn } from '../utils/cn';
 
 type View = 'gallery' | 'grid';
@@ -18,10 +19,12 @@ const VIEWS: Array<{ id: View; label: string; icon: typeof Boxes }> = [
   { id: 'gallery', label: 'Gallery', icon: Boxes },
   { id: 'grid', label: 'Grid', icon: LayoutGrid },
 ];
+const VIEW_IDS = VIEWS.map((v) => v.id);
 
 export function SpeciesPage() {
   const filters = useSpeciesFilters();
   const [view, setView] = useState<View>('gallery');
+  const viewTab = useTabKeys(VIEW_IDS, view, setView);
   const [savedOnly, setSavedOnly] = useState(false);
   // On a phone the unfiltered directory is what a reader wants first: with the
   // panel open by default, seventeen checkboxes stand between the page heading
@@ -101,7 +104,7 @@ export function SpeciesPage() {
       />
 
       {sharedIds && (
-        <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-forest-600 bg-forest-800/50 p-4">
+        <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xs border border-forest-600 bg-forest-800/50 p-4">
           <Share2 className="h-4 w-4 shrink-0 text-forest-300" aria-hidden="true" />
           <p className="flex-1 text-sm text-canvas/85">
             You are looking at a shared list of {sharedIds.length} species. It is held in the link, not in
@@ -124,7 +127,7 @@ export function SpeciesPage() {
             type="button"
             onClick={() => setShowFilters((v) => !v)}
             aria-expanded={showFilters}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-xs border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
           >
             <span className="inline-flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -134,14 +137,14 @@ export function SpeciesPage() {
           </button>
           <div
             className={cn(
-              'mt-3 rounded-xl border border-forest-800 bg-forest-900/70 p-4 lg:block',
+              'mt-3 rounded-xs border border-forest-800 bg-forest-900/70 p-4 lg:block',
               showFilters ? 'block' : 'hidden',
             )}
           >
             <FilterPanel filters={filters} />
 
             <div className="mt-3 border-t border-forest-700/60 pt-3">
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
+              <p className="mb-1.5 caps">
                 Saved species
               </p>
               <button
@@ -150,7 +153,7 @@ export function SpeciesPage() {
                 disabled={savedCount === 0 || !!sharedIds}
                 onClick={() => setSavedOnly((v) => !v)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-md border px-2.5 py-2 text-sm transition-colors disabled:opacity-50',
+                  'flex w-full items-center justify-between rounded-xs border px-2.5 py-2 text-sm transition-colors disabled:opacity-50',
                   savedOnly && !sharedIds
                     ? 'border-clay/70 bg-clay/15 text-clay'
                     : 'border-forest-700 text-canvas/75 hover:border-forest-500 hover:text-canvas',
@@ -166,7 +169,7 @@ export function SpeciesPage() {
                 <button
                   type="button"
                   onClick={copyShareLink}
-                  className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-forest-300 hover:bg-forest-800 hover:text-forest-200"
+                  className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-xs px-2.5 py-1.5 text-xs font-medium text-forest-300 hover:bg-forest-800 hover:text-forest-200"
                 >
                   {copied ? (
                     <>
@@ -181,7 +184,7 @@ export function SpeciesPage() {
                   )}
                 </button>
               )}
-              <p className="mt-1.5 text-[11px] leading-snug text-canvas/45">
+              <p className="mt-1.5 text-micro leading-snug text-canvas/45">
                 Saved species are kept in this browser only — there are no accounts here.
               </p>
             </div>
@@ -203,7 +206,7 @@ export function SpeciesPage() {
             <div
               role="tablist"
               aria-label="Directory view"
-              className="inline-flex rounded-lg border border-forest-800 bg-forest-900 p-1"
+              className="inline-flex rounded-xs border border-canvas/15 p-1"
             >
               {VIEWS.map((v) => {
                 const Icon = v.icon;
@@ -212,14 +215,12 @@ export function SpeciesPage() {
                   <button
                     key={v.id}
                     type="button"
-                    role="tab"
-                    aria-selected={active}
+                    {...viewTab(v.id)}
+                    aria-controls="directory-panel"
                     onClick={() => setView(v.id)}
                     className={cn(
-                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200 sm:min-h-0',
-                      active
-                        ? 'bg-forest-600 text-white'
-                        : 'text-canvas/60 hover:bg-forest-800/70 hover:text-canvas',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-3 py-1.5 text-sm font-medium transition-colors duration-200 sm:min-h-0',
+                      active ? 'bg-canvas text-ink' : 'text-canvas/60 hover:bg-canvas/[0.05] hover:text-canvas',
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
@@ -231,7 +232,7 @@ export function SpeciesPage() {
           </div>
 
           {shown.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
+            <div className="rounded-xs border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
               <p className="font-medium text-canvas">
                 {savedOnly && savedCount === 0
                   ? 'You have not saved any species yet'
@@ -253,10 +254,10 @@ export function SpeciesPage() {
                 Reset filters
               </button>
             </div>
-          ) : view === 'gallery' ? (
-            <SpeciesGallery species={shown} fallback={grid} />
           ) : (
-            grid
+            <div id="directory-panel" role="tabpanel" aria-label={view === 'gallery' ? 'Gallery' : 'Grid'}>
+              {view === 'gallery' ? <SpeciesGallery species={shown} fallback={grid} /> : grid}
+            </div>
           )}
         </div>
       </div>

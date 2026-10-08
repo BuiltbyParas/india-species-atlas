@@ -34,7 +34,7 @@ type TabId = (typeof TABS)[number]['id'];
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-forest-700/60 py-5 first:border-t-0 first:pt-0">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">{title}</h3>
+      <h3 className="mb-2 caps">{title}</h3>
       <div className="text-sm leading-relaxed text-canvas/80">{children}</div>
     </section>
   );
@@ -121,16 +121,16 @@ export function SpeciesProfile({ species }: { species: Species }) {
 
       <div className="px-5 pt-5 sm:px-7">
         <header>
-          <h2 className="font-serif text-2xl font-semibold text-canvas">{species.commonName}</h2>
+          <h2 className="font-serif text-3xl font-light tracking-tight text-canvas">{species.commonName}</h2>
           <p className="italic text-canvas/60">{species.scientificName}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {species.endemicToIndia && (
-              <span className="rounded-full bg-forest-700/70 px-2 py-0.5 text-[11px] font-medium text-forest-100">
+              <span className="rounded-full bg-forest-700/70 px-2 py-0.5 text-micro font-medium text-forest-100">
                 Endemic to India
               </span>
             )}
             {species.regions.map((r) => (
-              <span key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-[11px] text-canvas/70">
+              <span key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-micro text-canvas/70">
                 {REGION_LABELS[r]}
               </span>
             ))}
@@ -195,7 +195,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
         {tab === 'overview' && (
           <>
             <div
-              className="mb-5 rounded-lg border-l-2 bg-forest-800/60 p-3 text-sm"
+              className="mb-5 rounded-xs border-l-2 bg-forest-800/60 p-3 text-sm"
               style={{ borderColor: status.colorVar }}
             >
               <p className="font-semibold" style={{ color: status.colorVar }}>
@@ -254,7 +254,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
             <Block title="Ecological regions">
               <ul className="flex flex-wrap gap-1.5">
                 {species.regions.map((r) => (
-                  <li key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-[11px] text-canvas/75">
+                  <li key={r} className="rounded-full bg-forest-800 px-2 py-0.5 text-micro text-canvas/75">
                     {REGION_LABELS[r]}
                   </li>
                 ))}

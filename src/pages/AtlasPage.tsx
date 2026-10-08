@@ -74,7 +74,7 @@ export function AtlasPage() {
   return (
     <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:py-8">
       <div className="mb-5">
-        <h1 className="font-serif text-2xl font-semibold text-canvas sm:text-3xl">Interactive map</h1>
+        <h1 className="font-serif text-3xl font-light tracking-tight text-canvas sm:text-3xl">Interactive map</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-canvas/65">
           Pan and zoom the map, click a state to list its species, click a pin to open a profile, and switch
           between Species, Threats and Conservation views. Use the filters to narrow the selection.
@@ -89,7 +89,7 @@ export function AtlasPage() {
             type="button"
             onClick={() => setShowFilters((v) => !v)}
             aria-expanded={showFilters}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-xs border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
           >
             <span className="inline-flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -99,7 +99,7 @@ export function AtlasPage() {
           </button>
           <div
             className={cn(
-              'mt-2 scroll-slim rounded-xl border border-forest-800 bg-forest-900 p-4 lg:mt-3 lg:block lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto',
+              'mt-2 scroll-slim rounded-xs border border-forest-800 bg-forest-900 p-4 lg:mt-3 lg:block lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto',
               showFilters ? 'block' : 'hidden',
             )}
           >
@@ -110,20 +110,20 @@ export function AtlasPage() {
         {/* Map + context */}
         <div className="min-w-0">
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-            <ModeSwitch mode={mode} onChange={setMode} />
+            <ModeSwitch mode={mode} onChange={setMode} panelId="atlas-map-panel" />
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {mode === 'conservation' && (
                 <div
                   role="group"
                   aria-label="Conservation view"
-                  className="inline-flex rounded-lg border border-forest-700 bg-forest-900 p-1"
+                  className="inline-flex rounded-xs border border-forest-700 bg-forest-900 p-1"
                 >
                   <button
                     type="button"
                     aria-pressed={!show3D}
                     onClick={() => setWants3D(false)}
                     className={cn(
-                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'text-canvas/65 hover:text-canvas' : 'bg-forest-600 text-white',
                     )}
                   >
@@ -138,7 +138,7 @@ export function AtlasPage() {
                       setWants3D(true);
                     }}
                     className={cn(
-                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition sm:min-h-0',
                       show3D ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
                     )}
                   >
@@ -148,7 +148,7 @@ export function AtlasPage() {
                 </div>
               )}
               {!show3D && (
-                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas sm:min-h-0">
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xs border border-forest-700 bg-forest-900 px-2.5 py-1.5 text-xs font-medium text-canvas/75 hover:text-canvas sm:min-h-0">
                   <input
                     type="checkbox"
                     checked={shadeByCount}
@@ -168,7 +168,7 @@ export function AtlasPage() {
 
           {/* The map is the page on a phone, so it gets more of the screen
               there than it needs on a desktop with a sidebar beside it. */}
-          <div className="h-[70vh] min-h-[420px] overflow-hidden rounded-xl border border-forest-800 sm:h-[62vh]">
+          <div id="atlas-map-panel" role="tabpanel" aria-label="Map" className="h-[70vh] min-h-[420px] overflow-hidden rounded-xs border border-forest-800 sm:h-[62vh]">
             <Suspense
               fallback={
                 <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/50">
@@ -191,7 +191,7 @@ export function AtlasPage() {
           </div>
 
           {mode === 'conservation' && wants3D && unavailable && (
-            <p className="mt-2 rounded-lg border border-dashed border-forest-700/70 bg-forest-900/50 px-3 py-2 text-xs text-canvas/60">
+            <p className="mt-2 rounded-xs border border-dashed border-forest-700/70 bg-forest-900/50 px-3 py-2 text-xs text-canvas/60">
               {unavailable === 'unsupported'
                 ? 'The 3D view needs WebGL and is turned off where reduced motion is requested, so the map is shown instead. Everything it would show is in the map and in the species profiles.'
                 : 'The 3D view was running too slowly on this device to be worth the battery, so the map is shown instead.'}
@@ -209,7 +209,7 @@ export function AtlasPage() {
             {selectedState ? (
               <StatePanel state={selectedState} onClear={() => setSelectedState(null)} />
             ) : (
-              <div className="rounded-lg border border-dashed border-forest-700/70 bg-forest-900/50 p-4 text-sm text-canvas/55">
+              <div className="rounded-xs border border-dashed border-forest-700/70 bg-forest-900/50 p-4 text-sm text-canvas/55">
                 <p className="font-medium text-canvas/75">No state selected</p>
                 <p className="mt-1">
                   Click any state on the map to see which of the atlas&rsquo; species occur there and open their

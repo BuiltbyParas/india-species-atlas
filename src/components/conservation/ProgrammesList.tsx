@@ -14,10 +14,10 @@ export function ProgrammesList() {
         title="Conservation programmes"
         description="Selected programmes run by the Government of India and partners. A programme is linked to a species here only where public government or IUCN sources describe that species as a focus."
       />
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="mt-8 grid gap-x-10 gap-y-6 md:grid-cols-2">
         {PROGRAMMES.map((p) => (
-          <article key={p.id} className="rounded-xl border border-forest-700/70 bg-forest-900 p-5">
-            <h3 className="font-serif text-lg font-semibold text-canvas">{p.name}</h3>
+          <article key={p.id} className="sheet">
+            <h3 className="font-serif text-xl font-normal tracking-tight text-canvas">{p.name}</h3>
             <p className="mt-0.5 text-xs text-canvas/55">
               {p.authority}
               {p.startedYear ? ` · since ${p.startedYear}` : ''}
@@ -26,7 +26,7 @@ export function ProgrammesList() {
 
             {p.speciesIds.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-forest-300">In this atlas</p>
+                <p className="caps">In this atlas</p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {p.speciesIds.map((id) => {
                     const s = SPECIES_BY_ID[id];

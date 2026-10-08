@@ -8,6 +8,7 @@ import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { ProgrammeShape } from './ProgrammeShape';
 import { programmeSitesFor, programmeStatesFor, type ProgrammeSite } from './programmeSites';
 import type { ConservationScene, SceneSite } from './conservationScene';
+import { loadIndiaGeoJson } from '../../geo/india';
 
 /**
  * The opt-in 3D companion to the Conservation map mode.
@@ -52,8 +53,9 @@ export function ConservationView({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}india-states.geojson`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('geojson unavailable'))))
+    // The same shared request every map on the site uses, so the file is
+    // fetched once per visit rather than once per component.
+    loadIndiaGeoJson()
       .then((data) => {
         if (!cancelled) setGeojson(data as GeoCollection);
       })
@@ -219,7 +221,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.turn(-1)}
             aria-label="Turn left"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -227,7 +229,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.turn(1)}
             aria-label="Turn right"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -235,7 +237,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.zoom(1)}
             aria-label="Zoom in"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ZoomIn className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -243,7 +245,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.zoom(-1)}
             aria-label="Zoom out"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ZoomOut className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -254,18 +256,18 @@ export function ConservationView({
               select(-1);
             }}
             aria-label="Reset the view"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-[10px] text-forest-300/45 sm:flex">
+        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-micro text-forest-300/45 sm:flex">
           <Move3d className="h-3.5 w-3.5" aria-hidden="true" />
           Drag to turn · click a marker for its programme
         </p>
 
-        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[17rem] text-right text-[10px] leading-snug text-forest-300/45">
+        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[17rem] text-right text-micro leading-snug text-forest-300/45">
           The step marks whether a state has a programme in this dataset, not how much. Markers are plan
           shapes, not depictions of species.
         </p>
@@ -280,7 +282,7 @@ export function ConservationView({
         {current ? (
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="flex items-center gap-2 font-serif text-base font-semibold text-canvas">
+              <p className="flex items-center gap-2 font-serif text-lg font-normal tracking-tight text-canvas">
                 <ProgrammeShape identity={current.identity} />
                 {current.programme.name}
               </p>

@@ -180,7 +180,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
                     to={item.to}
                     className={cn('menu-link', active && 'is-active')}
                     aria-current={active ? 'page' : undefined}
-                    data-cursor="Go"
+                    data-cursor="Enter"
                   >
                     <span className="menu-label-mask">
                       <span className="menu-label">{item.label}</span>
@@ -209,7 +209,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
           <ul className="space-y-2">
             {SECONDARY.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className="menu-secondary" data-cursor="Go">
+                <Link to={l.to} className="menu-secondary" data-cursor="Enter">
                   {l.label}
                 </Link>
               </li>

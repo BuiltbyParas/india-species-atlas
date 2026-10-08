@@ -136,6 +136,7 @@ export function SpeciesMap({
   showLegend = true,
   vars,
   align = 'center',
+  legendPhase,
 }: {
   species: Species;
   highlightThreat?: ThreatId | null;
@@ -147,6 +148,11 @@ export function SpeciesMap({
   /** Layer values set declaratively, for the documentary clock. */
   vars?: { range: number; threat: number; cons: number; zoom: number };
   align?: 'left' | 'center';
+  /**
+   * Which caption the key shows, when the caller knows the phase (the pinned
+   * scene does). Without it the key follows the layer variables instead.
+   */
+  legendPhase?: 'range' | 'threats' | 'conservation';
 }) {
   const geo = useIndiaGeo();
   const uid = useId().replace(/:/g, '');
@@ -270,7 +276,7 @@ export function SpeciesMap({
                 tabIndex={interactive ? 0 : undefined}
                 role={interactive ? 'button' : undefined}
                 aria-label={interactive ? `${p.label}${p.note ? `. ${p.note}` : ''}` : undefined}
-                data-cursor={interactive ? 'Locality' : undefined}
+                data-cursor={interactive ? 'Locate' : undefined}
               >
                 <circle cx={x} cy={y} r="14" className="sm-point-hit" />
                 <circle cx={x} cy={y} r={i === 0 ? 5.5 : 4} className="sm-point-dot" />
@@ -288,16 +294,16 @@ export function SpeciesMap({
           style={{ left: hover.x, top: hover.y }}
           role="tooltip"
         >
-          <p className="text-[13px] leading-snug text-canvas">{hover.point.label}</p>
-          <p className="mt-0.5 text-[11px] tabular-nums text-canvas/50">
+          <p className="text-small leading-snug text-canvas">{hover.point.label}</p>
+          <p className="mt-0.5 text-micro tabular-nums text-canvas/50">
             {formatDeg(hover.point.lat, 'lat')} {formatDeg(hover.point.lng, 'lng')}
           </p>
-          {hover.point.note && <p className="mt-1 text-[12px] leading-snug text-canvas/70">{hover.point.note}</p>}
+          {hover.point.note && <p className="mt-1 text-label leading-snug text-canvas/70">{hover.point.note}</p>}
         </div>
       )}
 
       {showLegend && (
-        <div className="sm-legend pointer-events-none absolute left-0 top-0 h-24 w-[15rem] text-[11px] leading-snug text-canvas/45">
+        <div className="sm-legend pointer-events-none absolute left-0 top-0 isolate h-28 w-[17rem]" data-phase={legendPhase}>
           <p className="sm-legend-range">
             Shaded: states of record. Points: indicative localities, not a range boundary. The ringed point is {anchor.label.split(',')[0]}.
           </p>

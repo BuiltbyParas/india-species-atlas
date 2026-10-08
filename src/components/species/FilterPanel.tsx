@@ -20,7 +20,7 @@ function CheckRow({
   hint?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-md px-1.5 py-1.5 text-sm hover:bg-forest-800/60">
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-xs px-1.5 py-1.5 text-sm hover:bg-forest-800/60">
       <input
         type="checkbox"
         checked={checked}
@@ -43,7 +43,7 @@ function CheckRow({
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset className="border-t border-forest-700/60 py-3 first:border-t-0 first:pt-0">
-      <legend className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">{title}</legend>
+      <legend className="mb-1 caps">{title}</legend>
       {children}
     </fieldset>
   );

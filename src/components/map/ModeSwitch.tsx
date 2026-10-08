@@ -1,6 +1,7 @@
 import { PawPrint, ShieldCheck, TriangleAlert } from 'lucide-react';
 import type { ConservationMode } from '../../types';
 import { cn } from '../../utils/cn';
+import { useTabKeys } from '../ui/useTabKeys';
 
 const MODES: Array<{ id: ConservationMode; label: string; icon: typeof PawPrint; hint: string }> = [
   { id: 'species', label: 'Species', icon: PawPrint, hint: 'Where each species occurs' },
@@ -8,19 +9,25 @@ const MODES: Array<{ id: ConservationMode; label: string; icon: typeof PawPrint;
   { id: 'conservation', label: 'Conservation', icon: ShieldCheck, hint: 'Sites linked to programmes' },
 ];
 
+const MODE_IDS = MODES.map((m) => m.id);
+
 export function ModeSwitch({
   mode,
   onChange,
+  panelId,
 }: {
   mode: ConservationMode;
   onChange: (m: ConservationMode) => void;
+  /** The element the tabs switch: the map. */
+  panelId?: string;
 }) {
+  const tab = useTabKeys(MODE_IDS, mode, onChange);
   return (
     <div>
       <div
         role="tablist"
         aria-label="Map mode"
-        className="inline-flex rounded-lg border border-forest-700 bg-forest-900 p-1"
+        className="inline-flex rounded-xs border border-canvas/15 p-1"
       >
         {MODES.map((m) => {
           const Icon = m.icon;
@@ -28,13 +35,13 @@ export function ModeSwitch({
           return (
             <button
               key={m.id}
-              role="tab"
-              aria-selected={active}
+              {...tab(m.id)}
+              aria-controls={panelId}
               type="button"
               onClick={() => onChange(m.id)}
               className={cn(
-                'inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition sm:min-h-0',
-                active ? 'bg-forest-600 text-white' : 'text-canvas/65 hover:text-canvas',
+                'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-3 py-1.5 text-sm font-medium transition sm:min-h-0',
+                active ? 'bg-canvas text-ink' : 'text-canvas/65 hover:text-canvas',
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />

@@ -131,7 +131,7 @@ function ThreatList({ onHover }: { onHover: (t: ThreatId | null) => void }) {
             onBlur={() => onHover(null)}
             data-cursor="Trace"
           >
-            <span className="flex items-baseline justify-between gap-4 text-[14px] text-canvas/85">
+            <span className="flex items-baseline justify-between gap-4 text-sm text-canvas/85">
               <span>{t.name}</span>
               <span className="tabular-nums text-canvas/45">
                 {t.value} of {SPECIES.length}
@@ -162,8 +162,8 @@ function ProgrammeList({ onHover }: { onHover: (id: string | null) => void }) {
             onBlur={() => onHover(null)}
             data-cursor="Locate"
           >
-            <span className="w-11 shrink-0 tabular-nums text-[13px] text-canvas/45">{p.startedYear ?? '—'}</span>
-            <span className="text-[14px] leading-snug text-canvas/85 transition-colors group-hover:text-canvas">{p.name.split(' (')[0]}</span>
+            <span className="w-11 shrink-0 tabular-nums text-small text-canvas/45">{p.startedYear ?? '—'}</span>
+            <span className="text-sm leading-snug text-canvas/85 transition-colors group-hover:text-canvas">{p.name.split(' (')[0]}</span>
           </button>
         </li>
       ))}
@@ -174,11 +174,14 @@ function ProgrammeList({ onHover }: { onHover: (id: string | null) => void }) {
 const DEVICE_NOTE =
   'The threads join each species’ indicative localities; breaking them is a drawing device for the recorded threats, not a map of where those threats fall.';
 
+const CHAPTER = { index: 4, title: 'Fragmentation to protection' };
+const CHAPTER_LABEL = `Chapter ${String(CHAPTER.index).padStart(2, '0')}`;
+
 export function ConservationChapter() {
   const wide = useWideLayout();
   const reduced = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
-  useChapter(ref, { index: 4, title: 'Fragmentation to protection' });
+  useChapter(ref, CHAPTER);
   return (
     <section ref={ref} id="conservation-chapter" aria-labelledby="cons-title" className="relative">
       {wide && !reduced ? <PinnedConservation /> : <StackedConservation />}
@@ -198,6 +201,7 @@ function PinnedConservation() {
     const section = sectionRef.current;
     const map = mapRef.current;
     if (!section || !map) return;
+    let last: 'frag' | 'prot' = 'frag';
     const ctx = gsap.context(() => {
       gsap.set(map, { '--frag': 0, '--prot': 0, '--draw': 0 });
       const tl = gsap.timeline({ defaults: { ease: 'none' } });
@@ -210,7 +214,10 @@ function PinnedConservation() {
         end: 'bottom bottom',
         scrub: 0.8,
         animation: tl,
-        onUpdate: (self) => setPhase(self.progress < 0.5 ? 'frag' : 'prot'),
+        onUpdate: (self) => {
+          const next = self.progress < 0.5 ? 'frag' : 'prot';
+          if (next !== last) setPhase((last = next));
+        },
       });
     }, section);
     return () => ctx.revert();
@@ -221,27 +228,27 @@ function PinnedConservation() {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="mx-auto grid h-full max-w-[1600px] grid-cols-12 gap-x-8 px-12 pb-12 pt-28">
           <div className="relative col-span-5 flex flex-col">
-            <p className="text-[13px] tabular-nums text-canvas/45">Chapter 04</p>
-            <h2 id="cons-title" className="mt-4 font-serif text-[clamp(2.8rem,5.2vw,5.8rem)] font-light leading-[0.92] tracking-[-0.035em] text-canvas">
+            <p className="text-small tabular-nums text-canvas/45">{CHAPTER_LABEL}</p>
+            <h2 id="cons-title" className="mt-4 font-serif text-title font-light text-canvas">
               <span className={cn('cons-word', phase === 'frag' && 'is-on')}>From fragmentation</span>
               <br />
               <span className={cn('cons-word', phase === 'prot' && 'is-on')}>to protection</span>
             </h2>
             <div className="relative mt-10 flex-1">
               <div className={cn('phase-panel', phase === 'frag' && 'is-current')}>
-                <p className="mb-5 max-w-md text-[14px] leading-relaxed text-canvas/65">
+                <p className="mb-5 max-w-md text-sm leading-relaxed text-canvas/65">
                   How many of the {SPECIES.length} species each threat is recorded against. Point to one to see whose lines it cuts.
                 </p>
                 <ThreatList onHover={setHlThreat} />
               </div>
               <div className={cn('phase-panel', phase === 'prot' && 'is-current')}>
-                <p className="mb-5 max-w-md text-[14px] leading-relaxed text-canvas/65">
+                <p className="mb-5 max-w-md text-sm leading-relaxed text-canvas/65">
                   {PROGRAMMES.length} programmes, by the year they began. Point to one to find its sites.
                 </p>
                 <ProgrammeList onHover={setHlProgramme} />
               </div>
             </div>
-            <p className="max-w-md text-[12px] leading-snug text-canvas/40">{DEVICE_NOTE}</p>
+            <p className="max-w-md text-label leading-snug text-canvas/40">{DEVICE_NOTE}</p>
           </div>
           <div className="relative col-span-7">
             <NationalMap ref={mapRef} hlThreat={hlThreat} hlProgramme={hlProgramme} className="absolute inset-0" />
@@ -268,7 +275,7 @@ function StackedConservation() {
   return (
     <div className="px-4 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-3xl">
-        <p className="text-[13px] tabular-nums text-canvas/45">Chapter 04</p>
+        <p className="text-small tabular-nums text-canvas/45">{CHAPTER_LABEL}</p>
         <h2 id="cons-title" className="mt-4 font-serif text-[clamp(2.6rem,9vw,4.6rem)] font-light leading-[0.95] tracking-[-0.03em] text-canvas">
           From fragmentation to protection
         </h2>
@@ -281,7 +288,7 @@ function StackedConservation() {
           </button>
         </div>
         <NationalMap ref={mapRef} hlThreat={hlThreat} hlProgramme={hlProgramme} className="mt-4 aspect-[1000/1105] w-full" />
-        <p className="mt-3 text-[12px] leading-snug text-canvas/45">{DEVICE_NOTE}</p>
+        <p className="mt-3 text-label leading-snug text-canvas/45">{DEVICE_NOTE}</p>
         <div className="mt-12 space-y-12">
           <div>
             <h3 className="facts-heading">Threats, by how many species they are recorded against</h3>
@@ -310,10 +317,10 @@ function StackedConservation() {
 function Closing() {
   return (
     <div className="closing mx-auto flex min-h-[90svh] max-w-[1600px] flex-col justify-center px-4 py-24 sm:px-8 lg:px-12">
-      <p className="max-w-5xl font-serif text-[clamp(2.2rem,5.4vw,5.6rem)] font-light leading-[1.02] tracking-[-0.03em] text-canvas/55">
+      <p className="max-w-5xl font-serif text-headline font-light text-canvas/55">
         <RevealText text="Mapping is not just about where species are." stagger={0.05} />
       </p>
-      <p className="mt-6 max-w-5xl font-serif text-[clamp(2.2rem,5.4vw,5.6rem)] font-light leading-[1.02] tracking-[-0.03em] text-canvas">
+      <p className="mt-6 max-w-5xl font-serif text-headline font-light text-canvas">
         <RevealText text="It is about where we choose to protect them." delay={0.6} stagger={0.05} />
       </p>
     </div>

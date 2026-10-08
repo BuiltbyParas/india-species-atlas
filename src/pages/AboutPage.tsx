@@ -5,8 +5,8 @@ import { totalSpecies, conservationRegionCount, statesCovered } from '../utils/s
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-forest-700/70 bg-forest-900 p-5">
-      <h3 className="font-serif text-lg font-semibold text-canvas">{title}</h3>
+    <div className="sheet">
+      <h3 className="font-serif text-xl font-normal tracking-tight text-canvas">{title}</h3>
       <div className="mt-2 space-y-2 text-sm leading-relaxed text-canvas/75">{children}</div>
     </div>
   );
@@ -24,7 +24,7 @@ export function AboutPage() {
         description="A student project for an environmental-studies / Computer-Aided Instruction (CAI) assignment."
       />
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2">
+      <div className="mt-12 grid gap-x-10 gap-y-6 sm:grid-cols-2">
         <Card title="Purpose">
           <p>
             To visually connect the <em>geography</em> of {totalSpecies} selected threatened species in India
@@ -59,8 +59,8 @@ export function AboutPage() {
         </Card>
       </div>
 
-      <div className="mt-8 rounded-xl border-l-2 border-forest-400 bg-forest-800/50 p-5">
-        <h3 className="font-serif text-lg font-semibold text-canvas">Limitations</h3>
+      <div className="mt-8 callout">
+        <h3 className="font-serif text-xl font-normal tracking-tight text-canvas">Limitations</h3>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-canvas/75">
           <li>
             The map is an <strong>educational representation</strong>. Markers are indicative locations within a
@@ -85,10 +85,10 @@ export function AboutPage() {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Link to="/atlas" className="rounded-lg bg-forest-500 px-5 py-3 text-sm font-semibold text-white hover:bg-forest-400">
+        <Link to="/atlas" className="rounded-xs bg-canvas px-5 py-3 text-sm font-medium text-ink hover:bg-parchment">
           Explore the map
         </Link>
-        <Link to="/sources" className="rounded-lg border border-forest-600 px-5 py-3 text-sm font-semibold text-canvas hover:bg-forest-900">
+        <Link to="/sources" className="rounded-xs border border-forest-600 px-5 py-3 text-sm font-semibold text-canvas hover:bg-forest-900">
           See all sources
         </Link>
       </div>

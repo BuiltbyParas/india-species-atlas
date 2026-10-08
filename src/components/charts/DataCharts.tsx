@@ -6,9 +6,9 @@ import { BarChart } from './BarChart';
 
 function ChartFrame({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <figure className="rounded-xl border border-forest-700/70 bg-forest-900 p-5">
+    <figure className="sheet">
       <figcaption className="mb-4">
-        <h3 className="font-serif text-base font-semibold text-canvas">{title}</h3>
+        <h3 className="font-serif text-lg font-normal tracking-tight text-canvas">{title}</h3>
         {note && <p className="mt-0.5 text-xs text-canvas/55">{note}</p>}
       </figcaption>
       {children}
@@ -61,7 +61,7 @@ export function ThreatChart() {
 /** Grouped panels. `full` adds the threats chart. */
 export default function ChartsPanel({ variant = 'mini' }: { variant?: 'mini' | 'full' }) {
   return (
-    <div className={variant === 'full' ? 'grid gap-5 lg:grid-cols-3' : 'grid gap-5 md:grid-cols-2'}>
+    <div className={variant === 'full' ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'grid gap-x-10 gap-y-8 md:grid-cols-2'}>
       <StatusChart />
       <HabitatChart />
       {variant === 'full' && <ThreatChart />}

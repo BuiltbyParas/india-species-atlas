@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { getLenis } from '../../motion/SmoothScroll';
-import { prefersReducedMotion } from '../../motion/preferences';
+import { useReducedMotion } from '../../motion/preferences';
 
 /**
  * A line of type running along a curve, like a river's name lettered along
@@ -29,6 +29,7 @@ export function CurvedLoop({
   const svgRef = useRef<SVGSVGElement>(null);
   const textPathRef = useRef<SVGTextPathElement>(null);
   const measureRef = useRef<SVGTextElement>(null);
+  const reduced = useReducedMotion();
   const unit = words.join('   ·   ') + '   ·   ';
   const text = unit.repeat(6);
 
@@ -44,7 +45,6 @@ export function CurvedLoop({
     let dragging = false;
     let lastX = 0;
     let dir = -1;
-    const reduced = prefersReducedMotion();
 
     const place = () => {
       if (offset > 0) offset -= unitLen;
@@ -107,7 +107,7 @@ export function CurvedLoop({
       svg.removeEventListener('pointercancel', up);
       window.removeEventListener('resize', onResize);
     };
-  }, [speed, unit]);
+  }, [speed, unit, reduced]);
 
   return (
     <div className={className}>

@@ -72,7 +72,7 @@ export function CinematicHero() {
                 <p className="font-serif text-[clamp(2rem,3.6vw,3.4rem)] font-light leading-[1.02] tracking-[-0.02em] text-canvas">
                   {c.title}
                 </p>
-                <p className="mt-4 max-w-[26rem] text-[15px] leading-relaxed text-canvas/70">{c.body}</p>
+                <p className="mt-4 max-w-[26rem] text-body leading-relaxed text-canvas/70">{c.body}</p>
               </div>
             ))}
           </div>
@@ -89,7 +89,7 @@ export function CinematicHero() {
               <RevealText text="Tracing the lines that shape survival." play={ready} delay={0.7} stagger={0.04} className="block" />
             </p>
             <div className={`hero-meta md:col-span-6 md:justify-self-end ${ready ? 'is-shown' : ''}`}>
-              <dl className="grid grid-cols-2 gap-x-10 gap-y-1 text-[13px] text-canvas/55">
+              <dl className="grid grid-cols-2 gap-x-10 gap-y-1 text-small text-canvas/55">
                 <dt className="sr-only">Latitude</dt>
                 <dd className="tabular-nums">{ext ? `${formatDeg(ext.minLat, 'lat')} to ${formatDeg(ext.maxLat, 'lat')}` : ' '}</dd>
                 <dt className="sr-only">Longitude</dt>
@@ -98,7 +98,7 @@ export function CinematicHero() {
                 <dd>{totalSpecies} threatened species</dd>
                 <dd>IUCN Red List categories</dd>
               </dl>
-              <p className="scroll-cue mt-6 flex items-center gap-3 text-[13px] text-canvas/55">
+              <p className="scroll-cue mt-6 flex items-center gap-3 text-small text-canvas/55">
                 <span className="scroll-cue-line" aria-hidden="true" />
                 Scroll to follow the line
               </p>

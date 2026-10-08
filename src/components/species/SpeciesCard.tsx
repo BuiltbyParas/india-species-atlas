@@ -3,6 +3,7 @@ import type { Species } from '../../types';
 import { REGION_LABELS } from '../../data/regions';
 import { SpeciesImage } from '../ui/SpeciesImage';
 import { StatusBadge } from '../ui/StatusBadge';
+import { PhotoCredit } from '../ui/PhotoCredit';
 import { FavouriteButton } from './FavouriteButton';
 import { useSpeciesProfile } from './SpeciesProfileProvider';
 
@@ -18,11 +19,12 @@ export function SpeciesCard({ species }: { species: Species }) {
   const { open } = useSpeciesProfile();
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 has-[:focus-visible]:border-forest-500 has-[:focus-visible]:shadow-xl motion-reduce:hover:translate-y-0">
+    <article className="group relative flex flex-col overflow-hidden rounded-xs border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 has-[:focus-visible]:border-forest-500 has-[:focus-visible]:shadow-xl motion-reduce:hover:translate-y-0">
       <div className="relative overflow-hidden">
         <SpeciesImage
           species={species}
           className="h-44 w-full"
+          sizes="(min-width: 1280px) 22vw, (min-width: 640px) 45vw, 100vw"
           imgClassName="transition-transform duration-500 ease-[var(--ease-emphasis)] group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
         {/* Reads the badge over any photograph, and ties the image to the card
@@ -40,7 +42,7 @@ export function SpeciesCard({ species }: { species: Species }) {
       </div>
 
       <div className="flex flex-1 flex-col p-4 pt-3.5">
-        <h3 className="font-serif text-lg font-semibold leading-tight text-canvas">
+        <h3 className="font-serif text-xl font-normal tracking-tight leading-tight text-canvas">
           <button
             type="button"
             onClick={() => open(species.id)}
@@ -55,7 +57,7 @@ export function SpeciesCard({ species }: { species: Species }) {
           {species.regions.slice(0, 2).map((r) => (
             <span
               key={r}
-              className="rounded-full border border-forest-800 bg-forest-800/60 px-2 py-0.5 text-[11px] text-canvas/60"
+              className="rounded-xs border border-canvas/10 px-1.5 py-px text-micro text-canvas/60"
             >
               {REGION_LABELS[r]}
             </span>
@@ -63,7 +65,7 @@ export function SpeciesCard({ species }: { species: Species }) {
         </div>
         <span
           aria-hidden="true"
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest-300 transition-colors group-hover:text-forest-200"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm text-canvas/70 transition-colors group-hover:text-canvas"
         >
           View profile
           <ArrowRight
@@ -71,6 +73,8 @@ export function SpeciesCard({ species }: { species: Species }) {
             aria-hidden="true"
           />
         </span>
+        {/* Above the stretched profile button, so the credit's links stay clickable. */}
+        <PhotoCredit species={species} className="relative z-20 mt-3 border-t border-canvas/[0.06] pt-2.5" />
       </div>
     </article>
   );

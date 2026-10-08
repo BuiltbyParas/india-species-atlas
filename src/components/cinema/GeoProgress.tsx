@@ -15,7 +15,9 @@ import { useCurrentChapter } from '../../motion/chapters';
  *
  * Stops are found by `[data-route-stop]` elements on the page; the leg from
  * stop i to stop i+1 fills as the page scrolls from the top of the one to the
- * top of the next.
+ * top of the next. The finale is the last stop, so the closing leg
+ * returns to the Thar as the ending arrives. The map steps aside once the
+ * footer comes up, so it never sits on top of the footer's links.
  */
 export function GeoProgress({ stops }: { stops: Species[] }) {
   const geo = useIndiaGeo();
@@ -47,16 +49,26 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
 
   useEffect(() => {
     let tops: number[] = [];
+    let footerTop = Infinity;
     let raf = 0;
+    let wasShown: boolean | null = null;
     const measure = () => {
       const nodes = [...document.querySelectorAll<HTMLElement>('[data-route-stop]')];
       nodes.sort((a, b) => Number(a.dataset.routeStop) - Number(b.dataset.routeStop));
       tops = nodes.map((n) => n.getBoundingClientRect().top + window.scrollY);
+      const footer = document.querySelector<HTMLElement>('.site-footer');
+      footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : Infinity;
     };
     const update = () => {
       raf = 0;
       const y = window.scrollY + window.innerHeight * 0.5;
-      setShown(tops.length > 0 && y > tops[0] - window.innerHeight * 0.4);
+      const bottom = window.scrollY + window.innerHeight;
+      const next = tops.length > 0 && y > tops[0] - window.innerHeight * 0.4 && bottom < footerTop + 40;
+      // Only touch React when visibility actually flips, not on every frame.
+      if (next !== wasShown) {
+        wasShown = next;
+        setShown(next);
+      }
       legRefs.current.forEach((leg, i) => {
         if (!leg) return;
         const a = tops[i];

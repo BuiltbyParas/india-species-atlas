@@ -2,14 +2,18 @@ import type { ReactNode } from 'react';
 import { cn } from '../../utils/cn';
 
 /**
- * Two sizes, because a page needs a first rank and a second one. Before this
- * every page title was set at the same size as the section headings beneath
- * it, which left the pages looking like a stack of equal parts rather than a
- * document with a top.
+ * A heading in the documentary's voice, for the working pages.
+ *
+ * Two ranks, because a page needs a first rank and a second one. Both are
+ * light Newsreader with tight tracking — the same hand that sets the chapter
+ * statements on the home page — so moving from the film to the map or the
+ * directory does not change typeface weight half-way through the atlas. The
+ * eyebrow is the chapter label's form: a short rule, then the words, in small
+ * sentence case rather than shouted capitals.
  */
 const TITLE_SIZE = {
-  page: 'text-3xl sm:text-4xl lg:text-[2.6rem] lg:leading-[1.12]',
-  section: 'text-2xl sm:text-3xl',
+  page: 'text-heading',
+  section: 'text-subheading',
 } as const;
 
 export function SectionHeading({
@@ -32,16 +36,16 @@ export function SectionHeading({
   return (
     <div className={cn(align === 'center' && 'mx-auto max-w-2xl text-center', 'max-w-3xl', className)}>
       {eyebrow && (
-        <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-forest-400">{eyebrow}</p>
+        <p className={cn('eyebrow', size === 'page' ? 'mb-5' : 'mb-3', align === 'center' && 'justify-center')}>
+          {eyebrow}
+        </p>
       )}
-      <Tag className={cn('font-serif font-semibold leading-tight text-canvas', TITLE_SIZE[size])}>
-        {title}
-      </Tag>
+      <Tag className={cn('font-serif font-light text-canvas', TITLE_SIZE[size])}>{title}</Tag>
       {description && (
         <p
           className={cn(
-            'mt-3 leading-relaxed text-canvas/70',
-            size === 'page' ? 'text-base sm:text-lg' : 'text-sm sm:text-base',
+            'max-w-[42rem]',
+            size === 'page' ? 'mt-5 font-serif text-lede font-light text-canvas/75' : 'mt-3 text-body text-canvas/70',
           )}
         >
           {description}

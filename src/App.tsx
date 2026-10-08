@@ -28,8 +28,13 @@ function ScrollToTop() {
   return null;
 }
 
+/**
+ * Holds the page open while a route's code arrives. It is a full screen tall
+ * so the footer starts below the fold and is not shoved down when the page
+ * lands (that jump was most of the working pages' layout shift).
+ */
 function PageFallback() {
-  return <div className="min-h-[70vh]" aria-busy="true" />;
+  return <div className="min-h-[100svh]" aria-busy="true" />;
 }
 
 function Shell() {
@@ -55,7 +60,7 @@ function Shell() {
     <>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:bg-canvas focus:px-3 focus:py-2 focus:text-sm focus:text-ink"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-(--z-skip) focus:bg-canvas focus:px-3 focus:py-2 focus:text-sm focus:text-ink"
       >
         Skip to content
       </a>

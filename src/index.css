@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'leaflet/dist/leaflet.css';
+@import 'lenis/dist/lenis.css';
 
 /*
   India Species Atlas — design system
@@ -50,15 +51,87 @@
   --color-status-vu: #e6b800;
   --color-status-nt: #7a9e3f;
   --color-status-lc: #3f8f5c;
+
+  /*
+    Type scale. Ten steps, set the way a printed atlas sets them: three
+    display ranks in light Newsreader for the documentary, two editorial ranks
+    for the working pages, a serif lede, and four text sizes in Geist. Nothing
+    is set below 11px. Each step carries its own leading and tracking, so a
+    class such as `text-title` is the whole typographic decision.
+
+    See documentation/PREMIUM_DESIGN_SYSTEM.md for where each one is used.
+  */
+  --text-display: clamp(3.2rem, 9vw, 10rem); /* the atlas's own name: hero, finale */
+  --text-display--line-height: 0.86;
+  --text-display--letter-spacing: -0.045em;
+  --text-title: clamp(3rem, 5.4vw, 6.4rem); /* a species' name */
+  --text-title--line-height: 0.9;
+  --text-title--letter-spacing: -0.035em;
+  --text-headline: clamp(2.2rem, 4.8vw, 5rem); /* a chapter's statement */
+  --text-headline--line-height: 1.02;
+  --text-headline--letter-spacing: -0.03em;
+  --text-heading: clamp(2.1rem, 3.6vw, 3.4rem); /* a working page's title */
+  --text-heading--line-height: 1.02;
+  --text-heading--letter-spacing: -0.03em;
+  --text-subheading: clamp(1.35rem, 1.9vw, 1.7rem); /* a section inside a page */
+  --text-subheading--line-height: 1.15;
+  --text-subheading--letter-spacing: -0.015em;
+  --text-lede: clamp(1.12rem, 1.35vw, 1.3rem); /* serif paragraph that opens or carries a section */
+  --text-lede--line-height: 1.5;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.8125rem; /* notes, captions, the running header */
+  --text-small--line-height: 1.55;
+  --text-label: 0.75rem; /* legends, credits, map labels */
+  --text-label--line-height: 1.4;
+  --text-micro: 0.6875rem; /* the floor: eyebrows, attributions */
+  --text-micro--line-height: 1.4;
+
+  /* Three trackings: tight for display serif, open for small capitals. */
+  --tracking-display: -0.035em;
+  --tracking-tight: -0.02em;
+  --tracking-caps: 0.14em;
 }
 
+/*
+  Layers and rhythm. Stacking order is named rather than numbered at each call
+  site, so the cursor, loader, header and menu can never be reshuffled by a
+  stray z-index.
+*/
 :root {
   color-scheme: dark;
+
+  --z-map-ui: 500; /* Leaflet controls and map captions */
+  --z-progress: 900; /* the route-line progress map */
+  --z-menu: 1400;
+  --z-header: 1500;
+  --z-dialog: 1600;
+  --z-skip: 2000;
+  --z-loader: 2500;
+  --z-cursor: 3000;
+
+  /* The page gutter, and the vertical rhythm between chapters. */
+  --gutter: 1rem;
+  --space-chapter: clamp(6rem, 14vh, 11rem);
+  --space-block: clamp(3rem, 7vh, 5.5rem);
+}
+@media (min-width: 640px) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 3rem;
+  }
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 5rem;
+}
+/* Without Lenis (working pages, reduced motion) in-page jumps glide natively. */
+html:not(.lenis) {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -216,7 +289,7 @@ select,
   background: rgb(10 23 16 / 0.82);
   border: 1px solid var(--color-forest-700);
   color: var(--color-forest-200);
-  font-size: 11px;
+  font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 2px 8px;
@@ -327,7 +400,7 @@ body {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: var(--z-cursor);
 }
 .cursor-dot,
 .cursor-ring {
@@ -350,7 +423,15 @@ body {
   width: 0;
   height: 0;
 }
+/*
+  The ring is a survey reticle: four ticks pointing in at the target. Over an
+  interactive element it opens and the ticks come in; where the element names
+  its action the ring takes a dark fill and carries the word, set small, like
+  a label on a sheet map. It never becomes a solid disc that hides what it
+  points at.
+*/
 .cursor-ring-shape {
+  --tick: color-mix(in srgb, var(--color-canvas) 0%, transparent);
   position: absolute;
   left: 50%;
   top: 50%;
@@ -359,22 +440,36 @@ body {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--color-canvas) 45%, transparent);
   transform: translate(-50%, -50%);
+  background:
+    linear-gradient(var(--tick), var(--tick)) 50% 0 / 1px 7px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) 50% 100% / 1px 7px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) 0 50% / 7px 1px no-repeat,
+    linear-gradient(var(--tick), var(--tick)) 100% 50% / 7px 1px no-repeat,
+    color-mix(in srgb, var(--color-forest-950) 0%, transparent);
   transition:
     width 0.55s var(--ease-out-expo),
     height 0.55s var(--ease-out-expo),
+    --tick 0.4s,
     background-color 0.4s,
     border-color 0.4s;
 }
+@property --tick {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
 .cursor-ring[data-state='hover'] .cursor-ring-shape {
-  width: 58px;
-  height: 58px;
-  border-color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+  --tick: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+  width: 54px;
+  height: 54px;
+  border-color: color-mix(in srgb, var(--color-canvas) 60%, transparent);
 }
 .cursor-ring[data-state='label'] .cursor-ring-shape {
-  width: 84px;
-  height: 84px;
-  background: var(--color-canvas);
-  border-color: var(--color-canvas);
+  --tick: var(--color-contour);
+  width: 78px;
+  height: 78px;
+  background-color: color-mix(in srgb, var(--color-forest-950) 78%, transparent);
+  border-color: color-mix(in srgb, var(--color-canvas) 75%, transparent);
 }
 .cursor-ring[data-pressed='true'] .cursor-ring-shape {
   width: 26px;
@@ -385,9 +480,9 @@ body {
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  font-size: 12px;
-  letter-spacing: 0.01em;
-  color: var(--color-ink);
+  font-size: var(--text-label);
+  letter-spacing: 0.02em;
+  color: var(--color-canvas);
   white-space: nowrap;
   opacity: 0;
   transition: opacity 0.25s;
@@ -435,7 +530,7 @@ body {
 .loader {
   position: fixed;
   inset: 0;
-  z-index: 2500;
+  z-index: var(--z-loader);
   background: var(--color-forest-950);
   color: var(--color-canvas);
   clip-path: inset(0 0 0 0);
@@ -469,7 +564,7 @@ body {
 .loader-coords {
   position: absolute;
   inset: 0;
-  font-size: 12px;
+  font-size: var(--text-label);
   color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
   font-variant-numeric: tabular-nums;
   animation: loader-in 0.8s ease 0.9s both;
@@ -504,7 +599,8 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  height: min(64vh, 120vw);
+  /* The sheet is a little taller than wide; on a phone the width decides. */
+  height: min(64vh, 96vw);
   transform: translate(-50%, -50%);
   overflow: visible;
 }
@@ -535,8 +631,8 @@ body {
   right: 1.5rem;
   bottom: 1.75rem;
   display: grid;
-  gap: 2px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: var(--text-label);
 }
 .loader-steps li {
   display: flex;
@@ -554,8 +650,27 @@ body {
   position: absolute;
   right: 1.5rem;
   top: 1.5rem;
-  font-size: 12px;
+  font-size: var(--text-label);
   color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+/* On a phone the checklist moves to the top corner, so it never sits on the title. */
+@media (max-width: 639px) {
+  .loader-steps {
+    right: auto;
+    left: 1rem;
+    top: 1.25rem;
+    bottom: auto;
+  }
+  .loader-title {
+    left: 1rem;
+    right: 1rem;
+  }
+  .loader-coord-w {
+    left: 0.75rem;
+  }
+  .loader-coord-e {
+    right: 0.75rem;
+  }
 }
 @media (min-width: 1024px) {
   .loader-title,
@@ -573,13 +688,30 @@ body {
 .site-header {
   transition: background-color 0.5s;
 }
-.site-header.is-scrolled::before {
+/*
+  Over the film the header has no bar, only a scrim that appears once the page
+  moves. It is solid behind the wordmark and fades below it, so copy scrolling
+  up underneath is covered before it reaches the type rather than read
+  through it.
+*/
+.site-header::before {
   content: '';
   position: absolute;
-  inset: 0 0 -40px 0;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-forest-950) 85%, transparent), transparent);
+  inset: 0 0 -3rem 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-forest-950) 0%,
+    color-mix(in srgb, var(--color-forest-950) 94%, transparent) 50%,
+    color-mix(in srgb, var(--color-forest-950) 60%, transparent) 72%,
+    transparent 100%
+  );
   pointer-events: none;
   z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out-expo);
+}
+.site-header.is-scrolled::before {
+  opacity: 1;
 }
 .chapter-title-inner {
   display: inline-flex;
@@ -652,7 +784,7 @@ body {
 .menu {
   position: fixed;
   inset: 0;
-  z-index: 1400;
+  z-index: var(--z-menu);
   visibility: hidden;
   transition: visibility 0s linear 1s;
 }
@@ -792,7 +924,7 @@ body {
   background: var(--color-contour);
 }
 .menu-figure {
-  font-size: 13px;
+  font-size: var(--text-small);
   color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
   opacity: 0;
   transition: opacity 0.4s;
@@ -884,6 +1016,43 @@ body {
 .menu-secondary:focus-visible {
   color: var(--color-canvas);
   background-size: 100% 1px;
+}
+
+/* --- editorial furniture for the working pages ---
+   The documentary's vocabulary, carried onto the map, directory and reference
+   pages: a hairline instead of a box, a short rule before a label, small
+   capitals only where a printed map key would use them. */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: var(--text-small);
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
+}
+.eyebrow::before {
+  content: '';
+  width: 2rem;
+  height: 1px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--color-contour) 80%, transparent);
+}
+.caps {
+  font-size: var(--text-micro);
+  line-height: 1.4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
+}
+.sheet {
+  position: relative;
+  padding: 1.25rem 0 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 14%, transparent);
+}
+.callout {
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 1px solid var(--color-contour);
 }
 
 /* --- links --- */
@@ -1058,21 +1227,39 @@ body {
     filter 0.8s ease 0.15s,
     visibility 0s;
 }
+/*
+  The three layer buttons read as a map key: three equal columns, each a
+  numeral over its label, under one hairline. On a phone they no longer wrap
+  into two ragged rows; the label wraps inside its own column instead.
+*/
 .phase-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 1.25rem;
+  width: 100%;
+  max-width: 34rem;
 }
 .phase-tab {
   position: relative;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  min-height: 40px;
-  padding-top: 0.75rem;
-  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-height: 44px;
+  padding-top: 0.8rem;
+  text-align: left;
+  font-size: var(--text-small);
+  line-height: 1.3;
   color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
   transition: color 0.4s;
+}
+.phase-tab > span:first-child {
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-contour) 70%, transparent);
+  transition: color 0.4s;
+}
+.phase-tab.is-current > span:first-child {
+  color: var(--color-contour);
 }
 .phase-tab::before {
   content: '';
@@ -1106,7 +1293,7 @@ body {
 }
 .facts-heading {
   margin-bottom: 1rem;
-  font-size: 13px;
+  font-size: var(--text-small);
   color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
 }
 .photo-frame {
@@ -1306,25 +1493,66 @@ body {
   border: 1px solid color-mix(in srgb, var(--color-canvas) 14%, transparent);
   backdrop-filter: blur(6px);
 }
+/*
+  The map key. One caption per layer, and never two at once. Where the scene
+  knows its phase (`data-phase`), the outgoing caption leaves before the next
+  arrives; otherwise (the documentary clock) each caption follows its layer
+  variable, with a gap between them rather than an overlap. The key sits on a
+  soft backing so it stays legible over the hatching, under the contour rule
+  that marks every label in the atlas.
+*/
 .sm-legend {
-  font-size: 12px;
-  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  font-size: var(--text-label);
+  color: color-mix(in srgb, var(--color-canvas) 60%, transparent);
+}
+.sm-legend::before {
+  content: '';
+  position: absolute;
+  inset: -1rem -2.5rem -2rem -1rem;
+  background: radial-gradient(farthest-side at 0 0, color-mix(in srgb, var(--color-forest-950) 92%, transparent) 55%, transparent);
+  opacity: clamp(0, var(--range) * 2, 1);
+  z-index: -1;
 }
 .sm-legend p {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  transition: opacity 0.5s;
+  padding-top: 0.75rem;
+}
+.sm-legend p::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 1px;
+  background: var(--color-contour);
 }
 .sm-legend-range {
-  opacity: clamp(0, (1 - var(--threat) * 3), 1);
+  opacity: clamp(0, (0.2 - var(--threat)) * 8, 1);
 }
 .sm-legend-threat {
-  opacity: clamp(0, min(var(--threat) * 3, 1 - var(--cons) * 3), 1);
+  opacity: clamp(0, min((var(--threat) - 0.35) * 8, (0.2 - var(--cons)) * 8), 1);
 }
 .sm-legend-cons {
-  opacity: clamp(0, var(--cons) * 3, 1);
+  opacity: clamp(0, (var(--cons) - 0.35) * 8, 1);
+}
+.sm-legend[data-phase] p {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.sm-legend[data-phase='range'] .sm-legend-range,
+.sm-legend[data-phase='threats'] .sm-legend-threat,
+.sm-legend[data-phase='conservation'] .sm-legend-cons {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s ease 0.3s,
+    transform 0.9s var(--ease-out-expo) 0.3s;
 }
 
 /* --- dome --- */
@@ -1635,7 +1863,7 @@ body {
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
-  z-index: 900;
+  z-index: var(--z-progress);
   width: 92px;
   pointer-events: none;
   opacity: 0;
@@ -1648,14 +1876,13 @@ body {
   opacity: 1;
   transform: none;
 }
-@media (min-width: 1024px) {
-  .geo-progress {
-    right: 3rem;
-    bottom: 2rem;
-    width: 110px;
-  }
+.geo-progress {
+  right: 3rem;
+  bottom: 2rem;
+  width: 110px;
 }
-@media (max-width: 1023px) {
+/* Only alongside the pinned, wide layout it was designed to sit beside. */
+@media (max-width: 1179px), (max-height: 679px) {
   .geo-progress {
     display: none;
   }
@@ -1697,7 +1924,7 @@ body {
 .gp-label {
   margin-top: 0.5rem;
   text-align: right;
-  font-size: 11px;
+  font-size: var(--text-micro);
   line-height: 1.3;
   color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
 }
@@ -1743,7 +1970,8 @@ body {
     opacity 0.5s,
     transform 0.5s var(--ease-out-expo);
 }
-.doc-controls.is-shown {
+.doc-controls.is-shown,
+.doc-controls:focus-within {
   opacity: 1;
   transform: none;
 }
