@@ -10,6 +10,8 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { useSpeciesProfile } from './SpeciesProfileProvider';
 import type { Gallery, GalleryCard } from './galleryScene';
 import { registerScene } from '../../world/sceneRegistry';
+import { Link } from 'react-router-dom';
+import { SpeciesLocator } from './SpeciesLocator';
 
 /**
  * The species gallery: photographic cards mounted in real 3D space.
@@ -204,6 +206,9 @@ export function SpeciesGallery({
           </p>
         )}
 
+        {/* The card at the front, located: its ground behind the ring, redrawn as each card comes round. */}
+        {ready && <SpeciesLocator key={current.id} species={current} className="gallery-locator" />}
+
         <p className="pointer-events-none absolute bottom-3 right-4 max-w-[15rem] text-right text-micro leading-snug text-forest-300/45">
           Photographs mounted in a 3D frame — the cards are modelled, the animals are not.
         </p>
@@ -249,14 +254,19 @@ export function SpeciesGallery({
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            onClick={() => open(current.id)}
-            className={buttonClasses('primary', 'md', 'ml-1')}
-          >
-            View profile
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          <button type="button" onClick={() => open(current.id)} className={buttonClasses('secondary', 'md', 'ml-1')}>
+            Quick profile
           </button>
+          <Link
+            to={`/species/${current.id}`}
+            data-geo={`${current.distributionPoints[0].lng},${current.distributionPoints[0].lat}`}
+            data-geo-kind="card"
+            data-cursor="Enter"
+            className={buttonClasses('primary', 'md')}
+          >
+            Enter its world
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </div>
 
