@@ -115,6 +115,7 @@
   --z-header: 1500;
   --z-dialog: 1600;
   --z-skip: 2000;
+  --z-transition: 2400; /* the sheet that turns the page */
   --z-loader: 2500;
   --z-cursor: 3000;
 
@@ -431,8 +432,7 @@ body {
 .has-custom-cursor * {
   cursor: none !important;
 }
-.has-custom-cursor input[type='text'],
-.has-custom-cursor input[type='search'],
+.has-custom-cursor input:not([type='checkbox']):not([type='radio']):not([type='range']),
 .has-custom-cursor textarea {
   cursor: text !important;
 }
@@ -442,6 +442,12 @@ body {
   inset: 0;
   z-index: var(--z-cursor);
 }
+.cursor-trail {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 .cursor-dot,
 .cursor-ring {
   position: fixed;
@@ -450,6 +456,14 @@ body {
   opacity: 0;
   transition: opacity 0.3s;
   will-change: transform;
+}
+.cursor-layer[data-visible='true'] .cursor-dot,
+.cursor-layer[data-visible='true'] .cursor-ring {
+  opacity: 1;
+}
+.cursor-layer[data-visible='true'] .cursor-ring[data-state='text'],
+.cursor-layer[data-visible='true'] .cursor-ring[data-state='text'] ~ .cursor-dot {
+  opacity: 0;
 }
 .cursor-dot {
   width: 6px;
@@ -462,19 +476,30 @@ body {
 .cursor-ring {
   width: 0;
   height: 0;
+  --lw: 54px;
+  --lh: 54px;
+}
+.cursor-ring-body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
 }
 /*
   The ring is a survey reticle: four ticks pointing in at the target. Over an
   interactive element it opens and the ticks come in; where the element names
   its action the ring takes a dark fill and carries the word, set small, like
-  a label on a sheet map. It never becomes a solid disc that hides what it
-  points at.
+  a label on a sheet map. On a magnetic control it locks on: the circle opens
+  out to the control's own box and becomes four corner marks. It never
+  becomes a solid disc that hides what it points at.
 */
 .cursor-ring-shape {
   --tick: color-mix(in srgb, var(--color-canvas) 0%, transparent);
+  --corner: transparent;
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: 0;
+  top: 0;
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -489,9 +514,27 @@ body {
   transition:
     width 0.55s var(--ease-out-expo),
     height 0.55s var(--ease-out-expo),
+    border-radius 0.45s var(--ease-out-expo),
     --tick 0.4s,
     background-color 0.4s,
     border-color 0.4s;
+}
+/* Corner marks for the lock: eight short rules, drawn only in that state. */
+.cursor-ring-shape::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background:
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 0 0 / 9px 1px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 0 0 / 1px 9px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 100% 0 / 9px 1px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 100% 0 / 1px 9px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 0 100% / 9px 1px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 0 100% / 1px 9px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 100% 100% / 9px 1px no-repeat,
+    linear-gradient(var(--color-canvas), var(--color-canvas)) 100% 100% / 1px 9px no-repeat;
 }
 @property --tick {
   syntax: '<color>';
@@ -511,9 +554,24 @@ body {
   background-color: color-mix(in srgb, var(--color-forest-950) 78%, transparent);
   border-color: color-mix(in srgb, var(--color-canvas) 75%, transparent);
 }
-.cursor-ring[data-pressed='true'] .cursor-ring-shape {
-  width: 26px;
-  height: 26px;
+.cursor-ring[data-state='lock'] .cursor-ring-shape {
+  width: var(--lw);
+  height: var(--lh);
+  border-radius: 2px;
+  border-color: transparent;
+}
+.cursor-ring[data-state='lock'] .cursor-ring-shape::after {
+  opacity: 0.9;
+}
+.cursor-ring[data-state='area'] .cursor-ring-shape,
+.cursor-ring[data-state='trace'] .cursor-ring-shape {
+  --tick: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  width: 22px;
+  height: 22px;
+}
+.cursor-ring[data-state='trace'] .cursor-ring-shape {
+  --tick: var(--color-contour);
+  border-color: var(--color-contour);
 }
 .cursor-label {
   position: absolute;
@@ -531,12 +589,38 @@ body {
   opacity: 1;
   transition-delay: 0.12s;
 }
+/* Beside the reticle, small, for regions and for the lock's corner. */
+.cursor-ring:is([data-state='area'], [data-state='trace']) .cursor-label {
+  left: 18px;
+  top: 14px;
+  transform: none;
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+  opacity: 1;
+}
+.cursor-ring[data-state='trace'] .cursor-label {
+  color: var(--color-contour);
+}
+.cursor-ring[data-state='lock'] .cursor-label {
+  left: calc(var(--lw) / 2 + 6px);
+  top: calc(var(--lh) / -2);
+  transform: translateY(-40%);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-contour);
+  opacity: 1;
+  transition-delay: 0.18s;
+}
 .cursor-splash {
   position: fixed;
   width: 0;
   height: 0;
 }
-.cursor-splash span {
+.cursor-splash span,
+.touch-mark span {
   position: absolute;
   left: 0;
   top: 0;
@@ -547,7 +631,8 @@ body {
   border: 1px solid var(--color-contour);
   animation: cursor-splash 1s var(--ease-out-expo) forwards;
 }
-.cursor-splash span:nth-child(2) {
+.cursor-splash span:nth-child(2),
+.touch-mark span:nth-child(2) {
   animation-delay: 0.08s;
   border-color: color-mix(in srgb, var(--color-contour) 70%, transparent);
 }
@@ -564,6 +649,401 @@ body {
     transform: scale(7);
     opacity: 0;
   }
+}
+/* The touch equivalent of the splash: two rings where the finger landed. */
+.touch-mark {
+  position: fixed;
+  z-index: var(--z-cursor);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.touch-mark span {
+  animation-duration: 0.8s;
+  animation-name: touch-mark;
+}
+@keyframes touch-mark {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(4.2);
+    opacity: 0;
+  }
+}
+
+/* --- control states (interaction/state.ts writes data-ix) --- */
+/*
+  A pressed control gives a little under the finger and springs back once on
+  release. The individual scale property composes with the magnetic pull
+  (translate) and with any transform a control already has.
+*/
+:where(.cta, .menu-button, .menu-link) {
+  /* Controls with no transition of their own; the others append to a control's own transitions as var(--ix-scale). Never translate: the magnetic pull is written every frame. */
+  transition: var(--ix-scale);
+}
+:root {
+  --ix-scale: scale 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+:where(.ix-press, .cta, .text-link, .menu-button, .dome-arrow, .sw-next, .menu-secondary)[data-ix='press'] {
+  scale: 0.955;
+}
+.menu-link[data-ix='press'] {
+  scale: 0.985;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.ix-press, .cta, .text-link, .menu-button, .dome-arrow, .sw-next, .menu-secondary, .menu-link)[data-ix] {
+    scale: none;
+  }
+}
+
+/* A close control: the cross turns a little towards closing as it is approached. */
+.ix-close svg {
+  transition: rotate 0.5s var(--ease-out-expo);
+}
+.ix-close[data-ix='hover'] svg,
+.ix-close:focus-visible svg {
+  rotate: 45deg;
+}
+.ix-close[data-ix='press'] svg {
+  rotate: 90deg;
+}
+
+/* --- hover depth (interaction/depth.ts writes --dx, --dy, --dh) --- */
+/* A directory card turns a few degrees to the pointer; its photograph drifts the other way; a light crosses it. */
+.depth-card {
+  --dx: 0;
+  --dy: 0;
+  --dh: 0;
+  transform: perspective(1100px) rotateX(calc(var(--dy) * -4deg)) rotateY(calc(var(--dx) * 5deg));
+}
+.depth-card img {
+  translate: calc(var(--dx) * -10px) calc(var(--dy) * -8px);
+}
+.depth-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    80% 60% at calc(50% + var(--dx) * 100%) calc(30% + var(--dy) * 100%),
+    color-mix(in srgb, var(--color-canvas) 6%, transparent),
+    transparent 70%
+  );
+  opacity: var(--dh);
+}
+
+/* --- line titles (components/cinema/LineTitle.tsx) --- */
+.line-title {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+.lt-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.lt-l {
+  display: inline-block;
+  transform-origin: 50% 80%;
+}
+.line-title[data-lt='pre'] .lt-l {
+  opacity: 0;
+  filter: blur(5px);
+}
+.line-title[data-lt='write'] .lt-l {
+  transition:
+    opacity 0.5s linear,
+    filter 0.7s var(--ease-out-expo);
+}
+.lt-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.lt-rule {
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.line-title[data-lt='write'] .lt-rule {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.95s var(--ease-cinema) var(--lt-delay, 0s);
+}
+.line-title[data-lt='done'] .lt-rule {
+  stroke-dashoffset: 0;
+  stroke: color-mix(in srgb, var(--color-canvas) 32%, transparent);
+  transition: stroke 1.4s var(--ease-out-expo);
+}
+
+/* --- page transition (interaction/RouteTransition.tsx) --- */
+/*
+  LINE → SCREEN. A rule is drawn out from the point pressed; the sheet
+  unfolds from it above and below; the destination is named on it. Then the
+  sheet opens from the same line onto the new page, like the bustard's
+  shutter, and the line lifts.
+*/
+.sheet-cover {
+  --line-y: 50vh;
+  --line-x: 50vw;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-transition);
+  pointer-events: none;
+  visibility: hidden;
+  color: var(--color-canvas);
+}
+.sheet-cover:not([data-phase='idle']) {
+  visibility: visible;
+  pointer-events: auto;
+}
+.sheet-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background-color: var(--color-forest-950);
+  /* A faint graticule: it is a sheet, not a curtain. */
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-canvas) 3.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 3.5%, transparent) 1px, transparent 1px);
+  background-size: 96px 96px;
+  background-attachment: fixed;
+  transform: scaleY(0);
+}
+.sheet-top {
+  top: 0;
+  height: var(--line-y);
+  transform-origin: 50% 100%;
+}
+.sheet-bottom {
+  top: var(--line-y);
+  bottom: 0;
+  transform-origin: 50% 0;
+}
+.sheet-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--line-y);
+  height: 0;
+  opacity: 0;
+}
+.sheet-rule-line {
+  position: absolute;
+  top: 0;
+  height: 1px;
+  margin-top: -0.5px;
+  background: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+  transform: scaleX(0);
+}
+.sheet-rule-left {
+  left: 0;
+  width: var(--line-x);
+  transform-origin: 100% 50%;
+}
+.sheet-rule-right {
+  left: var(--line-x);
+  right: 0;
+  transform-origin: 0 50%;
+}
+.sheet-nib {
+  position: absolute;
+  top: 0;
+  left: var(--line-x);
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 999px;
+  background: var(--color-contour);
+  box-shadow: 0 0 0 1.5px var(--color-forest-950);
+  opacity: 0;
+}
+.sheet-caption {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: var(--line-y);
+  opacity: 0;
+}
+@media (min-width: 1024px) {
+  .sheet-caption {
+    left: clamp(3rem, 8vw, 9rem);
+  }
+}
+.sheet-eyebrow,
+.sheet-title {
+  position: absolute;
+  left: 0;
+  bottom: 14px;
+}
+.sheet-eyebrow {
+  bottom: calc(14px + clamp(2rem, 4.2vw, 3.4rem));
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+.sheet-title {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.sheet-note {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-contour);
+}
+
+/* close: the line, then the sheet from it, then the name */
+.sheet-cover[data-phase='close'] .sheet-rule,
+.sheet-cover[data-phase='hold'] .sheet-rule {
+  opacity: 1;
+}
+.sheet-cover[data-phase='close'] .sheet-rule-line {
+  animation: sheet-rule 0.32s var(--ease-cinema) both;
+}
+.sheet-cover[data-phase='close'] .sheet-nib-left {
+  animation: sheet-nib-left 0.32s var(--ease-cinema) both;
+}
+.sheet-cover[data-phase='close'] .sheet-nib-right {
+  animation: sheet-nib-right 0.32s var(--ease-cinema) both;
+}
+.sheet-cover[data-phase='close'] .sheet-half {
+  animation: sheet-unfold 0.42s var(--ease-cinema) 0.14s both;
+}
+.sheet-cover[data-phase='close'] .sheet-caption {
+  animation: sheet-caption-in 0.36s var(--ease-out-expo) 0.24s both;
+}
+.sheet-cover[data-phase='hold'] .sheet-rule-line,
+.sheet-cover[data-phase='hold'] .sheet-half {
+  transform: none;
+}
+.sheet-cover[data-phase='hold'] .sheet-caption {
+  opacity: 1;
+}
+/* open: the sheet parts from the line onto the new page */
+.sheet-cover[data-phase='open'] .sheet-top {
+  transform-origin: 50% 0;
+}
+.sheet-cover[data-phase='open'] .sheet-bottom {
+  transform-origin: 50% 100%;
+}
+.sheet-cover[data-phase='open'] .sheet-half {
+  animation: sheet-part 0.68s var(--ease-out-expo) 0.08s both;
+}
+.sheet-cover[data-phase='open'] .sheet-rule {
+  animation: sheet-fade 0.42s var(--ease-out-expo) both;
+}
+.sheet-cover[data-phase='open'] .sheet-rule-line {
+  transform: none;
+}
+.sheet-cover[data-phase='open'] .sheet-caption {
+  animation: sheet-fade 0.2s linear both;
+}
+@keyframes sheet-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes sheet-nib-left {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(var(--line-x) * -1) 0;
+  }
+}
+@keyframes sheet-nib-right {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(100vw - var(--line-x)) 0;
+  }
+}
+@keyframes sheet-unfold {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes sheet-part {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0);
+  }
+}
+@keyframes sheet-caption-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* While the page turns under cover, nothing else animates its exit. */
+.is-turning .menu,
+.is-turning .menu * {
+  transition: none !important;
+  animation: none !important;
+}
+/* Reduced motion: no line and no unfolding; the sheet fades, names the page, and fades. */
+.sheet-cover[data-reduced='true'] .sheet-rule {
+  display: none;
+}
+.sheet-cover[data-reduced='true'] .sheet-half {
+  transform: none;
+  animation: none;
+}
+.sheet-cover[data-reduced='true'][data-phase='close'] {
+  animation: sheet-fade 0.2s linear reverse both;
+}
+.sheet-cover[data-reduced='true'][data-phase='open'] {
+  animation: sheet-fade 0.26s linear both;
+}
+.sheet-cover[data-reduced='true'] .sheet-caption {
+  animation: none;
+  opacity: 1;
 }
 
 /* --- loader --- */
@@ -1101,7 +1581,8 @@ body {
   background-repeat: no-repeat;
   transition:
     background-size 0.5s var(--ease-out-expo),
-    color 0.3s;
+    color 0.3s,
+    var(--ix-scale);
 }
 .menu-secondary:hover,
 .menu-secondary:focus-visible {
@@ -1261,7 +1742,9 @@ body {
   background-size: 100% 1px;
   background-position: 100% 100%;
   background-repeat: no-repeat;
-  transition: background-size 0.6s var(--ease-out-expo);
+  transition:
+    background-size 0.6s var(--ease-out-expo),
+    var(--ix-scale);
 }
 .text-link:hover,
 .text-link:focus-visible {
@@ -1512,19 +1995,49 @@ body {
   position: relative;
   overflow: hidden;
   background: var(--color-forest-900);
-  --px: 0;
-  --py: 0;
+  /* Written by interaction/depth.ts while the pointer is over the frame. */
+  --dx: 0;
+  --dy: 0;
+  --dh: 0;
 }
 .photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  translate: calc(var(--px) * -14px) calc(var(--py) * -14px);
-  transition: translate 1.2s var(--ease-out-expo), scale 1.2s var(--ease-out-expo);
+  translate: calc(var(--dx) * -16px) calc(var(--dy) * -14px);
+  scale: calc(1 + var(--dh) * 0.035);
   will-change: transform;
 }
-.photo-frame:hover .photo-img {
-  scale: 1.035;
+/* The photograph is the evidence; the effect stays around it: a light crossing the print. */
+.photo-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 70% at calc(50% + var(--dx) * 90%) calc(40% + var(--dy) * 80%),
+    color-mix(in srgb, var(--color-canvas) 9%, transparent),
+    transparent 70%
+  );
+  mix-blend-mode: soft-light;
+  opacity: var(--dh);
+}
+/* Crop marks, the way a print is marked up for the press, closing in as it is looked at. */
+.photo-marks {
+  --m: calc(22px - var(--dh) * 10px);
+  --c: color-mix(in srgb, var(--color-canvas) calc(var(--dh) * 70%), transparent);
+  position: absolute;
+  inset: var(--m);
+  pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 14px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 0 / 1px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 14px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 1px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 14px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 1px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 14px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 1px 14px no-repeat;
 }
 .photo-grain {
   position: absolute;
@@ -1918,7 +2431,8 @@ body {
   color: var(--color-canvas);
   transition:
     border-color 0.3s,
-    background-color 0.3s;
+    background-color 0.3s,
+    var(--ix-scale);
 }
 .dome-arrow:hover {
   border-color: var(--color-canvas);
@@ -2108,6 +2622,12 @@ body {
   vector-effect: non-scaling-stroke;
 }
 /* The dotted guide under each leg: a survey line, the route still to come. */
+/* The route-progress map is the one place scroll speed reaches a line: a fling
+   thickens the reader's route a hair, and it settles when the page stops. */
+.geo-progress .gl:not(.gp-guide) .gl-path {
+  stroke-width: calc(var(--gl-w) * (1 + var(--atlas-velocity, 0) * 1.2) / (var(--gl-k, 1) * var(--gl-z, 1)));
+  transition: stroke-opacity 0.3s;
+}
 .gp-guide .gl-path {
   stroke-dasharray: 1px 3px;
   stroke-opacity: 0.5;
@@ -2316,6 +2836,61 @@ body {
   max-height: min(72svh, 760px);
   background: transparent;
 }
+/* The shutter: a ruled line, then the photograph opens from it (the bustard's way in, as the atlas's way of showing a print). */
+.photo-shutter {
+  background: transparent;
+}
+.photo-shutter .photo-img,
+.photo-shutter .photo-grain {
+  clip-path: inset(50% 0 50% 0);
+  transition: clip-path 1.15s var(--ease-cinema) 0.45s;
+}
+.photo-shutter.is-open .photo-img,
+.photo-shutter.is-open .photo-grain {
+  clip-path: inset(0 0 0 0);
+}
+.photo-shutter-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-contour);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+.photo-shutter.is-open .photo-shutter-line {
+  animation: shutter-line 1.5s var(--ease-cinema) forwards;
+}
+@keyframes shutter-line {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  35% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-shutter .photo-img,
+  .photo-shutter .photo-grain {
+    clip-path: none;
+    transition: none;
+  }
+  .photo-shutter-line {
+    display: none;
+  }
+}
+.sw-photo .photo-marks {
+  /* Contained, not cropped: the frame's corners are not the print's. */
+  display: none;
+}
 .sw-photo .photo-img {
   object-fit: contain;
   object-position: 50% 100%;
@@ -2513,7 +3088,9 @@ body {
   display: block;
   margin-top: 1.25rem;
   color: var(--color-canvas);
-  transition: transform 0.6s var(--ease-out-expo);
+  transition:
+    transform 0.6s var(--ease-out-expo),
+    var(--ix-scale);
 }
 .sw-next:hover {
   transform: translateX(0.5rem);

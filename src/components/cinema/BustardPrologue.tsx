@@ -185,7 +185,7 @@ function Pinned({ species }: { species: Species }) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="bustard-prologue relative h-[320vh]" aria-label={`${species.commonName}: the way in`}>
+    <section ref={sectionRef} data-trail className="bustard-prologue relative h-[320vh]" aria-label={`${species.commonName}: the way in`}>
       <div ref={stageRef} className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="mx-auto grid h-full max-w-[1600px] grid-cols-12 gap-x-8 px-12 pb-10 pt-28">
           <div className="relative col-span-5">

@@ -74,7 +74,7 @@ export function CinematicHero({ focus }: { focus?: Species }) {
   const captions = anchor ? [...CAPTIONS, landing(focus!, anchor)] : CAPTIONS;
 
   return (
-    <div ref={ref} id="atlas-top" data-chapter="1">
+    <div ref={ref} id="atlas-top" data-chapter="1" data-trail>
       <HeroStage
         withPlates={false}
         endFocus={anchor ? { lng: anchor.lng, lat: anchor.lat } : undefined}

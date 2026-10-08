@@ -304,6 +304,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
         aria-label={`Species gallery. ${focus.commonName} is in front. Use the arrow keys to turn, Enter to open the profile.`}
         onKeyDown={onKey}
         data-cursor-drag
+        data-cursor-area="Turn"
       >
         <div ref={sphereRef} className="dome-sphere">
           {tiles.map((t, i) => {
@@ -383,13 +384,13 @@ export function DomeGallery({ species }: { species: Species[] }) {
           <PhotoCredit species={focus} className="mt-3" />
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="dome-arrow" onClick={() => goTo((center - 1 + count) % count)} aria-label="Previous species" data-cursor="Turn">
+          <button type="button" className="dome-arrow" onClick={() => goTo((center - 1 + count) % count)} aria-label="Previous species" data-cursor="Turn" data-magnetic="0.4">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
           </button>
-          <button type="button" className="dome-arrow" onClick={() => goTo((center + 1) % count)} aria-label="Next species" data-cursor="Turn">
+          <button type="button" className="dome-arrow" onClick={() => goTo((center + 1) % count)} aria-label="Next species" data-cursor="Turn" data-magnetic="0.4">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button type="button" className="text-link ml-4" onClick={() => open(focus.id)} data-cursor="Discover">
+          <button type="button" className="text-link ml-4" onClick={() => open(focus.id)} data-cursor="Discover" data-magnetic="0.22">
             Open profile
           </button>
         </div>

@@ -196,6 +196,7 @@ export function SpeciesGallery({
         tabIndex={0}
         aria-label="Species gallery. Use the left and right arrow keys to turn the ring, and Enter to open the species in front."
         onKeyDown={onKeyDown}
+        data-cursor-area="Turn"
         className="relative isolate h-[26rem] overflow-hidden rounded-xs border border-forest-800 bg-[radial-gradient(120%_100%_at_50%_0%,var(--color-forest-900),var(--color-forest-950)_70%)] outline-none ring-forest-500/70 transition-shadow focus-visible:ring-2 sm:h-[32rem] lg:h-[36rem]"
       >
         <canvas

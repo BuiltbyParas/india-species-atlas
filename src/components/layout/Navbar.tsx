@@ -69,11 +69,12 @@ export function Navbar() {
           <button
             type="button"
             className="menu-button"
+            data-magnetic="0.35"
             aria-expanded={open}
             aria-controls="site-menu"
             onClick={() => setOpen((v) => !v)}
           >
-            <span className="menu-button-text">
+            <span className="menu-button-text" data-magnetic-inner>
               <span>{open ? 'Close' : 'Menu'}</span>
             </span>
             <span className="menu-button-lines" aria-hidden="true">

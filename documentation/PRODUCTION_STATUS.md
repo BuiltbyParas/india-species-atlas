@@ -334,3 +334,21 @@ The existing loader was evolved into the opening rather than given a second intr
 - The full screenshot pass at every viewport and under reduced motion: no errors, no overflow.
 - Keyboard tests pass. GPU vitals and per-section frame timing were measured for both builds.
 - `tsc -b` and `vite build` are clean. Oxlint shows only fast-refresh warnings (dev-only), from components that also export helpers.
+
+## Interaction engine (branch `atlas/interaction`, after Gate 8)
+
+- **Audit:** [`LUSION_EXPERIENCE_AUDIT.md`](LUSION_EXPERIENCE_AUDIT.md). **System:** [`INTERACTION_ENGINE.md`](INTERACTION_ENGINE.md).
+- **What changed:**
+  - **One engine:** a frame loop, a spring, a pointer store, a scroll-velocity store and an event stream (`src/interaction/`). The cursor, magnetic controls, hover depth, parallax, the trail and the line titles all run on it.
+  - **The page turn:** a rule from the point pressed, the sheet unfolding from it, and the destination named from the dataset. Focus moves to the new page and its heading is announced.
+  - **The cursor as instrument:** spring, velocity stretch, press rebound, lock-on corner marks over magnetic controls, area labels, and an ink trail that traces the atlas's own lines.
+  - **Press / release states and touch marks** on every control.
+  - **Line titles** on the species pages and the 404: a contour that becomes the rule.
+  - **Photographs:** depth, a crossing light, crop marks, and a shutter with an ink-bleed edge.
+- **Preserved:** every scene, timing, 3D loop, data value, label and reduced-motion composition.
+- **Verification:**
+  - `tsc -b`, `vite build`; oxlint shows no new warnings.
+  - Regression pass at 1920, 1440, 1280, tablet, 430 and 390, plus reduced motion on desktop and phone: no errors, no overflow, no broken images, one `h1` each.
+  - Navigation edge cases: keyboard, back, ctrl-click, double click, reduced motion, touch.
+  - The dialog trap and tablists.
+  - Scroll frame timing equal to Gate 8 on desktop and phone (numbers in `INTERACTION_ENGINE.md`).

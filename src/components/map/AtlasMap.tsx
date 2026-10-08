@@ -201,7 +201,7 @@ export function AtlasMap({
   };
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" data-cursor-area="Explore">
       <MapContainer
         center={INDIA_CENTER}
         zoom={4}

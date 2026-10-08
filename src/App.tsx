@@ -7,6 +7,8 @@ import { CustomCursor } from './components/cinema/CustomCursor';
 import { Loader, shouldShowLoader } from './components/cinema/Loader';
 import { SmoothScroll } from './motion/SmoothScroll';
 import { markIntroDone } from './motion/intro';
+import { InteractionProvider } from './interaction/InteractionProvider';
+import { RouteTransition } from './interaction/RouteTransition';
 import { HomePage } from './pages/HomePage';
 
 // The working pages are split out, so the documentary's first load carries
@@ -68,11 +70,13 @@ function Shell() {
         Skip to content
       </a>
       {home && <SmoothScroll />}
+      <InteractionProvider />
       <CustomCursor />
+      <RouteTransition />
       {loading && <Loader onDone={done} />}
       <div className="flex min-h-screen flex-col">
         <Navbar />
-        <main id="main" className="flex-1">
+        <main id="main" tabIndex={-1} className="flex-1 outline-none">
           <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />

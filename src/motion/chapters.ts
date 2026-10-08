@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore, type RefObject } from 'react';
+import { emit as announce } from '../interaction/events';
 
 /**
  * Which chapter of the documentary is on screen, for the header's running
@@ -24,6 +25,7 @@ function emit(next: Chapter | null) {
   if (current?.index === next?.index) return;
   current = next;
   for (const l of listeners) l();
+  if (next) announce('chapter:start', { index: next.index, title: next.title });
 }
 
 function compute() {

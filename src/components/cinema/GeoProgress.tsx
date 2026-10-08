@@ -4,6 +4,7 @@ import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { bowedLeg } from '../../geo/line/paths';
 import { useCurrentChapter } from '../../motion/chapters';
+import { useVelocityVar } from '../../interaction/velocity';
 
 /**
  * Scroll progress drawn as a route across a small map of India.
@@ -29,6 +30,8 @@ import { useCurrentChapter } from '../../motion/chapters';
  * hides.
  */
 export function GeoProgress({ stops }: { stops: Species[] }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useVelocityVar(rootRef);
   const geo = useIndiaGeo();
   const chapter = useCurrentChapter();
   const legRefs = useRef<Array<SVGGElement | null>>([]);
@@ -116,7 +119,7 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
   }, [legs.length, anchors]);
 
   return (
-    <div className={`geo-progress ${shown ? 'is-shown' : ''}`} aria-hidden="true">
+    <div ref={rootRef} className={`geo-progress ${shown ? 'is-shown' : ''}`} aria-hidden="true">
       <svg viewBox={MAP_VIEWBOX}>
         <path d={geo?.all ?? ''} className="gp-country" />
         {legs.map((d, i) => (

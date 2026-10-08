@@ -13,8 +13,8 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'sm' | 'md';
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xs font-medium ' +
-  'transition-[background-color,border-color,color,box-shadow,transform] ' +
+  'ix-press inline-flex items-center justify-center gap-2 rounded-xs font-medium ' +
+  'transition-[background-color,border-color,color,box-shadow,transform,scale] ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
 

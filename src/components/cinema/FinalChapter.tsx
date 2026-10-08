@@ -33,7 +33,7 @@ export function FinalChapter() {
   });
 
   return (
-    <section ref={ref} data-route-stop="5" className={cn('final relative overflow-hidden', seen && 'is-shown')} aria-labelledby="final-title">
+    <section ref={ref} data-route-stop="5" data-trail className={cn('final relative overflow-hidden', seen && 'is-shown')} aria-labelledby="final-title">
       <div className="mx-auto grid min-h-[100svh] max-w-[1600px] items-center gap-12 px-4 py-28 sm:px-8 lg:grid-cols-12 lg:px-12">
         <div className="relative lg:col-span-7">
           <h2 id="final-title" className="font-serif text-display font-light text-canvas">
@@ -52,9 +52,9 @@ export function FinalChapter() {
                 <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line"><path d="M0 5 C 12 1, 26 9, 40 5" /></svg>
               </Link>
             </Magnetic>
-            <Link to="/species" className="text-link">Browse the species</Link>
-            <Link to="/documentary" className="text-link">Documentary mode</Link>
-            <Link to="/sources" className="text-link">Sources</Link>
+            <Link to="/species" className="text-link" data-magnetic="0.2">Browse the species</Link>
+            <Link to="/documentary" className="text-link" data-magnetic="0.2">Documentary mode</Link>
+            <Link to="/sources" className="text-link" data-magnetic="0.2">Sources</Link>
           </div>
         </div>
         <div className="relative lg:col-span-5">

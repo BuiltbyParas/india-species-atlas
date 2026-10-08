@@ -16,7 +16,9 @@ import { cn } from '../utils/cn';
 import { SpeciesMap } from '../components/cinema/SpeciesMap';
 import { ConservationFacts, PHASE_VARS, Photo, setVars, ThreatFacts, type Phase } from '../components/cinema/SpeciesScene';
 import { StatusIndicator } from '../components/cinema/StatusIndicator';
-import { RevealText } from '../components/cinema/RevealText';
+import { LineTitle } from '../components/cinema/LineTitle';
+import { useParallax } from '../interaction/parallax';
+import { emit } from '../interaction/events';
 import { PhotoCredit } from '../components/ui/PhotoCredit';
 import { NotFoundPage } from './NotFoundPage';
 
@@ -58,11 +60,19 @@ function World({ species }: { species: Species }) {
   const [hlSites, setHlSites] = useState(false);
   const mapSeen = useInView(mapRef, { rootMargin: '0px 0px -20% 0px' });
   const status = STATUS_INFO[species.status];
+  // The atmosphere drifts away from the hand, so the photograph and title read as nearer.
+  const washRef = useRef<HTMLImageElement>(null);
+  useParallax(washRef, -18);
   const anchor = species.distributionPoints[0];
   const order = SPECIES.findIndex((s) => s.id === species.id);
   const next = SPECIES[(order + 1) % SPECIES.length];
   const prev = SPECIES[(order - 1 + SPECIES.length) % SPECIES.length];
   const backdrop = photoSources(species)?.small;
+
+  useEffect(() => {
+    emit('species:enter', { id: species.id });
+    return () => emit('species:exit', { id: species.id });
+  }, [species.id]);
 
   useEffect(() => {
     document.title = `${species.commonName} (${species.scientificName}) — India Species Atlas`;
@@ -103,11 +113,11 @@ function World({ species }: { species: Species }) {
     <article className="species-world" aria-labelledby="world-title" style={{ ['--status' as string]: status.hex }}>
       {/* ---------------------------------------------------------------- opening */}
       <header className="sw-open relative isolate overflow-hidden">
-        {backdrop && <img src={backdrop} alt="" aria-hidden="true" className="sw-wash" />}
+        {backdrop && <img ref={washRef} src={backdrop} alt="" aria-hidden="true" className="sw-wash" />}
         <div className="mx-auto grid max-w-[1600px] gap-10 px-(--gutter) pb-16 pt-28 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-12 lg:items-end lg:gap-x-12 lg:pb-20 lg:pt-32">
           <div className="lg:col-span-5 lg:pb-4">
             <nav aria-label="Breadcrumb" className="eyebrow">
-              <Link to="/species" className="hover:text-canvas">
+              <Link to="/species" className="hover:text-canvas" data-cursor="Return">
                 Species
               </Link>
               <span aria-hidden="true">/</span>
@@ -116,7 +126,7 @@ function World({ species }: { species: Species }) {
               </span>
             </nav>
             <h1 id="world-title" className="mt-8 font-serif text-title font-light text-canvas">
-              <RevealText text={species.commonName} stagger={0.08} />
+              <LineTitle key={species.id} text={species.commonName} seed={order} />
             </h1>
             <p className="mt-4 font-serif text-xl italic text-canvas/65 sm:text-2xl">{species.scientificName}</p>
             <StatusIndicator status={species.status} className="mt-6" />
@@ -147,7 +157,7 @@ function World({ species }: { species: Species }) {
             </dl>
           </div>
           <figure className="lg:col-span-7">
-            <Photo species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" />
+            <Photo key={species.id} species={species} className="sw-photo" sizes="(min-width: 1024px) 58vw, 100vw" shutter />
             <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
               <span className="text-label text-canvas/45">{species.image.alt}</span>
               <PhotoCredit species={species} />
@@ -171,7 +181,7 @@ function World({ species }: { species: Species }) {
       </section>
 
       {/* ------------------------------------------------------- map and chapters */}
-      <section className="sw-body mx-auto max-w-[1600px] px-(--gutter)" aria-label={`${species.commonName}: the map`}>
+      <section data-trail className="sw-body mx-auto max-w-[1600px] px-(--gutter)" aria-label={`${species.commonName}: the map`}>
         <div className="sw-grid">
           <div className="sw-map-col">
             <div className="sw-map-sticky">
@@ -356,12 +366,12 @@ function Onwards({ from, next, prev }: { from: Species; next: Species; prev: Spe
       <div className="mx-auto grid max-w-[1600px] items-center gap-10 px-(--gutter) py-(--space-chapter) lg:grid-cols-12 lg:gap-x-12">
         <div className="lg:col-span-6">
           <p className="eyebrow">Next on the line</p>
-          <Link to={`/species/${next.id}`} className="sw-next" data-cursor="Enter">
+          <Link to={`/species/${next.id}`} className="sw-next" data-cursor="Follow" data-magnetic="0.12">
             <span className="font-serif text-headline font-light">{next.commonName}</span>
             <span className="mt-2 block font-serif text-lg italic text-canvas/55">{next.scientificName}</span>
           </Link>
           <p className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-small">
-            <Link to={`/species/${prev.id}`} className="text-link">
+            <Link to={`/species/${prev.id}`} className="text-link" data-cursor="Return" data-magnetic="0.2">
               Previous: {prev.commonName}
             </Link>
             <Link to="/species" className="text-link">

@@ -147,7 +147,8 @@ export function SpeciesProfileProvider({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={close}
                   data-autofocus
-                  className="grid h-10 w-10 place-items-center rounded-xs text-canvas/70 hover:bg-forest-800 hover:text-canvas"
+                  data-magnetic="0.4"
+                  className="ix-press ix-close grid h-10 w-10 place-items-center rounded-xs text-canvas/70 hover:bg-forest-800 hover:text-canvas"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />

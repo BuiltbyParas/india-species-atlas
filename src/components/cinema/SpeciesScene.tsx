@@ -6,7 +6,8 @@ import { PROGRAMME_BY_ID } from '../../data/programmes';
 import { gsap, ScrollTrigger } from '../../motion/gsap';
 import { scrollToTarget } from '../../motion/SmoothScroll';
 import { useInView } from '../../motion/useInView';
-import { hasFinePointer, prefersReducedMotion, useReducedMotion, useWideLayout } from '../../motion/preferences';
+import { useInkBleed } from '../../interaction/ink';
+import { useReducedMotion, useWideLayout } from '../../motion/preferences';
 import { photoSources } from '../../utils/photo';
 import { cn } from '../../utils/cn';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
@@ -159,39 +160,26 @@ export function Photo({
   className,
   imgRef,
   sizes,
+  shutter,
 }: {
   species: Species;
   className?: string;
   imgRef?: React.Ref<HTMLImageElement>;
+  /** Open from a ruled line the first time it comes into view. */
+  shutter?: boolean;
   /** The slot's width, so the browser can choose between the WebP and the master. */
   sizes: string;
 }) {
   const photo = photoSources(species);
   const frameRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = frameRef.current;
-    if (!el || !hasFinePointer() || prefersReducedMotion()) return;
-    const onMove = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      el.style.setProperty('--px', x.toFixed(3));
-      el.style.setProperty('--py', y.toFixed(3));
-    };
-    const onLeave = () => {
-      el.style.setProperty('--px', '0');
-      el.style.setProperty('--py', '0');
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    };
-  }, []);
+  const seen = useInView(frameRef, { rootMargin: '0px 0px -8% 0px' });
+  // The shutter's edges run like ink as the print opens (interaction/ink.ts).
+  useInkBleed(frameRef, Boolean(shutter && seen));
   if (!photo) return null;
   return (
-    <div ref={frameRef} className={cn('photo-frame', className)}>
+    // `data-depth`: the interaction engine eases --dx/--dy/--dh on the frame;
+    // the photograph drifts inside it, a light crosses it and crop marks close in.
+    <div ref={frameRef} className={cn('photo-frame', shutter && 'photo-shutter', shutter && seen && 'is-open', className)} data-depth>
       <img
         ref={imgRef}
         src={photo.src}
@@ -205,6 +193,8 @@ export function Photo({
         className="photo-img"
       />
       <span className="photo-grain" aria-hidden="true" />
+      <span className="photo-marks" aria-hidden="true" />
+      {shutter && <span className="photo-shutter-line" aria-hidden="true" />}
     </div>
   );
 }
@@ -276,6 +266,7 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
   return (
     <section
       ref={sectionRef}
+      data-trail
       className="species-scene relative h-[440vh]"
       aria-labelledby={`scene-${species.id}`}
       data-phase={phase ?? 'intro'}
@@ -323,7 +314,7 @@ function PinnedScene({ species, index, total }: { species: Species; index: numbe
                     The {species.commonName}&rsquo;s page
                   </Link>
                 </Magnetic>
-                <button type="button" className="text-link whitespace-nowrap text-canvas/60" onClick={() => open(species.id)} data-cursor="Discover">
+                <button type="button" className="text-link whitespace-nowrap text-canvas/60" onClick={() => open(species.id)} data-cursor="Discover" data-magnetic="0.22">
                   Quick profile
                 </button>
               </div>

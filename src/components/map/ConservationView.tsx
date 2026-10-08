@@ -201,6 +201,7 @@ export function ConservationView({
         tabIndex={0}
         aria-label="Conservation programmes in three dimensions. Drag to turn the view; arrow keys turn and tilt it; plus and minus zoom."
         onKeyDown={onKeyDown}
+        data-cursor-area="Explore"
         className="relative min-h-0 flex-1 outline-none ring-forest-500/70 transition-shadow focus-visible:ring-2"
       >
         <canvas

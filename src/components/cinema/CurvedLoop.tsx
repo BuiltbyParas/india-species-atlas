@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
-import { getLenis } from '../../motion/SmoothScroll';
+import { scrollSpeed, watchScrollVelocity } from '../../interaction/velocity';
 import { useReducedMotion } from '../../motion/preferences';
 
 /**
@@ -38,6 +38,7 @@ export function CurvedLoop({
     const tp = textPathRef.current;
     const measure = measureRef.current;
     if (!svg || !tp || !measure) return;
+    watchScrollVelocity();
     let unitLen = measure.getComputedTextLength() || 1000;
     let offset = -unitLen;
     let raf = 0;
@@ -55,7 +56,8 @@ export function CurvedLoop({
 
     const loop = () => {
       if (!dragging) {
-        const v = getLenis()?.velocity ?? 0;
+        // The page's own speed, in px per 60 Hz frame (the shared velocity store).
+        const v = scrollSpeed() / 60;
         if (Math.abs(v) > 0.5) dir = v > 0 ? -1 : 1;
         offset += dir * (speed + Math.min(Math.abs(v) * 0.25, 6));
       }

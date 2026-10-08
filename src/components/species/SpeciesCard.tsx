@@ -19,7 +19,12 @@ export function SpeciesCard({ species }: { species: Species }) {
   const { open } = useSpeciesProfile();
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xs border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 has-[:focus-visible]:border-forest-500 has-[:focus-visible]:shadow-xl motion-reduce:hover:translate-y-0">
+    // `data-depth`: the card turns two or three degrees towards the pointer and
+    // a light crosses it (interaction/depth.ts, `.depth-card` in index.css).
+    <article
+      data-depth
+      className="depth-card group relative flex flex-col overflow-hidden rounded-xs border border-forest-800 bg-forest-900 text-left transition-[border-color,box-shadow,translate] duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-xl hover:shadow-forest-950/60 has-[:focus-visible]:border-forest-500 has-[:focus-visible]:shadow-xl motion-reduce:hover:translate-y-0"
+    >
       <div className="relative overflow-hidden">
         <SpeciesImage
           species={species}
@@ -46,6 +51,7 @@ export function SpeciesCard({ species }: { species: Species }) {
           <button
             type="button"
             onClick={() => open(species.id)}
+            data-cursor="Open"
             className="text-left after:absolute after:inset-0 after:z-10 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-400"
           >
             {species.commonName}
