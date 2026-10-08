@@ -374,3 +374,21 @@ The existing loader was evolved into the opening rather than given a second intr
   - Keyboard journeys: focus moves to `main` and the new page is announced.
   - Back and forward, and hurrying a journey, work.
   - Journey frame timing is in the architecture document.
+
+## Final creative-director pass (branch `atlas/final-polish`)
+
+Cut from `atlas/spatial-world` (`393f5ef`), not merged and not pushed. The audit and scores are in [`FINAL_CREATIVE_DIRECTOR_AUDIT.md`](FINAL_CREATIVE_DIRECTOR_AUDIT.md), and the whole system is in [`FINAL_CREATIVE_SYSTEM.md`](FINAL_CREATIVE_SYSTEM.md).
+
+**Changes:**
+- **Colophon and authorship.** A survey line of anchor longitudes, then the statement and "Designed and built by Paras Attri".
+- **Phone menu.** Labels no longer clip, and the active section carries a survey ring.
+- **Running head** on the working pages.
+- **The compare sheet**, in place of the empty box.
+- **Empty and error states** drawn as Atlas states: no results, 404, a missing photograph, a slow photograph.
+- **Idle working pages** run no animation frames.
+- **Focus** returns to the menu's opener when the menu closes.
+
+**Verification:**
+- QA matrix: 100 / 100 clean (1920, 1440, 1280, tablet, 430, 390, and reduced motion on desktop and phone).
+- Home scroll timing equals the baseline.
+- Entry JS is +0.3 kB gzip; CSS is +1.4 kB gzip.
