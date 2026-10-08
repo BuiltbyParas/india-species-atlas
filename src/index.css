@@ -3989,3 +3989,37 @@ body {
     animation: none;
   }
 }
+
+/* On a phone the register reads as entries, not as a table to scroll sideways. */
+@media (max-width: 699px) {
+  .src-table {
+    min-width: 0;
+  }
+  .src-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .src-table tbody tr {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid color-mix(in srgb, var(--color-canvas) 9%, transparent);
+  }
+  .src-table tbody th,
+  .src-table td {
+    width: auto;
+    padding: 0;
+    border-top: 0;
+  }
+  .src-table td:nth-child(2) {
+    font-size: var(--text-label);
+  }
+  .src-table td.src-kind {
+    font-size: var(--text-micro);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+}

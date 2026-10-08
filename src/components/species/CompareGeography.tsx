@@ -104,7 +104,7 @@ export function CompareGeography({ species }: { species: Species[] }) {
       aria-label="The selected species on one map"
     >
       <figure className="cg-map">
-        <svg viewBox={viewBox} className="h-full w-full" role="img" aria-label={`Map comparing where ${species.map((s) => s.commonName).join(', ')} are recorded`}>
+        <svg viewBox={viewBox} className="block h-auto w-full" role="img" aria-label={`Map comparing where ${species.map((s) => s.commonName).join(', ')} are recorded`}>
           <path d={geo?.all ?? ''} className="cg-country" />
           {systems.map((sys, i) => (
             <g key={sys.s.id} className="cg-system" data-mark={sys.mark} style={{ ['--k' as string]: i }}>
