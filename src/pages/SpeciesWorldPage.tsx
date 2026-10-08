@@ -16,6 +16,7 @@ import { cn } from '../utils/cn';
 import { SpeciesMap } from '../components/cinema/SpeciesMap';
 import { ConservationFacts, PHASE_VARS, Photo, setVars, ThreatFacts, type Phase } from '../components/cinema/SpeciesScene';
 import { StatusIndicator } from '../components/cinema/StatusIndicator';
+import { StatusScale } from '../components/cinema/StatusScale';
 import { LineTitle } from '../components/cinema/LineTitle';
 import { useParallax } from '../interaction/parallax';
 import { emit } from '../interaction/events';
@@ -60,6 +61,7 @@ function World({ species }: { species: Species }) {
   const [phase, setPhase] = useState<Phase>('range');
   const [hlThreat, setHlThreat] = useState<ThreatId | null>(null);
   const [hlSites, setHlSites] = useState(false);
+  const [hlLocality, setHlLocality] = useState<string | null>(null);
   const mapSeen = useInView(mapRef, { rootMargin: '0px 0px -20% 0px' });
   const status = STATUS_INFO[species.status];
   // The atmosphere drifts away from the hand, so the photograph and title read as nearer.
@@ -136,6 +138,7 @@ function World({ species }: { species: Species }) {
             </h1>
             <p className="mt-4 font-serif text-xl italic text-canvas/65 sm:text-2xl">{species.scientificName}</p>
             <StatusIndicator status={species.status} className="mt-6" />
+            <StatusScale status={species.status} className="mt-3" />
             <dl className="sw-facts mt-10">
               <div>
                 <dt>Anchor locality</dt>
@@ -197,6 +200,8 @@ function World({ species }: { species: Species }) {
                 highlightThreat={hlThreat}
                 highlightSites={hlSites}
                 legendPhase={phase}
+                highlightLocality={hlLocality}
+                onLocality={setHlLocality}
                 className="sw-map"
               />
             </div>
@@ -209,7 +214,9 @@ function World({ species }: { species: Species }) {
                   <span className="tabular-nums">{c.n}</span>
                   {c.title}
                 </h2>
-                {c.phase === 'range' && <RangeChapter species={species} />}
+                {c.phase === 'range' && (
+                  <RangeChapter species={species} mapRef={mapRef} highlight={hlLocality} onHover={setHlLocality} />
+                )}
                 {c.phase === 'threats' && (
                   <>
                     <ThreatFacts species={species} onHover={setHlThreat} />
@@ -229,8 +236,108 @@ function World({ species }: { species: Species }) {
   );
 }
 
-function RangeChapter({ species }: { species: Species }) {
+/**
+ * MAP → POINTS → ROWS. The first time the locality register comes into view,
+ * each locality leaves its point on the map and travels to its row, and the
+ * row is written as it lands: the table is the map's points, read as data.
+ * Afterwards the two stay joined — pointing at a row lights its point on the
+ * map, and pointing at a point lights its row. Reduced motion shows the table
+ * as it is.
+ */
+function useLocalityFlight(tableRef: React.RefObject<HTMLTableElement | null>, mapRef: React.RefObject<HTMLDivElement | null>) {
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table || reduced || typeof table.animate !== 'function') return;
+    table.dataset.flight = 'waiting';
+    const timers: number[] = [];
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        void fly();
+      },
+      { rootMargin: '0px 0px -30% 0px' },
+    );
+    let live = true;
+    // The map draws its points in as it arrives; wait until they are there to be lifted off.
+    const pointsDrawn = async () => {
+      const start = performance.now();
+      while (live && performance.now() - start < 1400) {
+        const dot = mapRef.current?.querySelector('.sm-point:last-of-type .sm-point-dot');
+        const r = dot?.getBoundingClientRect();
+        if (r && r.width >= 4 && getComputedStyle(dot!.closest('.sm-point')!).opacity === '1') return;
+        await new Promise((res) => window.setTimeout(res, 60));
+      }
+    };
+    const fly = async () => {
+        await pointsDrawn();
+        if (!live) return;
+        const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
+        const map = mapRef.current;
+        const box = map?.getBoundingClientRect();
+        const mapOnScreen = !!box && box.bottom > 0 && box.top < window.innerHeight && box.width > 0;
+        rows.forEach((row, i) => {
+          row.style.setProperty('--k', String(i));
+          if (!mapOnScreen) return;
+          const label = row.dataset.locality ?? '';
+          const dot = map!.querySelector(`[data-locality="${CSS.escape(label)}"] .sm-point-dot`);
+          const mark = row.querySelector('.sw-reg-dot, .sw-anchor');
+          const a = dot?.getBoundingClientRect();
+          const b = mark?.getBoundingClientRect();
+          if (!a || !b || !a.width) return;
+          const ax = a.left + a.width / 2;
+          const ay = a.top + a.height / 2;
+          const bx = b.left + b.width / 2;
+          const by = b.top + b.height / 2;
+          const flyer = document.createElement('span');
+          flyer.className = 'locality-flyer';
+          flyer.setAttribute('aria-hidden', 'true');
+          document.body.appendChild(flyer);
+          // A shallow arc, so the point is seen to be lifted off the map rather than slid.
+          const mx = (ax + bx) / 2;
+          const my = Math.min(ay, by) - 40;
+          const anim = flyer.animate(
+            [
+              { transform: `translate(${ax}px, ${ay}px) scale(0.6)`, opacity: 0 },
+              { transform: `translate(${ax}px, ${ay}px) scale(1)`, opacity: 1, offset: 0.12 },
+              { transform: `translate(${mx}px, ${my}px) scale(1)`, opacity: 1, offset: 0.55 },
+              { transform: `translate(${bx}px, ${by}px) scale(1)`, opacity: 1 },
+            ],
+            { duration: 820, delay: i * 70, easing: 'cubic-bezier(0.7, 0, 0.2, 1)', fill: 'backwards' },
+          );
+          anim.onfinish = () => flyer.remove();
+          anim.oncancel = () => flyer.remove();
+        });
+        // Rows write themselves in as their points arrive (CSS, staggered by --k).
+        requestAnimationFrame(() => (table.dataset.flight = 'flying'));
+        timers.push(window.setTimeout(() => (table.dataset.flight = 'done'), rows.length * 70 + 900));
+    };
+    io.observe(table);
+    return () => {
+      live = false;
+      io.disconnect();
+      timers.forEach((t) => window.clearTimeout(t));
+      document.querySelectorAll('.locality-flyer').forEach((n) => n.remove());
+      delete table.dataset.flight;
+    };
+  }, [tableRef, mapRef, reduced]);
+}
+
+function RangeChapter({
+  species,
+  mapRef,
+  highlight,
+  onHover,
+}: {
+  species: Species;
+  mapRef: React.RefObject<HTMLDivElement | null>;
+  highlight: string | null;
+  onHover: (label: string | null) => void;
+}) {
   const ordered = useMemo(() => chain(species.distributionPoints), [species]);
+  const tableRef = useRef<HTMLTableElement>(null);
+  useLocalityFlight(tableRef, mapRef);
   return (
     <div className="space-y-6">
       <p className="font-serif text-lede font-light text-canvas/90">{species.habitatNote}</p>
@@ -243,7 +350,7 @@ function RangeChapter({ species }: { species: Species }) {
       </dl>
       <div>
         <p className="caps">Locality register</p>
-        <table className="sw-register">
+        <table ref={tableRef} className="sw-register">
           <caption className="sr-only">Indicative localities for {species.commonName}, with coordinates</caption>
           <thead>
             <tr>
@@ -254,9 +361,19 @@ function RangeChapter({ species }: { species: Species }) {
           </thead>
           <tbody>
             {ordered.map((p, i) => (
-              <tr key={p.label}>
+              <tr
+                key={p.label}
+                data-locality={p.label}
+                className={cn(highlight === p.label && 'is-hl')}
+                onPointerEnter={() => onHover(p.label)}
+                onPointerLeave={() => onHover(null)}
+              >
                 <th scope="row">
-                  {i === 0 && <span className="sw-anchor" title="Anchor locality" aria-label="Anchor locality: " />}
+                  {i === 0 ? (
+                    <span className="sw-anchor" title="Anchor locality" aria-label="Anchor locality: " />
+                  ) : (
+                    <span className="sw-reg-dot" aria-hidden="true" />
+                  )}
                   {p.label}
                   {p.note && <span className="block text-label text-canvas/45">{p.note}</span>}
                 </th>

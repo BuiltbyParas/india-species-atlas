@@ -90,6 +90,8 @@ export function SpeciesMap({
   vars,
   align = 'center',
   legendPhase,
+  highlightLocality = null,
+  onLocality,
 }: {
   species: Species;
   highlightThreat?: ThreatId | null;
@@ -106,6 +108,10 @@ export function SpeciesMap({
    * scene does). Without it the key follows the layer variables instead.
    */
   legendPhase?: 'range' | 'threats' | 'conservation';
+  /** A locality picked out elsewhere (the species page's register), by its label. */
+  highlightLocality?: string | null;
+  /** Called when the reader points at a locality here, so the register can answer. */
+  onLocality?: (label: string | null) => void;
 }) {
   const geo = useIndiaGeo();
   const uid = useId().replace(/:/g, '');
@@ -220,12 +226,13 @@ export function SpeciesMap({
             return (
               <g
                 key={p.label}
-                className="sm-point"
+                className={cn('sm-point', highlightLocality === p.label && 'is-hl')}
+                data-locality={p.label}
                 style={{ ['--k' as string]: i / Math.max(ordered.length - 1, 1) }}
-                onPointerEnter={interactive ? (e) => onPoint(p, e.currentTarget) : undefined}
-                onPointerLeave={interactive ? () => setHover(null) : undefined}
-                onFocus={interactive ? (e) => onPoint(p, e.currentTarget) : undefined}
-                onBlur={interactive ? () => setHover(null) : undefined}
+                onPointerEnter={interactive ? (e) => (onPoint(p, e.currentTarget), onLocality?.(p.label)) : undefined}
+                onPointerLeave={interactive ? () => (setHover(null), onLocality?.(null)) : undefined}
+                onFocus={interactive ? (e) => (onPoint(p, e.currentTarget), onLocality?.(p.label)) : undefined}
+                onBlur={interactive ? () => (setHover(null), onLocality?.(null)) : undefined}
                 tabIndex={interactive ? 0 : undefined}
                 role={interactive ? 'button' : undefined}
                 aria-label={interactive ? `${p.label}${p.note ? `. ${p.note}` : ''}` : undefined}

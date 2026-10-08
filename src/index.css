@@ -3237,3 +3237,152 @@ body {
     animation: none;
   }
 }
+
+/* --- the Red List category as a distance along one line (cinema/StatusScale.tsx) --- */
+.status-scale {
+  --to: 0%;
+  --draw-to: 0%;
+  width: min(100%, 17rem);
+  padding: 0.35rem 0 1.15rem;
+}
+.ss-track {
+  position: relative;
+  height: 1px;
+}
+.ss-rule,
+.ss-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+}
+.ss-rule {
+  right: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-canvas) 22%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+}
+/* The line is ruled from Least Concern to the species' category, then holds. */
+.ss-line {
+  width: var(--to);
+  background: color-mix(in srgb, var(--status) 85%, var(--color-canvas));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 1.3s var(--ease-cinema) 0.25s;
+}
+.status-scale.is-drawn .ss-line {
+  transform: scaleX(1);
+}
+.ss-tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  margin-left: -0.5px;
+  background: color-mix(in srgb, var(--color-canvas) 35%, transparent);
+}
+.ss-tick.is-beyond {
+  background: color-mix(in srgb, var(--color-canvas) 16%, transparent);
+}
+.ss-code {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-canvas) 34%, transparent);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out-expo) calc(0.2s + var(--k) * 0.12s);
+}
+.ss-tick.is-beyond .ss-code {
+  color: color-mix(in srgb, var(--color-canvas) 20%, transparent);
+}
+.ss-tick.is-here .ss-code {
+  color: var(--status);
+}
+.status-scale.is-drawn .ss-code {
+  opacity: 1;
+}
+.ss-mark {
+  position: absolute;
+  top: 0;
+  left: var(--to);
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 999px;
+  background: var(--status);
+  box-shadow: 0 0 0 2px var(--color-forest-950), 0 0 0 3px color-mix(in srgb, var(--status) 60%, transparent);
+  transform: scale(0);
+  transition: transform 0.5s var(--ease-out-expo) 1.45s;
+}
+.status-scale.is-drawn .ss-mark {
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ss-line,
+  .ss-code,
+  .ss-mark {
+    transition: none;
+  }
+}
+
+/* --- geography ↔ data on the species page: a locality is one thing in two places --- */
+.sw-register tbody tr {
+  transition: background-color 0.3s;
+}
+.sw-register tbody tr.is-hl {
+  background: color-mix(in srgb, var(--color-canvas) 5%, transparent);
+}
+.sw-register tbody tr.is-hl th {
+  color: var(--color-canvas);
+}
+.sw-reg-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-contour);
+  vertical-align: 0.08em;
+}
+.sw-register[data-flight='waiting'] tbody tr {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.sw-register[data-flight='waiting'] .sw-reg-dot,
+.sw-register[data-flight='flying'] .sw-reg-dot,
+.sw-register[data-flight='waiting'] .sw-anchor,
+.sw-register[data-flight='flying'] .sw-anchor {
+  visibility: hidden;
+}
+.sw-register[data-flight='flying'] tbody tr {
+  transition:
+    opacity 0.6s var(--ease-out-expo) calc(var(--k) * 70ms + 0.35s),
+    transform 0.6s var(--ease-out-expo) calc(var(--k) * 70ms + 0.35s),
+    background-color 0.3s;
+}
+.locality-flyer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 999px;
+  background: var(--color-contour);
+  box-shadow: 0 0 0 2px var(--color-forest-950);
+  z-index: var(--z-progress);
+  pointer-events: none;
+}
+.sm-point.is-hl .sm-point-dot {
+  r: 7px;
+  fill: var(--color-contour);
+}
+.sm-point.is-hl .sm-point-hit {
+  fill: color-mix(in srgb, var(--color-canvas) 12%, transparent);
+}
