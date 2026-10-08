@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useCurrentChapter } from '../../motion/chapters';
 import { lockScroll } from '../../motion/SmoothScroll';
 import { cn } from '../../utils/cn';
+import { describeRoute } from '../../interaction/routeCaption';
 import { FlowingMenu } from './FlowingMenu';
 
 /**
@@ -16,6 +17,8 @@ export function Navbar() {
   const { pathname } = useLocation();
   const home = pathname === '/';
   const chapter = useCurrentChapter();
+  // Working pages carry the same running head as the documentary: where you are on the sheet.
+  const page = home || pathname === '/documentary' ? null : describeRoute(pathname);
   const [scrolled, setScrolled] = useState(false);
 
   const close = useCallback(() => setOpen(false), []);
@@ -62,6 +65,15 @@ export function Navbar() {
                     {chapter.title}
                   </>
                 ) : null}
+              </span>
+            </p>
+          )}
+          {page && (
+            <p className="chapter-title hidden text-small text-canvas/60 md:block">
+              <span className="chapter-title-inner is-shown" key={pathname}>
+                <span className="text-canvas/40">{page.eyebrow}</span>
+                <span className="chapter-title-rule" aria-hidden="true" />
+                {page.title}
               </span>
             </p>
           )}

@@ -178,6 +178,21 @@ export function Photo({
   const seen = useInView(frameRef, { rootMargin: '0px 0px -8% 0px' });
   // The shutter's edges run like ink as the print opens (interaction/ink.ts).
   useInkBleed(frameRef, Boolean(shutter && seen));
+  // A print still on its way develops in the frame (a graticule, then the photograph fades up)
+  // instead of leaving an empty dark box. A photograph already decoded is shown as it is.
+  useEffect(() => {
+    const frame = frameRef.current;
+    const img = frame?.querySelector('img');
+    if (!frame || !img || (img.complete && img.naturalWidth > 0)) return;
+    frame.dataset.developing = '';
+    const done = () => delete frame.dataset.developing;
+    img.addEventListener('load', done, { once: true });
+    img.addEventListener('error', done, { once: true });
+    return () => {
+      img.removeEventListener('load', done);
+      img.removeEventListener('error', done);
+    };
+  }, []);
   if (!photo) return null;
   return (
     // `data-depth`: the interaction engine eases --dx/--dy/--dh on the frame;

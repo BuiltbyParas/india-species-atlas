@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Bird, Fish, PawPrint, Shell, Turtle } from 'lucide-react';
 import type { Species } from '../../types';
 import { STATUS_INFO } from '../../data/statusInfo';
+import { formatDeg } from '../../geo/india';
 import { PALETTE } from '../../theme';
 import { cn } from '../../utils/cn';
 import { photoSources } from '../../utils/photo';
@@ -13,53 +13,49 @@ import { photoSources } from '../../utils/photo';
  * and `scripts/images/`). It is served responsively — a 720 px WebP for small
  * slots, the 1400 px master where the slot is large — with its intrinsic size
  * set so the box is reserved before it loads. If a photograph is missing or
- * fails to load, a placeholder tinted by IUCN status and marked with the
- * animal group stands in; it never pretends to be a picture of the animal.
+ * fails to load, a field card that says so stands in; it never pretends to
+ * be a picture of the animal.
  * Credits are rendered beside the image by `PhotoCredit`.
  */
 
-const GROUP_ICON = {
-  mammal: PawPrint,
-  bird: Bird,
-  reptile: Turtle,
-  fish: Fish,
-  amphibian: Shell,
-} as const;
-
+/**
+ * The photograph that is not there. It is set like a field card with the
+ * picture missing: a frame with crop marks, the species, and where it was
+ * recorded. It says plainly that the photograph is unavailable, so it is never
+ * mistaken for one.
+ */
 function Placeholder({ species, className }: { species: Species; className?: string }) {
-  const Icon = GROUP_ICON[species.group];
   const status = STATUS_INFO[species.status];
+  const a = species.distributionPoints[0];
   return (
     <div
-      className={cn('relative flex items-center justify-center overflow-hidden bg-forest-800', className)}
+      className={cn('photo-missing relative overflow-hidden bg-forest-900', className)}
       role="img"
-      aria-label={species.image.alt}
+      aria-label={`${species.commonName}: photograph unavailable`}
     >
-      {/* soft contour-line texture */}
       <svg
-        className="absolute inset-0 h-full w-full opacity-[0.14]"
+        className="absolute inset-0 h-full w-full opacity-[0.12]"
         viewBox="0 0 200 200"
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
       >
         {[18, 40, 62, 84, 106, 128, 150].map((r) => (
-          <circle key={r} cx="60" cy="150" r={r} fill="none" stroke={PALETTE.forest300} strokeWidth="1.5" />
+          <circle key={r} cx="150" cy="160" r={r} fill="none" stroke={PALETTE.forest300} strokeWidth="1" />
         ))}
       </svg>
-      <div
-        className="absolute inset-x-0 bottom-0 h-1.5"
-        style={{ backgroundColor: status.colorVar }}
-        aria-hidden="true"
-      />
-      <div className="relative flex flex-col items-center gap-2 text-forest-200">
-        <span
-          className="grid h-16 w-16 place-items-center rounded-full border"
-          style={{ borderColor: status.colorVar, color: status.colorVar }}
-        >
-          <Icon className="h-8 w-8" strokeWidth={1.6} aria-hidden="true" />
-        </span>
-        <span className="max-w-[85%] text-center text-xs font-medium leading-tight text-forest-200/80">
-          {species.commonName}
+      <span className="photo-missing-crop" aria-hidden="true" />
+      <div className="absolute inset-x-0 bottom-0 h-px" style={{ backgroundColor: status.colorVar }} aria-hidden="true" />
+      <div className="relative flex h-full flex-col justify-between p-[clamp(0.75rem,6%,1.5rem)]">
+        <span className="caps">Photograph unavailable</span>
+        <span>
+          <span className="block font-serif text-[clamp(1rem,2.2vw,1.35rem)] font-light leading-tight text-canvas/85">
+            {species.commonName}
+          </span>
+          {a && (
+            <span className="mt-1 block text-micro tabular-nums text-canvas/45">
+              {formatDeg(a.lat, 'lat')} {formatDeg(a.lng, 'lng')}
+            </span>
+          )}
         </span>
       </div>
     </div>

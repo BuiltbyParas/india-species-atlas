@@ -43,7 +43,7 @@ export function AboutPage() {
           size="page"
           eyebrow="About this project"
           title="An educational atlas of India’s threatened wildlife"
-          description="A student project for an environmental-studies / Computer-Aided Instruction (CAI) assignment."
+          description="A digital field study of threatened species, designed and built by Paras Attri. It began as an environmental-studies / Computer-Aided Instruction (CAI) project."
         />
 
         <div className="mt-14">
@@ -146,17 +146,22 @@ export function AboutPage() {
 
           <Chapter n="05" title="The maker">
             <p>
-              A student project for an environmental-studies / Computer-Aided Instruction (CAI) assignment. The atlas
-              is deliberately small; it is a teaching tool, not a complete inventory.
+              Designed, written and built by Paras Attri, beginning as an environmental-studies / Computer-Aided
+              Instruction (CAI) project. The atlas is deliberately small; it is a teaching tool, not a complete
+              inventory.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/atlas" className="rounded-xs bg-canvas px-5 py-3 text-sm font-medium text-ink hover:bg-parchment">
-                Explore the map
+            <p>
+              Everything on screen is made for it: the geographic line system, the WebGL relief and gallery, the
+              journeys between pages, the cursor, the charts and the maps. No template or chart kit is used.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <Link to="/atlas" className="cta" data-magnetic="0.25" data-cursor="Enter">
+                <span>Explore the map</span>
+                <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line">
+                  <path d="M0 5 C 12 1, 26 9, 40 5" />
+                </svg>
               </Link>
-              <Link
-                to="/sources"
-                className="rounded-xs border border-forest-600 px-5 py-3 text-sm font-semibold text-canvas hover:bg-forest-900"
-              >
+              <Link to="/sources" className="text-link" data-magnetic="0.2">
                 See all sources
               </Link>
             </div>

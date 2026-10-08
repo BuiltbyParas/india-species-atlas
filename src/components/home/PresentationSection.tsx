@@ -10,6 +10,7 @@ import {
   totalSpecies,
 } from '../../utils/stats';
 import { SectionHeading } from '../ui/SectionHeading';
+import { buttonClasses } from '../ui/buttonClasses';
 
 function CaptureCard() {
   const byStatus = countByStatus();
@@ -99,7 +100,7 @@ function ShareCard() {
       <button
         type="button"
         onClick={copy}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-xs border border-forest-600 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-forest-800"
+        className={buttonClasses('secondary', 'sm', 'mt-3 text-xs')}
       >
         {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
         {copied ? 'Copied' : 'Copy link'}
@@ -126,11 +127,11 @@ export function PresentationSection() {
           <ShareCard />
         </div>
         <div className="mt-6">
-          <Link
-            to="/atlas"
-            className="inline-flex items-center gap-2 rounded-xs bg-canvas px-5 py-3 text-sm font-medium text-ink hover:bg-parchment"
-          >
-            Open the interactive map
+          <Link to="/atlas" className="cta" data-magnetic="0.25" data-cursor="Enter">
+            <span>Open the interactive map</span>
+            <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line">
+              <path d="M0 5 C 12 1, 26 9, 40 5" />
+            </svg>
           </Link>
         </div>
       </div>

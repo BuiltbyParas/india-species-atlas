@@ -1,3 +1,5 @@
+import { useLayoutEffect } from 'react';
+import { holdScrollTrigger } from '../motion/gsap';
 import { SPECIES } from '../data/species';
 import { FEATURED } from '../content/featured';
 import { REGIONS } from '../data/regions';
@@ -15,6 +17,8 @@ import { GeoProgress } from '../components/cinema/GeoProgress';
 import { InteractiveStat } from '../components/cinema/InteractiveStat';
 
 export function HomePage() {
+  // The documentary's scenes scrub with ScrollTrigger; it runs only while this page is mounted.
+  useLayoutEffect(holdScrollTrigger, []);
   const byStatus = countByStatus();
   return (
     <div className="documentary-page">

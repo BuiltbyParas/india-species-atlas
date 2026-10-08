@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { GitCompareArrows, Heart, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Heart, X } from 'lucide-react';
 import type { Species } from '../types';
 import { SPECIES, SPECIES_BY_ID } from '../data/species';
 import { HABITAT_LABELS, REGION_LABELS } from '../data/regions';
@@ -15,6 +15,7 @@ import { SectionHeading } from '../components/ui/SectionHeading';
 import { buttonClasses } from '../components/ui/buttonClasses';
 import { useSpeciesProfile } from '../components/species/SpeciesProfileProvider';
 import { CompareGeography } from '../components/species/CompareGeography';
+import { CompareChooser } from '../components/species/CompareChooser';
 
 /**
  * Side-by-side comparison of up to three species.
@@ -191,17 +192,16 @@ export function ComparePage() {
         description="Comparison makes the differences between categories concrete: two species can share an IUCN status and face completely different threats, or hold the same threat across very different ranges. Every cell is read from the atlas dataset, and the selection is kept in the address bar so a comparison can be linked to."
       />
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xs border border-forest-800 bg-forest-900/70 p-4">
+      <div className="compare-bar mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
         <label className="flex w-full flex-col gap-2 text-sm text-canvas/75 sm:w-auto sm:flex-row sm:items-center">
-          <span className="inline-flex items-center gap-2 font-medium">
-            <GitCompareArrows className="h-4 w-4 text-forest-300" aria-hidden="true" />
+          <span className="caps">
             Add a species
           </span>
           <select
             value=""
             disabled={full || remaining.length === 0}
             onChange={(e) => e.target.value && add(e.target.value)}
-            className="w-full rounded-xs border border-forest-700 bg-forest-900 px-3 py-2 text-sm text-canvas disabled:opacity-50 sm:w-auto"
+            className="atlas-select w-full sm:w-72"
           >
             <option value="">{full ? `Maximum of ${MAX} selected` : 'Choose…'}</option>
             {remaining.map((s) => (
@@ -231,16 +231,7 @@ export function ComparePage() {
       </div>
 
       {selected.length === 0 ? (
-        <div className="mt-8 rounded-xs border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
-          <p className="font-medium text-canvas">Nothing selected yet</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-canvas/60">
-            Choose up to {MAX} species above, or open any species profile and use “Compare with another
-            species”.
-          </p>
-          <Link to="/species" className={buttonClasses('secondary', 'md', 'mt-5')}>
-            Browse the directory
-          </Link>
-        </div>
+        <CompareChooser onPick={setSelection} />
       ) : (
         <>
         <CompareGeography species={selected} />

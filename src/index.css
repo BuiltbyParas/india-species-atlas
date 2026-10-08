@@ -1486,7 +1486,8 @@ body {
   height: 100%;
   overflow-y: auto;
   display: grid;
-  align-content: center;
+  /* safe: when the list is taller than the screen it starts below the header instead of under it */
+  align-content: safe center;
   gap: 3rem;
   padding: 6rem 1rem 3rem;
   max-width: 1600px;
@@ -1529,7 +1530,8 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem;
+  min-width: 0;
   padding: clamp(0.35rem, 1.2vh, 0.8rem) 0;
   color: var(--color-canvas);
 }
@@ -1542,9 +1544,11 @@ body {
   display: block;
   font-family: var(--font-serif);
   font-weight: 300;
-  font-size: clamp(2.4rem, 7.4vh, 5.6rem);
+  /* Height-led on desktop, width-capped on phones so "Conservation" never clips. */
+  font-size: clamp(2.1rem, min(7.4vh, 12.5vw), 5.6rem);
   line-height: 1;
   letter-spacing: -0.03em;
+  white-space: nowrap;
   transform: translateY(105%);
   transition:
     transform 0.5s var(--ease-cinema),
@@ -1560,21 +1564,37 @@ body {
 .menu-link:focus-visible .menu-label {
   letter-spacing: -0.01em;
 }
+/* The current section carries a survey mark: a ring around a point, as on the maps. */
 .menu-link.is-active .menu-label::after {
   content: '';
   display: inline-block;
-  width: 0.28em;
-  height: 0.28em;
-  margin-left: 0.3em;
-  vertical-align: 0.5em;
+  width: 0.3em;
+  height: 0.3em;
+  margin-left: 0.32em;
+  vertical-align: 0.48em;
   border-radius: 999px;
-  background: var(--color-contour);
+  border: 1px solid var(--color-contour);
+  background: radial-gradient(circle, var(--color-contour) 0 22%, transparent 26%);
 }
 .menu-figure {
+  flex: none;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-small);
   color: color-mix(in srgb, var(--color-canvas) 45%, transparent);
   opacity: 0;
   transition: opacity 0.4s;
+}
+@media (max-width: 639px) {
+  /* Phones: the figure sits under its section name rather than racing it for the width. */
+  .menu-link {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+  .menu-figure {
+    font-size: var(--text-micro);
+  }
 }
 .menu[data-open='true'] .menu-figure {
   opacity: 1;
@@ -1861,6 +1881,127 @@ body {
 }
 .footer-link:hover {
   color: var(--color-canvas);
+}
+
+/* --- colophon (the footer) --- */
+.colophon {
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 8%, transparent);
+}
+.colophon-scale {
+  position: relative;
+  height: 3.25rem;
+}
+.colophon-scale-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 1rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-canvas) 28%, transparent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 1.6s var(--ease-cinema);
+}
+.colophon-tick {
+  position: absolute;
+  top: calc(1rem - 6px);
+  width: 1px;
+  height: 13px;
+  margin-left: -0.5px;
+  background: var(--color-canvas);
+  transform: scaleY(0);
+  transition: transform 0.7s var(--ease-out-expo) calc(0.5s + var(--i) * 0.06s);
+}
+.colophon-tick[data-status='CR'] {
+  background: var(--color-status-cr);
+}
+.colophon-tick[data-status='EN'] {
+  background: var(--color-status-en);
+}
+.colophon-tick[data-status='VU'] {
+  background: var(--color-status-vu);
+}
+.colophon-scale-label {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-canvas) 42%, transparent);
+  opacity: 0;
+  transition: opacity 0.8s ease 1.1s;
+}
+.colophon.is-shown .colophon-scale-line,
+.colophon.is-shown .colophon-tick {
+  transform: none;
+}
+.colophon.is-shown .colophon-scale-label {
+  opacity: 1;
+}
+/* The signature: the name is underlined by the survey line, drawn last. */
+.colophon-name {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-serif);
+  font-size: 1.35em;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-canvas);
+}
+.colophon-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.15em;
+  height: 1px;
+  background: var(--color-contour);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 1.1s var(--ease-cinema) 1.4s;
+}
+.colophon.is-shown .colophon-name::after {
+  transform: none;
+}
+.colophon-facts {
+  display: grid;
+  gap: 1.1rem;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--color-canvas) 68%, transparent);
+}
+.colophon-facts dd {
+  margin-top: 0.2rem;
+}
+.colophon-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 0.55rem 2.5rem;
+  font-size: var(--text-small);
+}
+@media (min-width: 1024px) {
+  .colophon-links {
+    grid-template-columns: 1fr;
+    justify-items: end;
+  }
+}
+@media (max-width: 639px) {
+  .colophon-scale-label span:nth-child(2) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .colophon-scale-line,
+  .colophon-tick,
+  .colophon-name::after {
+    transform: none;
+    transition: none;
+  }
+  .colophon-scale-label {
+    opacity: 1;
+    transition: none;
+  }
 }
 
 /* --- hero --- */
@@ -4021,5 +4162,184 @@ body {
     font-size: var(--text-micro);
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
+  }
+}
+
+/* --- compare: the empty sheet --- */
+.compare-bar {
+  padding-block: 1rem;
+  border-block: 1px solid color-mix(in srgb, var(--color-canvas) 10%, transparent);
+}
+/* A form field drawn like the rest of the atlas: a ruled line, not a box. */
+.atlas-select {
+  appearance: none;
+  padding: 0.55rem 1.75rem 0.55rem 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-canvas) 30%, transparent);
+  border-radius: 0;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 6px center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, currentColor 50%) right 1px center / 5px 5px no-repeat;
+  background-color: transparent;
+  color: var(--color-canvas);
+  font-size: var(--text-small);
+  transition: border-color 0.3s;
+}
+.atlas-select:hover,
+.atlas-select:focus-visible {
+  border-bottom-color: var(--color-canvas);
+}
+.atlas-select option {
+  background: var(--color-forest-900);
+}
+.atlas-select:disabled {
+  opacity: 0.5;
+}
+.cc-sheet {
+  position: relative;
+  max-width: 38rem;
+}
+.cc-country {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 30%, transparent);
+  --gl-w: 1px;
+  --draw: 0;
+  transition: --draw 2.2s var(--ease-cinema);
+}
+.compare-chooser.is-shown .cc-country {
+  --draw: 1;
+}
+.cc-mark {
+  --c: var(--color-canvas);
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.5s ease calc(0.9s + var(--i) * 0.05s),
+    transform 0.7s var(--ease-out-expo) calc(0.9s + var(--i) * 0.05s);
+}
+.cc-mark[data-status='CR'] { --c: var(--color-status-cr); }
+.cc-mark[data-status='EN'] { --c: var(--color-status-en); }
+.cc-mark[data-status='VU'] { --c: var(--color-status-vu); }
+.compare-chooser.is-shown .cc-mark {
+  opacity: 1;
+  transform: none;
+}
+.cc-mark span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow:
+    0 0 0 2px var(--color-forest-950),
+    0 0 0 3px color-mix(in srgb, var(--c) 0%, transparent);
+  transition:
+    transform 0.45s var(--ease-out-expo),
+    box-shadow 0.45s var(--ease-out-expo);
+}
+.cc-mark.is-hot span {
+  transform: scale(1.25);
+  box-shadow:
+    0 0 0 3px var(--color-forest-950),
+    0 0 0 4px var(--c);
+}
+.cc-mark:active span {
+  transform: scale(0.85);
+}
+.cc-pair {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 1rem 0;
+  text-align: left;
+}
+.cc-pair-rule {
+  display: inline-block;
+  width: 1.4rem;
+  height: 1px;
+  margin: 0 0.35rem;
+  vertical-align: 0.32em;
+  background: var(--color-contour);
+  transform-origin: 0 50%;
+  transition: width 0.6s var(--ease-out-expo);
+}
+.cc-pair:hover .cc-pair-rule,
+.cc-pair:focus-visible .cc-pair-rule {
+  width: 3rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-country {
+    --draw: 1;
+    transition: none;
+  }
+  .cc-mark {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* --- missing photograph: crop marks around an empty frame --- */
+.photo-missing-crop {
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  --m: color-mix(in srgb, var(--color-canvas) 35%, transparent);
+  background:
+    linear-gradient(var(--m), var(--m)) top left / 10px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) top left / 1px 10px no-repeat,
+    linear-gradient(var(--m), var(--m)) top right / 10px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) top right / 1px 10px no-repeat,
+    linear-gradient(var(--m), var(--m)) bottom left / 10px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) bottom left / 1px 10px no-repeat,
+    linear-gradient(var(--m), var(--m)) bottom right / 10px 1px no-repeat,
+    linear-gradient(var(--m), var(--m)) bottom right / 1px 10px no-repeat;
+}
+
+/* --- empty sheet --- */
+.es-country {
+  --gl-stroke: color-mix(in srgb, var(--color-canvas) 22%, transparent);
+  --gl-w: 1px;
+}
+.es-ring,
+.es-cross {
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.es-ring {
+  stroke-dasharray: 3 5;
+}
+
+/* --- a photograph still loading: a survey graticule, then the print develops --- */
+.photo-frame[data-developing] {
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-canvas) 5%, transparent) 1px, transparent 1px) 0 0 / 100% 12.5%,
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 5%, transparent) 1px, transparent 1px) 0 0 / 12.5% 100%,
+    var(--color-forest-900);
+}
+.photo-frame[data-developing] .photo-img {
+  opacity: 0;
+}
+.photo-frame:not(.photo-shutter) .photo-img {
+  transition: opacity 0.9s var(--ease-out-expo);
+}
+.photo-shutter .photo-img {
+  transition:
+    clip-path 1.15s var(--ease-cinema) 0.45s,
+    opacity 0.9s var(--ease-out-expo);
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-frame .photo-img,
+  .photo-shutter .photo-img {
+    transition: none;
   }
 }

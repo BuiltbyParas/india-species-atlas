@@ -270,13 +270,17 @@ function useLocalityFlight(tableRef: React.RefObject<HTMLTableElement | null>, m
         await new Promise((res) => window.setTimeout(res, 60));
       }
     };
+    const onScreen = () => {
+      const box = mapRef.current?.getBoundingClientRect();
+      return !!box && box.bottom > 0 && box.top < window.innerHeight && box.width > 0;
+    };
     const fly = async () => {
-        await pointsDrawn();
+        // No points to lift when the map is off screen: write the rows at once rather than wait.
+        if (onScreen()) await pointsDrawn();
         if (!live) return;
         const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')];
         const map = mapRef.current;
-        const box = map?.getBoundingClientRect();
-        const mapOnScreen = !!box && box.bottom > 0 && box.top < window.innerHeight && box.width > 0;
+        const mapOnScreen = onScreen();
         rows.forEach((row, i) => {
           row.style.setProperty('--k', String(i));
           if (!mapOnScreen) return;

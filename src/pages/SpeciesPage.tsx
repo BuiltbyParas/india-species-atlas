@@ -9,6 +9,7 @@ import { FilterPanel } from '../components/species/FilterPanel';
 import { SpeciesCard } from '../components/species/SpeciesCard';
 import { SpeciesGallery } from '../components/species/SpeciesGallery';
 import { SectionHeading } from '../components/ui/SectionHeading';
+import { EmptySheet } from '../components/ui/EmptySheet';
 import { buttonClasses } from '../components/ui/buttonClasses';
 import { useTabKeys } from '../components/ui/useTabKeys';
 import { cn } from '../utils/cn';
@@ -232,28 +233,28 @@ export function SpeciesPage() {
           </div>
 
           {shown.length === 0 ? (
-            <div className="rounded-xs border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
-              <p className="font-medium text-canvas">
-                {savedOnly && savedCount === 0
-                  ? 'You have not saved any species yet'
-                  : 'No species match those filters'}
-              </p>
-              <p className="mt-1 text-sm text-canvas/60">
-                {savedOnly && savedCount === 0
-                  ? 'Use the heart on any species card to keep it here.'
-                  : 'Try removing a filter or clearing the search.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  filters.reset();
-                  setSavedOnly(false);
-                }}
-                className={buttonClasses('secondary', 'md', 'mt-5')}
-              >
-                Reset filters
-              </button>
-            </div>
+            <EmptySheet
+              eyebrow={savedOnly && savedCount === 0 ? 'Saved species' : 'No match on the sheet'}
+              title={
+                savedOnly && savedCount === 0 ? 'You have not saved any species yet' : 'No species match those filters'
+              }
+              actions={
+                <button
+                  type="button"
+                  onClick={() => {
+                    filters.reset();
+                    setSavedOnly(false);
+                  }}
+                  className={buttonClasses('secondary', 'md')}
+                >
+                  Reset filters
+                </button>
+              }
+            >
+              {savedOnly && savedCount === 0
+                ? 'Use the heart on any species card to keep it here.'
+                : 'Try removing a filter or clearing the search.'}
+            </EmptySheet>
           ) : (
             <div id="directory-panel" role="tabpanel" aria-label={view === 'gallery' ? 'Gallery' : 'Grid'}>
               {view === 'gallery' ? <SpeciesGallery species={shown} fallback={grid} /> : grid}

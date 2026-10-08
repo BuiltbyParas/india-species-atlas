@@ -15,6 +15,23 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
  */
 gsap.registerPlugin(ScrollTrigger);
 
+/*
+ * While enabled, ScrollTrigger keeps an empty requestAnimationFrame loop alive
+ * (a Firefox repaint workaround), even when no trigger exists. Only the
+ * documentary creates triggers, so it is enabled only while a page that holds
+ * it is mounted, and the working pages go fully idle when nothing moves.
+ * Pages hold it from a layout effect, which runs before their children's
+ * effects create triggers.
+ */
+ScrollTrigger.disable();
+let holders = 0;
+export function holdScrollTrigger() {
+  if (holders++ === 0) ScrollTrigger.enable();
+  return () => {
+    if (--holders === 0) ScrollTrigger.disable();
+  };
+}
+
 /** CSS `cubic-bezier(x1, y1, x2, y2)` as a function of progress: Newton's method, then bisection. */
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
   const ax = 3 * x1 - 3 * x2 + 1;
