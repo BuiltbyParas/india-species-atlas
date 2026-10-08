@@ -352,3 +352,25 @@ The existing loader was evolved into the opening rather than given a second intr
   - Navigation edge cases: keyboard, back, ctrl-click, double click, reduced motion, touch.
   - The dialog trap and tablists.
   - Scroll frame timing equal to Gate 8 on desktop and phone (numbers in `INTERACTION_ENGINE.md`).
+
+## Spatial world (branch `atlas/spatial-world`, after the interaction engine)
+
+- **Architecture:** [`SPATIAL_WORLD_ARCHITECTURE.md`](SPATIAL_WORLD_ARCHITECTURE.md).
+- **What changed:**
+  - **World state, geographic camera, scene registry.** Pages now hand their view of the sheet to one another.
+  - **Journeys.** Descend (to a species), travel (species to species, with the route leg), ascend (back to the atlas, into the map's frame).
+  - **Atlas.** Markers preview on hover and activate their species' line. "Enter its world" starts a journey. Filters fade markers and threads, and the map eases to what remains. The view is remembered. Visited species are ringed.
+  - **Species pages.** The IUCN category is placed along the IUCN scale. Localities fly from the map to the register, and the two stay linked.
+  - **`/conservation`.** Opens with data → geography → programme network, reversible on scroll.
+  - **`/compare`.** The species' ground on one sheet, with shared states named and counts on one scale.
+  - **`/sources`.** A source register.
+  - **`/about`.** Five ruled chapters, with the same words.
+  - **Cards and gallery.** They show their ground and act as portals.
+  - **Hero.** Dust over the Thar at the end of the descent.
+- **Preserved:** every scene, route, timing, data value and reduced-motion composition. The profile panel is still one click away everywhere (renamed "Quick profile").
+- **Verification:**
+  - `tsc -b` and `vite build` pass.
+  - A regression pass over 10 routes at 1440 and 390, each with and without reduced motion, found no errors and no overflow, with one `h1` per page.
+  - Keyboard journeys: focus moves to `main` and the new page is announced.
+  - Back and forward, and hurrying a journey, work.
+  - Journey frame timing is in the architecture document.
