@@ -3386,3 +3386,93 @@ body {
 .sm-point.is-hl .sm-point-hit {
   fill: color-mix(in srgb, var(--color-canvas) 12%, transparent);
 }
+
+/* --- data → geography → network (conservation/DataGeography.tsx) --- */
+.data-geo {
+  --outline: 1;
+  --mark: 1;
+  --row: 0;
+  --net: 1;
+}
+.data-geo.is-scrub {
+  height: 320vh;
+}
+.dg-stage {
+  display: grid;
+  gap: 2.5rem;
+}
+.data-geo.is-scrub .dg-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  grid-template-columns: 5fr 7fr;
+  align-items: center;
+  gap: 4rem;
+}
+.dg-map {
+  position: relative;
+  width: min(100%, 34rem);
+  margin-inline: auto;
+}
+.data-geo.is-scrub .dg-map {
+  width: auto;
+  height: min(84svh, 52rem);
+}
+.dg-beats {
+  position: relative;
+  min-height: 19rem;
+  margin-top: 1.5rem;
+}
+.dg-beat {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.5s var(--ease-out-expo),
+    transform 0.7s var(--ease-out-expo);
+}
+.dg-beat.is-on {
+  opacity: 1;
+  transform: none;
+}
+.dg-country {
+  --gl-alpha: 0.5;
+}
+.dg-row {
+  stroke: color-mix(in srgb, var(--color-canvas) 22%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: var(--row);
+}
+.dg-dot {
+  fill: var(--c);
+  stroke: var(--color-forest-950);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.dg-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-canvas) 60%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: var(--mark);
+}
+.dg-code {
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+  fill: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  opacity: max(var(--row), calc(var(--mark) * (1 - var(--net))));
+}
+/* In the last beat the programme's members hold; the others step back, and the two with no programme are left open. */
+.dg-point.is-apart .dg-dot {
+  opacity: calc(1 - var(--net) * 0.5);
+}
+.dg-point.is-none .dg-ring {
+  stroke-dasharray: 3 3;
+  opacity: max(var(--mark), var(--net));
+}
+.dg-point.is-member .dg-ring {
+  stroke: color-mix(in srgb, var(--color-river) calc(40% + var(--net) * 60%), var(--color-canvas));
+}

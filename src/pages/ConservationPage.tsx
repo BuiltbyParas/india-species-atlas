@@ -4,11 +4,14 @@ import { ThreatsOverview } from '../components/conservation/ThreatsOverview';
 import { ConservationTimeline } from '../components/conservation/ConservationTimeline';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import ChartsPanel from '../components/charts/DataCharts';
+import { DataGeography } from '../components/conservation/DataGeography';
 
 export function ConservationPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-16 px-4 py-12 sm:px-6 lg:space-y-20 lg:py-16">
       <StatusExplainer />
+
+      <DataGeography />
 
       <section>
         <SectionHeading
