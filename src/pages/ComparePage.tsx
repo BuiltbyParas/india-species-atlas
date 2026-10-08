@@ -14,6 +14,7 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { buttonClasses } from '../components/ui/buttonClasses';
 import { useSpeciesProfile } from '../components/species/SpeciesProfileProvider';
+import { CompareGeography } from '../components/species/CompareGeography';
 
 /**
  * Side-by-side comparison of up to three species.
@@ -241,7 +242,9 @@ export function ComparePage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-8">
+        <>
+        <CompareGeography species={selected} />
+        <div className="mt-12">
           <p className="mb-2 text-xs text-canvas/55 sm:hidden">
             Scroll the table sideways to reach the other species — the attribute column stays in place.
           </p>
@@ -303,6 +306,7 @@ export function ComparePage() {
           </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );
