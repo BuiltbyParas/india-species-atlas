@@ -97,6 +97,8 @@ export class FieldStage {
   private used = new Map<string, number>();
   private pending = new Map<string, Promise<FieldWorld | null>>();
   private current: string | null = null;
+  /** The world `show` is building or about to show; eviction leaves it alone. */
+  private wanted: string | null = null;
   private transition: Transition | null = null;
   private compositor: Compositor | null = null;
   private warm: THREE.WebGLRenderTarget | null = null;
@@ -272,7 +274,7 @@ export class FieldStage {
         this.renderer.render(world.scene, world.camera);
         this.renderer.setRenderTarget(null);
         this.worlds.set(id, world);
-        this.evict();
+        this.evict(id);
         return world;
       })
       .catch((err) => {
@@ -310,11 +312,16 @@ export class FieldStage {
     idle(() => void this.prepare(next).finally(() => this.runQueue()), { timeout: 2500 });
   }
 
-  /** On the lowest tier, hold at most three worlds. */
-  private evict() {
+  /**
+   * On the lowest tier, hold at most three worlds. The world just built (`fresh`)
+   * and the one `show` is waiting for are never evicted: neither has been used
+   * yet, so by age they would be the first to go, and the stage would then
+   * show a world that no longer exists and stop drawing.
+   */
+  private evict(fresh?: string) {
     const cap = qualityTier() === 'low' ? 3 : 5;
     if (this.worlds.size <= cap) return;
-    const keep = new Set([this.current, this.transition?.from, this.transition?.to]);
+    const keep = new Set([this.current, this.transition?.from, this.transition?.to, this.wanted, fresh]);
     const old = [...this.worlds.keys()].filter((k) => !keep.has(k)).sort((a, b) => (this.used.get(a) ?? 0) - (this.used.get(b) ?? 0));
     while (this.worlds.size > cap && old.length) {
       const id = old.shift()!;
@@ -336,7 +343,15 @@ export class FieldStage {
     id: string,
     o: { duration?: number; cut?: boolean; reset?: Partial<{ engage: number; progress: number; enter: number; drag: number }> } = {},
   ): Promise<void> {
-    const world = await this.prepare(id);
+    this.wanted = id;
+    // A world that cannot be built (a chunk that failed to load, a shader error) is tried once more;
+    // if it still fails the stage gives up, so the study shows its photograph rather than an empty layer.
+    let world = await this.prepare(id);
+    if (!world && !this.failed) world = await this.prepare(id);
+    if (!world && !this.failed) {
+      console.error('[field] the world for', id, 'could not be built; falling back to the photograph');
+      this.fail();
+    }
     if (!world || this.failed) return;
     if (this.transition) this.finishTransition();
     const applyReset = () => {
