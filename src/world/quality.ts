@@ -147,6 +147,8 @@ export class FrameGovernor {
   private slow = 0;
   private bad = 0;
   private cooldown = 0;
+  /** The last closed windows (newest last), for diagnosis: rung, share of slow frames, frames, ms. */
+  readonly windows: string[] = [];
 
   constructor(options: GovernorOptions) {
     this.o = {
@@ -191,6 +193,8 @@ export class FrameGovernor {
     if (this.frames < this.o.windowFrames && this.time < this.o.windowMs) return;
 
     const fraction = this.slow / this.frames;
+    this.windows.push(`r${this.rung} ${fraction.toFixed(2)} ${this.frames}f ${Math.round(this.time)}ms`);
+    if (this.windows.length > 8) this.windows.shift();
     this.frames = 0;
     this.time = 0;
     this.slow = 0;

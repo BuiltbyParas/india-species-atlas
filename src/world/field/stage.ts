@@ -92,6 +92,10 @@ export class FieldStage {
   readonly canvas: HTMLCanvasElement;
   readonly renderer: THREE.WebGLRenderer;
   failed = false;
+  /** Why the stage gave up, for diagnosis. */
+  failReason = '';
+  /** Mode changes and what caused them (newest last). */
+  readonly modeLog: string[] = [];
 
   private worlds = new Map<string, FieldWorld>();
   private used = new Map<string, number>();
@@ -155,7 +159,7 @@ export class FieldStage {
         this.resize(true);
         for (const w of this.worlds.values()) w.setRung(rung);
       },
-      onTooSlow: () => this.fail(),
+      onTooSlow: () => this.fail('too-slow'),
     });
     this.governor.begin();
 
@@ -168,7 +172,7 @@ export class FieldStage {
     });
     this.canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      this.fail();
+      this.fail('context-lost');
     });
   }
 
@@ -213,12 +217,19 @@ export class FieldStage {
     this.request();
   }
 
+  /** What a test needs to tell a stage that gave up from one that is merely idle. */
+  get diagnostics() {
+    return { windows: this.governor.windows, raf: this.raf !== 0, worldCount: this.worlds.size };
+  }
+
   get layerMode(): LayerMode {
     return this.mode;
   }
 
   private setMode(mode: LayerMode) {
     if (this.mode === mode) return;
+    this.modeLog.push(`${Math.round(performance.now())} ${this.mode}>${mode} showing=${this.showing} raf=${this.raf}`);
+    if (this.modeLog.length > 16) this.modeLog.shift();
     this.mode = mode;
     this.layer.dataset.mode = mode;
     if (mode === 'front') this.layer.style.transform = '';
@@ -235,9 +246,10 @@ export class FieldStage {
     return () => this.failures.delete(fn);
   }
 
-  private fail() {
+  private fail(reason: string) {
     if (this.failed) return;
     this.failed = true;
+    this.failReason = reason;
     this.setMode('off');
     for (const f of this.failures) f();
   }
@@ -354,7 +366,7 @@ export class FieldStage {
     if (!world && !this.failed) world = await this.prepare(id);
     if (!world && !this.failed) {
       console.error('[field] the world for', id, 'could not be built; falling back to the photograph');
-      this.fail();
+      this.fail('build');
     }
     if (!world || this.failed) return;
     if (this.transition) this.finishTransition();
@@ -564,7 +576,10 @@ export class FieldStage {
       const fresh = this.snapNext.delete(this.current);
       this.draw(this.current, this.input(dt, undefined, fresh || reduced), null);
     }
-    this.governor.sample(now);
+    // The dissolve draws two worlds and the compositor for a second or two by design; its frames say
+    // nothing about whether the device can hold one world, so they are not judged (and cannot abandon the stage).
+    if (tr) this.governor.reset();
+    else this.governor.sample(now);
 
     const settled =
       !this.transition &&
@@ -615,6 +630,10 @@ if (typeof window !== 'undefined') {
     mode: stage?.layerMode ?? 'none',
     showing: stage?.showing ?? null,
     failed: stage?.failed ?? false,
+    failReason: stage?.failReason ?? '',
+    modeLog: stage?.modeLog ?? [],
+    ...stage?.diagnostics,
+    tier: qualityTier(),
     rung: stage?.rung ?? 0,
     calls: stage?.renderer.info.render.calls ?? 0,
     triangles: stage?.renderer.info.render.triangles ?? 0,

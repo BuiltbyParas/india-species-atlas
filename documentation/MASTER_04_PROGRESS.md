@@ -584,3 +584,55 @@ All five supplied sites and the two extra ones loaded and were scrolled in the r
 ### 14.4 Not verified
 
 1280 × 800 and 1920 × 1080 captures; an idle-machine run of any of the above; Chrome stable; other GPUs. The earlier "both fixes hold" verdict in §13.5 should be read with §14.3.
+
+## 15. WebGL lifecycle recovery checkpoint (10 October 2026)
+
+Branch `atlas/master-04-visual-quality`, from `4d04b93`. Headed Chromium 153.0.8010.12, default flags, 1440 × 900, one browser at a time, `vite preview` on :4200 (rebuilt for each variant).
+
+### 15.1 What `mode=off` means
+
+`mode` goes to `off` in two ways only. Normal: the host releases (`attach()`'s release function) with no hand-over in progress. Terminal: `fail()`, which sets `failed = true`, sets `off` and never clears; `getFieldStage()` then returns `null` for the page's lifetime. `fail()` has three callers: the frame governor's `onTooSlow`, `webglcontextlost`, and a world that failed to build twice. The stage now records which (`failReason`), its mode changes (`modeLog`), the governor's last windows and the render-loop state, all in `window.__atlasField()`.
+
+### 15.2 Failure modes, against the evidence
+
+| # | Mode | Verdict |
+|---|---|---|
+| 1 | Governor disables rendering | **Confirmed.** `failReason=too-slow` in every failing run |
+| 2 | Active world evicted or disposed | Not it: 2 worlds held, `evict` protects current, wanted and transition worlds; at `?quality=low` all five studies still arrive |
+| 3 | Render loop stops and never resumes | Not it: `raf` is false only because `fail()` stopped it |
+| 4 | Context lost | Not it: 0 `webglcontextlost` events in every run |
+| 5 | World build fails | Not it: no console output; dolphin was built (`worlds=2`) |
+| 6 | Stage alive, wrong world | Not it in the failing runs (`showing` was right; it was `failed`) |
+| 7 | Video / GPU interaction | Contributing load only: the clip plays at about 17 ms/frame before the dissolve; no error, no loss |
+
+### 15.3 Root cause
+
+The failing run's governor windows at the dissolve (rung 2, the lowest): `0.00 24f 400ms` (clip playing, healthy) then `0.26 19f 717ms`, `0.80 10f 750ms`, `0.73 22f 717ms`. Two consecutive windows with at least 60 % slow frames abandon the stage. They fall inside the 1.5 s Next dissolve, which by design draws two worlds and the compositor. At rung 2 with the iGPU shared with the video wallpaper those frames take about 75 ms. The governor was written to catch a device that cannot hold one world; it was also judging a bounded, deliberately heavier transition, and abandonment is terminal. The earlier §14.3 guess (a world build) was wrong; the build had already finished.
+
+### 15.4 Why no idle retry
+
+The transition to `off` was a correct response to a wrong measurement, not a stage that needed resurrecting. Not measuring the dissolve removes the failure with no timer, no second render loop and no new GPU allocation. A retry would also have meant re-creating a stage after `getFieldStage()` returned `null` to components that had already fallen back to the photograph. Genuine persistent slowness, a lost context and a failed build still call `fail()` and still show the photograph.
+
+### 15.5 Change
+
+`src/world/field/stage.ts`: while a transition is running `frame()` calls `governor.reset()` instead of `sample()`, so no dissolve frame is counted and the first frame after it is ignored. Plus diagnostics: `failReason`, `modeLog`, `diagnostics` (governor windows, loop state, world count), `tier` in `__atlasField()`. `src/world/quality.ts`: `FrameGovernor.windows` (last eight closed windows). New `scripts/audit/lifecycle.mjs` (snow leopard clip, Next, Back, repeated, polling for a settled stage, dumping diagnostics on failure). No art, HUD or copy change.
+
+### 15.6 Results
+
+Reproduction: `ROUNDS=4 node scripts/audit/lifecycle.mjs`. Test conditions for **all** runs below: **stressed** (user's normal desktop: Brave open, `hidamari-player` live wallpaper running, about 1 GB RAM available, 2.4-3 GB swap in use, load 0.8-4.4). `tier=low` / `rung=2` by the time the clip is playing.
+
+| Variant | Result |
+|---|---|
+| Before (unmodified governor, with diagnostics) | **4 of 4 runs failed** at the first Next: `failed=true(too-slow)`, `mode=off`, `status=flat` |
+| After | 4 + 8 + 3 = **15 of 15 rounds** of play, Next, Back passed; 0 context losses, 0 console output |
+| After: `accept.mjs` seq / low / video | all OK (video: Next and Back now pass) |
+| After: `creative-scroll.mjs` (bustard, rhino, tiger; fast, reversed, zig-zag) and dolphin direct entry | all OK |
+| After: `rhino-low-tier.mjs` | all five arrive with their own world at `?quality=low` |
+| `tsc -b`, `npm run build` | pass |
+
+### 15.7 Not done, and limits
+
+- **The clean baseline was not run.** It needs the wallpaper stopped and other applications closed, which was not authorised here. The result is stressed-machine only; it shows the governor mis-judged a transition under load, not that the site fails on every machine.
+- Unfixed and not observed: after a long idle, the first sampled frame can carry a stale timestamp and register as one slow window (needs two in a row to abandon). No failure seen; left alone.
+- A device on which one world is genuinely too slow still ends on the photograph, by design. The tier is still lowered permanently by `noteStrain` and never raised.
+- One machine, GPU, browser build, 60 Hz, DPR 1. No Chrome stable, Firefox, Safari, DPR 2.

@@ -78,7 +78,9 @@ Ratings: V = visual impact, U = user-experience impact, R = technical risk of fi
 - **Change:** `src/world/field/worlds/himalaya.ts`, `sideR` feather 0.17 → 0.27 and its jitter 0.4 → 0.5. The tail still runs whole (the foot rule at `vUv.x > 0.6` is unchanged). Checked in chapters 2 and 4 (`settled-leopard1-feather.jpg`, `settled-leopard3-feather.jpg`): the edge dissolves into the slope.
 - **Not tested:** the other chapters of this study at other camera positions beyond the two above. The bustard, dolphin and rhinoceros panels have their own shaders and were not changed.
 
-### 3.4 The stage gives up and never comes back (P0/P1, **not fixed; measured, not understood**)
+### 3.4 The stage gives up and never comes back (P0/P1, **fixed in the lifecycle checkpoint, 10 October: see MASTER_04_PROGRESS §15**)
+
+> **Update:** the cause is understood and fixed (the governor judged the dissolve's frames). The idle retry proposed below was **not** built: the evidence shows no retry is needed. The text that follows is the earlier, superseded analysis.
 
 - **Observed:** `MODE=video node scripts/audit/accept.mjs` (play and pause the snow leopard clip, go home, come back, play, Next to the dolphin, Back). On this machine, as loaded now (§7), the final two probes failed in most runs (six of eight in total), on unmodified `16afae0` as well as after my changes: after Next the stage reports `status=flat`, `failed=true`, `rung=2`, and after Back the snow leopard page shows the dolphin's last frame with `mode=off`. Console output: none. Context losses: 0. In the runs that pass, `rung` is 1 before the clip plays and 2 while it plays.
 - **Cause (code):** the frame governor steps the stage down twice and then, on persistently slow windows, calls `fail()`. After `fail()` the stage never recovers in that page session; `getFieldStage()` returns null. That is by design (the page shows photographs), but a transient load (video decode plus a river-world build) can end the WebGL experience permanently.
