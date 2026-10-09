@@ -197,7 +197,7 @@ const PANEL_FRAGMENT = /* glsl */ `
     float j = (n - 0.5) * 0.04 + (n2 - 0.5) * 0.07;
     // The picture is padded with blurred snow on three sides; all of the padding, and the picture's own ragged border, fade away.
     float sideL = smoothstep(0.0, 0.2, vUv.x + j);
-    float sideR = smoothstep(0.0, 0.17, 1.0 - vUv.x + j * 0.4);
+    float sideR = smoothstep(0.0, 0.27, 1.0 - vUv.x + j * 0.5);
     float top = smoothstep(0.0, 0.2, 1.0 - vUv.y + j);
     float foot = smoothstep(0.0, 0.07, vUv.y + j);
     // The tail runs off the bottom of the picture at the right: leave it whole.

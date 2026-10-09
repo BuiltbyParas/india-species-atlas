@@ -526,3 +526,61 @@ Credits are in `src/assets/field/CREDITS.md` and in the panel's caption. Candida
 ### 12.5 Environment
 
 Earlier in the session `/tmp` held 2.2 GB of scratch from older sessions, swap was about 85 % used and Chromium failed every module load with `net::ERR_INSUFFICIENT_RESOURCES`. Two inactive session directories (1.5 GB) were removed; `/tmp` went from 2.3 GB to 0.7 GB used and the failures stopped. That pressure is a likely reason the stage dropped to the `low` tier in the first place.
+
+## 13. Final desktop acceptance: rhinoceros and snow-leopard footage (9 October 2026)
+
+### 13.1 Setup
+
+- Git: branch `atlas/master-04-visual-quality`, HEAD `16afae0`, working tree clean at the start; `f6c62b9` (rhino) and `16afae0` (footage) present. No source change was made.
+- Build: `npm run build` re-run; output identical to the existing `dist` (entry `index-D1z3Zdiq.js`), and `localhost:4200` (`vite preview`) serves that same entry.
+- Browser: Playwright's installed Chromium 153.0.8010.12, **headed** (Wayland session), default flags: no `--enable-gpu`, `--use-angle` or `--use-gl`. Renderer reported by WebGL2: `ANGLE (AMD, AMD Radeon Graphics (radeonsi renoir ACO), OpenGL ES 3.2)`, i.e. the integrated hardware GPU. (Headless Chromium on the same machine reports SwiftShader; it was not used for any result below.)
+- Script: `scripts/audit/accept.mjs` (`MODE=seq|low|video`), 1440 × 900. Each probe reads `window.__atlasField()` and the `data-status` attribute, counts `webglcontextlost`/`restored` events on every canvas, and samples the screenshot luminance. A probe passes only if the stage shows its own world, has not failed, issues at least 3 draw calls, is not `flat`, and no context loss has occurred.
+
+### 13.2 Results
+
+| Check | Result |
+|---|---|
+| Five-animal sequence, Next, scrolled to the end of each (bustard → snow leopard → dolphin → tiger → rhinoceros) | 10/10 probes pass. Draw calls 5, 5/3, 6, 8, 6; each canvas has its own luminance (tiger darkest, 60–66). 0 context losses, 0 console errors or warnings. |
+| Same with `?quality=low` | 10/10 pass; tiger 8 calls, rhinoceros 6 calls, as at default quality. 0 losses, 0 console output. |
+| Snow-leopard clip: play and pause four times | Each Play: `PLAYING`, `error` null, time advancing, loops past 8 s; each Pause: paused. Stage probe after every step passes (5 calls, same luminance). 0 losses. |
+| Away (home page) and back by history, then play again | Stage returns to the snow leopard with its own world, clip plays again. |
+| Next to the dolphin and Back while the clip had just played | Both stages draw their own world. **Corrected 10 October:** the script only logged this step; once it asserted it, the step failed in most runs on this machine under load (see §14.3). |
+| Console output across all three runs | None (no errors, warnings, or `CONTEXT_LOST_WEBGL`). |
+
+### 13.3 The earlier context loss
+
+The loss recorded in 12.3 happened only with Chromium forced onto the GPU (`--enable-gpu --use-angle=gl-egl`). It did not occur here with default flags on the real GPU, across four play/pause cycles, navigation away and back, and the full sequence. This does not show that the forced-flag configuration is safe, and nothing in this run explains it; no part of the result is inferred from SwiftShader. Left uninvestigated and unmasked: the stage already falls back to the photograph on a lost context (§11.5) and the footage panel falls back to its poster on a media error.
+
+### 13.4 Not covered
+
+One machine, one GPU, one Chromium build, 60 Hz, DPR 1, 1440 × 900 only. Not tested: Chrome stable, Firefox, Safari, discrete or other GPUs, DPR 2, long sessions. The 360 × 640 credit overflow (12.3) stands.
+
+### 13.5 Verdict
+
+Both fixes hold on desktop Chromium with the default configuration. No further code change was required, so nothing was committed; `scripts/audit/accept.mjs`, `accept-env.mjs` and this section are uncommitted.
+
+## 14. Creative quality audit and desktop polish (10 October 2026)
+
+Full audit, reference matrix and plan: `documentation/CREATIVE_QUALITY_AUDIT.md`. Headed Chromium 153, default flags, 1440 × 900; `tsc -b` and `npm run build` pass.
+
+### 14.1 References
+
+All five supplied sites and the two extra ones loaded and were scrolled in the real browser. No hover, cursor, menu, audio or reduced-motion behaviour was tested on them. Edolus' loader took about a minute on this machine.
+
+### 14.2 Changes
+
+| Change | File | Why | Checked |
+|---|---|---|---|
+| The header turns to ink on a pale veil over the Himalaya, river and floodplain worlds, as it already did over the Thar | `src/components/field/field.css` | Pale type on a pale sky at the top of the page; a black bar over a light world after 40 px | Frames of the snow leopard, dolphin and rhinoceros studies; computed colour under reduced motion |
+| The frame's foot is denser and a soft plate sits behind the anchor coordinates and the exit link | `field.css` | The fixed coordinates printed over the tiger's reserve list; body text ran through the rhinoceros progress label | Settled frames, before and after (tiger "Reserves", rhinoceros "Pressure") |
+| The snow leopard photograph's right edge dissolves over 27 % of its width, not 17 % | `src/world/field/worlds/himalaya.ts` | A straight vertical seam against the drawn slope | Habitat and Distribution chapters; the tail is still whole |
+| `window.__atlasField()` reports the governor's `rung`; the acceptance script asserts clip play/pause, prints the rung, and exits 1 on a problem | `src/world/field/stage.ts`, `scripts/audit/accept.mjs` | Review findings on the earlier script; to see why the stage gives up | Ran |
+| New scripts: `creative-walk.mjs` (home and every chapter), `creative-collide.mjs` (settled text-against-furniture measure), `creative-scroll.mjs` (fast, reversed, zig-zag) | `scripts/audit/` | Repeatable evidence | Ran |
+
+### 14.3 Open: the stage gives up under load
+
+`MODE=video accept.mjs` (play the clip, go home and back, Next to the dolphin, Back) failed in most runs here, on `16afae0` as well as after these changes: after Next the frame governor has stepped to its lowest rung and then abandoned the stage (`status=flat`, `failed=true`), and it does not come back until the page is reloaded. No console output; no context loss. An attempt to ignore the frames after a world build did not improve the pass rate and was reverted. The machine was swapping (about 2.4 GB) with a live-video wallpaper using the same iGPU, so this is not a clean measurement of the site. Proposal (idle retry of the stage) is in the audit, §3.4; not built.
+
+### 14.4 Not verified
+
+1280 × 800 and 1920 × 1080 captures; an idle-machine run of any of the above; Chrome stable; other GPUs. The earlier "both fixes hold" verdict in §13.5 should be read with §14.3.

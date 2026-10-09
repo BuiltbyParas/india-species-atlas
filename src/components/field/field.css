@@ -89,16 +89,36 @@
   --fs-scrim: rgba(222, 224, 200, 0.74);
 }
 
-/* The header floats over a light world on the Thar: its type turns to ink, its veil to sand. */
+/*
+  The header floats over a light world: its type turns to ink and its veil to the world's own
+  ground, never the forest-black bar. The Thar, the Himalaya, the river and the floodplain are
+  light; the forest keeps the dark veil.
+*/
 :root[data-env='thar'] .site-header[data-open='false'] {
-  --color-canvas: #2a1b10;
+  --header-ink: #2a1b10;
+  --header-ground: #eadbbf;
+}
+:root[data-env='himalaya'] .site-header[data-open='false'] {
+  --header-ink: #14222e;
+  --header-ground: #dfe8f1;
+}
+:root[data-env='river'] .site-header[data-open='false'] {
+  --header-ink: #16221f;
+  --header-ground: #dde0cf;
+}
+:root[data-env='floodplain'] .site-header[data-open='false'] {
+  --header-ink: #1f2417;
+  --header-ground: #d8dabe;
+}
+:root:is([data-env='thar'], [data-env='himalaya'], [data-env='river'], [data-env='floodplain']) .site-header[data-open='false'] {
+  --color-canvas: var(--header-ink);
+}
+:root:is([data-env='thar'], [data-env='himalaya'], [data-env='river'], [data-env='floodplain']) .site-header[data-open='false']::before {
+  background: linear-gradient(to bottom, var(--header-ground) 0%, color-mix(in srgb, var(--header-ground) 85%, transparent) 50%, transparent 100%);
 }
 :root[data-env='thar'] .geo-progress {
   --color-canvas: #2a1b10;
   --color-forest-950: #e6d4b2;
-}
-:root[data-env='thar'] .site-header[data-open='false']::before {
-  background: linear-gradient(to bottom, #eadbbf 0%, color-mix(in srgb, #eadbbf 85%, transparent) 50%, transparent 100%);
 }
 
 /* ---------------------------------------------------------- shared */
@@ -685,9 +705,14 @@
   content: '';
   position: absolute;
   inset: auto 0 0 0;
-  height: 6rem;
-  background: linear-gradient(to top, var(--fs-ground) 46%, transparent);
-  opacity: 0.88;
+  height: 14rem;
+  /* The foot runs the width of the page; the corner plate behind the anchor's coordinates and the
+     way out is taller, so a list or a paragraph that scrolls through that corner is gone before it
+     reaches them instead of printing over them. */
+  background:
+    radial-gradient(ellipse 34rem 14rem at 100% 100%, var(--fs-ground) 58%, color-mix(in srgb, var(--fs-ground) 82%, transparent) 72%, color-mix(in srgb, var(--fs-ground) 34%, transparent) 88%, transparent 100%) no-repeat,
+    linear-gradient(to top, var(--fs-ground) 68%, transparent) bottom / 100% 6.4rem no-repeat;
+  opacity: 0.97;
   pointer-events: none;
 }
 .fs-progress {

@@ -114,6 +114,10 @@ export class FieldStage {
   private values = { engage: 0, progress: 0, drag: 0, enter: 0, px: 0, py: 0 };
   private tween: Tween | null = null;
   private governor: FrameGovernor;
+  /** The frame governor's rung: 0 is full quality, 2 the lowest before the stage gives up. */
+  get rung() {
+    return this.governor.rung;
+  }
   private dpr: number;
   private width = 0;
   private height = 0;
@@ -611,6 +615,7 @@ if (typeof window !== 'undefined') {
     mode: stage?.layerMode ?? 'none',
     showing: stage?.showing ?? null,
     failed: stage?.failed ?? false,
+    rung: stage?.rung ?? 0,
     calls: stage?.renderer.info.render.calls ?? 0,
     triangles: stage?.renderer.info.render.triangles ?? 0,
     geometries: stage?.renderer.info.memory.geometries ?? 0,
