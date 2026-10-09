@@ -9,7 +9,9 @@ import { THREAT_BY_ID } from '../../data/threats';
 import { formatDeg } from '../../geo/india';
 import { useReducedMotion } from '../../motion/preferences';
 import { cn } from '../../utils/cn';
+import { FOOTAGE } from '../../content/footage';
 import { PhotoCredit } from '../ui/PhotoCredit';
+import { FieldFootage } from './FieldFootage';
 import { SpeciesMap } from '../cinema/SpeciesMap';
 import { PHASE_VARS, setVars, type Phase } from '../cinema/SpeciesScene';
 import { StatusIndicator } from '../cinema/StatusIndicator';
@@ -322,9 +324,11 @@ function SnowLeopard({ study, current, next, previous, onNext, onPrevious, onExi
         <Lede>{firstSentence(s.indianDistribution)}</Lede>
         <Body>{s.indianDistribution.split(/(?<=\.)\s/).slice(1).join(' ')}</Body>
       </Chapter>
-      <Chapter i={4} {...c} align="low">
+      {/* With the clip and its credit this chapter is taller than the low position leaves room for. */}
+      <Chapter i={4} {...c} align={FOOTAGE[study.id] ? 'left' : 'low'}>
         <Body>{s.image.alt}</Body>
         <PhotoCredit species={s} className="fs-credit" />
+        {FOOTAGE[study.id] && <FieldFootage footage={FOOTAGE[study.id]} active={current === 4} />}
       </Chapter>
       <Chapter i={5} {...c} hold>
         <Localities s={s} />

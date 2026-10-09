@@ -482,3 +482,47 @@ One `WebGLRenderer` and one frame loop for all five worlds; only the current wor
 ### 11.7 Verdict
 
 **Ready for desktop acceptance testing**, with one fix applied. The five studies, their transitions and the route changes hold 60 fps on this integrated GPU without leaks or errors across 1024–1920 px wide viewports. The home page's scroll smoothness is the item to watch in acceptance, and is measured but not fixed.
+
+## 12. Master 05: the rhinoceros blank screen, and field footage (9 October 2026)
+
+### 12.1 The defect: reproduced, cause found, fix verified
+
+Reproduced on the production build at `localhost:4200` (Chromium, GPU on, 1440 × 900) by walking the studies in order with the *Next* link and scrolling each to its end (`scripts/audit/rhino-repro.mjs`). From the dolphin onward the stage stops drawing: `window.__atlasField()` reports `showing: "bengal-tiger"` (later `"indian-rhinoceros"`), `mode: "host"`, `failed: false`, but the WebGL draw-call count freezes and the canvas keeps the last frame of the previous world (the dolphin, under the tiger's and the rhinoceros's titles). No console error, no failed request.
+
+Cause (`src/world/field/stage.ts`): when a session's frames are slow the frame governor lowers the session to the `low` tier (`noteStrain`). `low` allows only three worlds in memory (`evict`). `prepare()` called `evict()` straight after storing a new world; the world just built has never been used (`used` empty), so by age it is the oldest and is the one evicted and disposed. `show()` then makes it current, `draw()` finds no world and returns silently. After bustard, snow leopard and dolphin the fourth world (tiger) is evicted on arrival, and so is the fifth (rhinoceros). Seen on this laptop: the tier read `balanced` at the start and `low` from the dolphin's arrival.
+
+Fix written: `evict(fresh)` never evicts the world just built or the one `show()` is waiting for (`wanted`). Second change, found on the way: `show()` returned silently when a world could not be built (a failed chunk), leaving an empty layer with `data-status="ready"`; it now retries once and then calls `fail()` with a `console.error`, so the study shows its photograph (verified: with module loads failing, every study fell back to `data-status="flat"`).
+
+**Verified** (production build, Chromium, GPU on, 1440 × 900, after the environment was cleared, see 12.4):
+
+- `scripts/audit/rhino-low-tier.mjs` forces the lowest tier (`?quality=low`) so the condition is deterministic, and walks bustard → snow leopard → dolphin → tiger → rhinoceros with *Next*. **Before the fix** (the committed `stage.ts`, rebuilt for the test) the tiger and the rhinoceros stopped drawing: 1 draw call each instead of 8 and 6, and the canvas kept the dolphin's frame (mean luminance 123 and 169 against 63 and 150). **After the fix** every arrival draws its own world, with no console error.
+- `scripts/audit/rhino-repro.mjs` modes A (direct entry), B (the whole sequence) and C (fast wheel into the rhinoceros), and `scripts/audit/rhino-cycle.mjs` (slow scroll, away and back three times by history, refresh, scroll after refresh): all `ready`, every frame the right world (tiger about 48, rhinoceros about 129–150), no `CONTEXT_LOST_WEBGL`, no module-load failure, no console error. The rhinoceros was looked at in screenshots on arrival and at the end.
+
+Not reproduced: a literal white screen. What was seen is a stale or empty canvas (the previous world's frame); under a lost WebGL context the stage falls back to the photograph. The user's white frame is most likely the same stall on a machine where the first frame was never drawn.
+
+### 12.2 Field footage
+
+Project-owned wildlife video: none (`public/media` holds only the promotional film). One clip added, for the snow leopard, in its "Photograph" chapter as a small panel (`FieldFootage`, `content/footage.ts`): poster shown at once; the clip is fetched when the panel is within a screen of the viewport (`preload="metadata"`), plays on pointer hover or keyboard focus and via a Play/Pause button, pauses off screen or when the chapter is not current; nothing plays by itself under reduced motion; a failed load or refused play leaves the photograph. The Three.js world is untouched. The clip is not set into the 3D world because a rectangular video cannot be cut out without a background-removal model.
+
+| Clip | Source | Licence | Size |
+|---|---|---|---|
+| `snow-leopard-spiti.webm`, 8 s, 720 × 512, VP9, silent, looped | Commons: Snow leopard family, Spiti, Himachal Pradesh, India.webm; Rishi Sharma, Nature Conservation Foundation (camera trap, 17 Aug 2012) | CC BY 3.0 | 313 KB (poster 40 KB) |
+
+Credits are in `src/assets/field/CREDITS.md` and in the panel's caption. Candidates checked and not used (portrait, low resolution, single behaviour, or zoo footage): see CREDITS. No suitable clip for the dolphin or rhinoceros.
+
+### 12.3 Footage: verified in the rendered page
+
+`scripts/audit/footage-check.mjs` and `footage-controls.mjs`, desktop Chromium 1440 × 900, default flags:
+
+- **Poster and load:** the photograph (720 px) is on screen with the chapter; the video element does not exist until the panel is within a screen of the viewport. Transfer for the clip once played: about 300 KB in three range requests (313 KB file) plus the 40 KB poster. The one `ERR_ABORTED` on the clip is the browser dropping its metadata request before resuming with ranges; it is not a failure.
+- **Control:** hover plays and shows "Pause"; leaving pauses; Tab to the button plays and tabbing away pauses; Enter and Space toggle; a click while hovering pauses (the label says Pause) and re-entering plays again; pressing Play without hover keeps it playing after the pointer leaves. Scrolling to the next chapter pauses it. Reduced motion: hover does nothing, the button plays it. A blocked clip: the poster stays, the video and button are removed, one console warning.
+- **Two defects found and fixed:** (1) a tap on a touch screen did nothing, because Chrome focuses the button on tap and focus counted as "wanted", so the click then switched it off; focus now counts only when it is `:focus-visible`. The toggle was also invisible without hover; on `(hover: none)` it now stays visible (tap Play, tap Pause verified with touch emulation). (2) The chapter sat low and the panel ran into the progress line with its credit below the fold; with footage it now uses the default position. Checked at 1440 × 900, 1280 × 720 and 390 × 844 (on a phone the frame is 15 rem wide so the credit clears the progress line). **Remaining:** on a 360 × 640 screen the credit still extends below the fold.
+- **Not a product defect, but worth knowing:** with Chromium forced onto the GPU (`--enable-gpu --use-angle=gl-egl`, as `rhino-repro.mjs` does) starting the video lost the WebGL context on this laptop, the media element errored and the component fell back to the photograph, as designed. With default flags and with SwiftShader the same page plays correctly. Not reproduced without forced flags, so not investigated further.
+
+### 12.4 Validation
+
+`tsc -b` pass; `npm run build` pass. `oxlint` reports one error, in `video/src/scenes/himalaya.ts:92` (a syntax error from an earlier commit, untouched here) and warnings that were already there; none is in the files changed in this section.
+
+### 12.5 Environment
+
+Earlier in the session `/tmp` held 2.2 GB of scratch from older sessions, swap was about 85 % used and Chromium failed every module load with `net::ERR_INSUFFICIENT_RESOURCES`. Two inactive session directories (1.5 GB) were removed; `/tmp` went from 2.3 GB to 0.7 GB used and the failures stopped. That pressure is a likely reason the stage dropped to the `low` tier in the first place.

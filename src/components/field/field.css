@@ -968,6 +968,74 @@
   margin-top: 1rem;
   color: var(--fs-faint) !important;
 }
+.fs-footage {
+  margin: 1.4rem 0 0;
+  width: min(21rem, 100%);
+}
+.fs-footage-frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--fs-scrim);
+  outline: 1px solid var(--fs-line);
+  outline-offset: 0;
+  border-radius: 2px;
+}
+.fs-footage-poster,
+.fs-footage-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The photograph stays under the clip; the clip comes up over it only once it is actually playing. */
+.fs-footage-video {
+  opacity: 0;
+  transition: opacity 0.6s ease-out;
+}
+.fs-footage[data-state='playing'] .fs-footage-video {
+  opacity: 1;
+}
+.fs-footage-toggle {
+  position: absolute;
+  inset-inline-end: 0.5rem;
+  inset-block-end: 0.5rem;
+  padding: 0.3rem 0.65rem;
+  font: inherit;
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fs-ink);
+  background: color-mix(in srgb, var(--fs-scrim) 80%, transparent);
+  border: 1px solid var(--fs-line);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.fs-footage-frame:hover .fs-footage-toggle,
+.fs-footage-toggle:focus-visible {
+  opacity: 1;
+}
+/* No hover on a touch screen: the control stays in view. */
+@media (hover: none) {
+  .fs-footage-toggle {
+    opacity: 1;
+  }
+}
+.fs-footage-cap {
+  margin: 0.6rem 0 0;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.45;
+  color: var(--fs-faint);
+}
+.fs-footage-cap span {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.fs-footage-cap a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .fs-list {
   list-style: none;
   margin: 1.1rem 0 0;
@@ -1286,6 +1354,10 @@
   }
   .fs-ch.is-long .fs-ch-inner {
     padding-block: 8svh;
+  }
+  /* The clip is smaller on a phone so its credit clears the progress line. */
+  .fs-footage-frame {
+    width: 15rem;
   }
   .fs-ch-inner {
     padding: 1rem 0 1.25rem;

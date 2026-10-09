@@ -9,3 +9,11 @@
 | `indian-rhinoceros-cutout.webp` | [Indian rhinoceros in Kaziranga National Park March 2025 by Tisha Mukherjee 08.jpg](https://commons.wikimedia.org/wiki/File:Indian_rhinoceros_in_Kaziranga_National_Park_March_2025_by_Tisha_Mukherjee_08.jpg), Wikimedia Commons | Tisha Mukherjee | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Background removed (a cut-out made earlier in Master 04 with a segmentation model; none was run in this checkpoint), cropped to the animal and resized to 1400 × 711, transparent WebP. This is **not** the species record's photograph (Payamfarahani, which has branches across the animal); it is a field-study-only asset and the study page credits it where it is shown. |
 
 Each photograph except the rhinoceros's is the species record's own image (`src/assets/species/`), here at its larger size or uncropped; the study page credits it where it is shown.
+
+## Footage
+
+| File | Original | Author | Licence | Modification |
+|---|---|---|---|---|
+| `snow-leopard-spiti.webm`, `snow-leopard-spiti-poster.webp` | [Snow leopard family, Spiti, Himachal Pradesh, India.webm](https://commons.wikimedia.org/wiki/File:Snow_leopard_family,_Spiti,_Himachal_Pradesh,_India.webm), Wikimedia Commons (from the Snow Leopard Trust's video of camera-trap footage, 17 August 2012, Upper Spiti) | Rishi Sharma, Nature Conservation Foundation, India | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | Eight seconds (19 s to 27.8 s of the original), cropped to the camera's frame without its date and make overlay, scaled to 720 px wide at 24 fps, the last 0.8 s cross-faded into the first so it loops, audio removed, VP9 at CRF 40 (313 KB). The poster is its first frame, WebP (40 KB). Shown in the snow leopard study's "Photograph" chapter with its credit. |
+
+Other Commons clips checked on 9 October 2026 and **not** used: the Pilibhit tiger (CC0, but 480 × 864 portrait), the Ladakh snow leopard (CC BY 3.0, 480p), the Great Indian Bustard call (CC BY-SA 4.0, a single bird calling). No clip was found for the river dolphin; the rhinoceros clips on Commons are zoo footage and so would not match a floodplain.
