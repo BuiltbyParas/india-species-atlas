@@ -1,6 +1,6 @@
 import './field.css';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FIELD_STUDIES, type FieldStudy } from '../../content/fieldStudies';
 import { formatDeg } from '../../geo/india';
 import { onScroll } from '../../interaction/scroll';
@@ -41,7 +41,9 @@ export function FieldStudiesIndex() {
   const hostRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reduced = useReducedMotion();
-  const [returning] = useState(() => takeReturn());
+  const location = useLocation();
+  // Back from a study, or sent here by the header's "Field studies" (/#field-studies): open at the index.
+  const [returning] = useState(() => takeReturn() ?? (location.hash === '#field-studies' ? FIELD_STUDIES[0].id : null));
   const [scrollActive, setScrollActive] = useState(() => Math.max(0, FIELD_STUDIES.findIndex((f) => f.id === returning)));
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [engaged, setEngaged] = useState(false);
@@ -108,6 +110,18 @@ export function FieldStudiesIndex() {
       window.clearTimeout(t);
     };
   }, [returning]);
+
+  // Already on the home page when "Field studies" is chosen: travel down to the index.
+  const firstHash = useRef(location.key);
+  useEffect(() => {
+    if (location.hash !== '#field-studies' || location.key === firstHash.current) return;
+    // After the menu (if it was the way here) has folded and given the scroll back.
+    const t = window.setTimeout(() => {
+      const section = sectionRef.current;
+      if (section) scrollToTarget(section.getBoundingClientRect().top + window.scrollY);
+    }, 420);
+    return () => window.clearTimeout(t);
+  }, [location.hash, location.key]);
 
   // The world on screen follows the active study; the hand engages it.
   useEffect(() => {
@@ -276,10 +290,17 @@ function Composition({ study, active, entering, onEnter }: { study: FieldStudy; 
           </div>
         )}
       </dl>
-      <p className="fs-comp-verb" aria-hidden="true">
+      {/* The verb is also the visible way in (the name is the keyboard's; this one is for the eye and the hand). */}
+      <button type="button" className="fs-comp-verb" aria-hidden="true" tabIndex={-1} data-cursor={study.verb} onClick={onEnter}>
         <span className="fs-verb-rule" />
         {study.verb}
-      </p>
+        <span className="fs-comp-enter">
+          Enter
+          <svg viewBox="0 0 16 8" aria-hidden="true">
+            <path d="M0 4h14M11 1l3 3-3 3" />
+          </svg>
+        </span>
+      </button>
     </div>
   );
 }

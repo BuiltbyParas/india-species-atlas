@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLSL_DISSOLVE, GLSL_GRAIN, GLSL_HASH, GLSL_NOISE } from '../../gl/chunks';
 import { seededRandom } from '../../gl/particles';
 import { damp } from '../../../interaction/spring';
@@ -11,15 +10,17 @@ import { GLSL_COVER, loadPhoto } from '../gl/photo';
 import { makeHeightfield } from '../gl/terrain';
 import { fbm, lerp, seg, smooth, window4 } from '../noise';
 import { populationFigures } from '../../../components/field/studyFacts';
+import { drawSilhouette } from '../../../components/home/heroPlates';
+import { SPECIES_SILHOUETTES } from '../../../components/home/speciesSilhouettes';
 import type { FieldInput, FieldWorld, WorldContext } from '../types';
 
 /**
  * FIELD STUDY 05 · TRANSFORM · the greater one-horned rhinoceros, the
  * Brahmaputra floodplain.
  *
- * The physical study. It begins with a mass: a heavy, matte, folded form —
- * not a model of the animal, an abstraction of its weight and its plated
- * skin — standing on dark wet earth. The hand moves the light across it; the
+ * The physical study. It begins with a mass: a heavy, matte, folded form
+ * raised from the atlas's schematic outline of the species (body plan and
+ * posture, not a model of the animal) standing on dark wet earth. The hand moves the light across it; the
  * form turns slowly, as something heavy does. The floodplain rises around
  * it, tall grass and wallows (LANDSCAPE). Then the form breaks into points,
  * and the points are the record's own figure: one point for each animal of
@@ -32,7 +33,7 @@ import type { FieldInput, FieldWorld, WorldContext } from '../types';
  * photograph's colours, until they are the photograph (PHOTOGRAPH), and the
  * form returns, standing in its grass (PRESENT).
  *
- * Honesty: the form is abstract and says so; each point stands for one
+ * Honesty: the form claims only what its outline claims, and says so; each point stands for one
  * animal of the record's figure, the past figure drawn at its upper bound;
  * nothing is drawn between the two figures; the split is the record's
  * "more than two-thirds", nothing finer; the route is drawn between the
@@ -267,47 +268,190 @@ const PHOTO_FRAGMENT = /* glsl */ `
   }
 `;
 
-/** The heavy form: an ellipsoid with three deep folds and lumped, pitted skin, sitting low on its base. */
-function buildForm(detail: number): { geometry: THREE.BufferGeometry; points: (count: number, rand: () => number) => Float32Array } {
-  // Indexed, so the displaced surface shades smooth rather than faceted.
-  const geometry = mergeVertices(new THREE.IcosahedronGeometry(1, detail).deleteAttribute('normal').deleteAttribute('uv'));
-  const pos = geometry.attributes.position as THREE.BufferAttribute;
-  const cav = new Float32Array(pos.count);
-  const v = new THREE.Vector3();
-  // Two folds, behind the shoulder and before the hip, like the plates of the skin; nothing on the ends.
-  const folds = [-0.3, 0.38];
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i).normalize();
-    let r = 1;
-    let crease = 0;
-    const wrapK = Math.max(0, Math.min(1, (v.y + 0.45) * 1.1)) * (1 - Math.abs(v.x) * 0.4);
-    for (const c of folds) crease += Math.exp(-Math.pow((v.x - c + v.y * 0.1) / 0.07, 2)) * wrapK;
-    r -= crease * 0.085;
-    const lump = (fbm(v.x * 2.2 + 4, v.y * 2.2 + v.z * 1.3, 4, 3) - 0.5) * 0.16;
-    const pit = (fbm(v.x * 18 + v.z * 7, v.y * 18, 2, 8) - 0.5) * 0.022;
-    r += lump + pit;
-    const p = v.clone().multiplyScalar(r);
-    p.set(p.x * 2.05, p.y * 1.0, p.z * 0.86);
-    // The weight is forward: a high shoulder, a lower rump, and the mass tapering at the front end.
-    const front = Math.max(0, -p.x);
-    p.y *= 1 + Math.min(front, 1.1) * 0.12 - Math.max(0, p.x) * 0.05;
-    if (p.x < -1.45) {
-      const t = Math.min(1, (-p.x - 1.45) / 0.6);
-      p.y = p.y * (1 - t * 0.45) - t * 0.18;
-      p.z *= 1 - t * 0.4;
+/**
+ * The heavy form, sculpted from the species' published profile.
+ *
+ * The outline is the atlas's own schematic silhouette (`speciesSilhouettes`,
+ * drawn from the published description: pillar legs, the single horn, the
+ * shoulder and flank folds). It is inflated into a solid, the way a sculptor
+ * blows up a cut-out: every point inside the outline is raised by a circular
+ * profile of its distance to the edge, scaled by the local thickness of the
+ * part it belongs to, so the barrel of the body is deep and the legs are
+ * pillars. It makes the same claim the outline makes — body plan and
+ * posture, nothing finer — and the study says so on screen.
+ */
+function buildForm(fine: boolean): { geometry: THREE.BufferGeometry; points: (count: number, rand: () => number) => Float32Array } {
+  const art = SPECIES_SILHOUETTES['indian-rhinoceros'];
+  const [bw, bh] = art.box;
+  // 1. Rasterise the outline (2 px per silhouette unit, with a margin).
+  const R = 2;
+  const pad = 6;
+  const W = (bw + pad * 2) * R;
+  const H = (bh + pad * 2) * R;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  ctx.fillStyle = '#fff';
+  drawSilhouette(ctx, art, pad * R, pad * R, bw * R, bh * R);
+  const alpha = ctx.getImageData(0, 0, W, H).data;
+  const inside = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) inside[i] = alpha[i * 4 + 3] > 127 ? 1 : 0;
+
+  // 2. Signed distance to the outline (chamfer 3-4, in silhouette units): + inside, − outside.
+  const chamfer = (mask: (i: number) => boolean) => {
+    const d = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) d[i] = mask(i) ? 1e6 : 0;
+    const relax = (i: number, j: number, w: number) => {
+      if (d[j] + w < d[i]) d[i] = d[j] + w;
+    };
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (!d[i]) continue;
+        if (x > 0) relax(i, i - 1, 3);
+        if (y > 0) {
+          relax(i, i - W, 3);
+          if (x > 0) relax(i, i - W - 1, 4);
+          if (x < W - 1) relax(i, i - W + 1, 4);
+        }
+      }
+    for (let y = H - 1; y >= 0; y--)
+      for (let x = W - 1; x >= 0; x--) {
+        const i = y * W + x;
+        if (!d[i]) continue;
+        if (x < W - 1) relax(i, i + 1, 3);
+        if (y < H - 1) {
+          relax(i, i + W, 3);
+          if (x < W - 1) relax(i, i + W + 1, 4);
+          if (x > 0) relax(i, i + W - 1, 4);
+        }
+      }
+    for (let i = 0; i < W * H; i++) d[i] /= 3 * R;
+    return d;
+  };
+  const din = chamfer((i) => inside[i] === 1);
+  const dout = chamfer((i) => inside[i] === 0);
+  const sd = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) sd[i] = inside[i] ? din[i] - 0.25 : -dout[i] + 0.25;
+
+  // 3. The local thickness: the deepest distance nearby (a separable max filter, then softened),
+  //    so a leg stays a leg and the body is a barrel, and they meet in a haunch.
+  const reach = 5 * R;
+  const tmp = new Float32Array(W * H);
+  const rad = new Float32Array(W * H);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      let m = 0;
+      for (let k = Math.max(0, x - reach); k <= Math.min(W - 1, x + reach); k++) m = Math.max(m, din[y * W + k]);
+      tmp[y * W + x] = m;
     }
-    // Heavy: the underside flattens where it meets the ground.
-    if (p.y < -0.6) p.y = -0.6 + (p.y + 0.6) * 0.22;
-    pos.setXYZ(i, p.x, p.y, p.z);
-    cav[i] = Math.min(1, crease * 0.9 + Math.max(0, -lump) * 2.2);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      let m = 0;
+      for (let k = Math.max(0, y - reach); k <= Math.min(H - 1, y + reach); k++) m = Math.max(m, tmp[k * W + x]);
+      rad[y * W + x] = m;
+    }
+  const sample = (f: Float32Array, u: number, v: number) => {
+    const x = Math.min(W - 1.001, Math.max(0, (u + pad) * R - 0.5));
+    const y = Math.min(H - 1.001, Math.max(0, (v + pad) * R - 0.5));
+    const x0 = Math.floor(x);
+    const y0 = Math.floor(y);
+    const fx = x - x0;
+    const fy = y - y0;
+    const i = y0 * W + x0;
+    return (f[i] * (1 - fx) + f[i + 1] * fx) * (1 - fy) + (f[i + W] * (1 - fx) + f[i + W + 1] * fx) * fy;
+  };
+
+  // 4. Two sheets, front and back, over a grid that covers the outline. Grid points just outside
+  //    the outline are moved onto it with no height, so the sheets close on the edge itself.
+  const step = fine ? 0.7 : 1;
+  const nx = Math.ceil((bw + 2) / step) + 1;
+  const ny = Math.ceil((bh + 2) / step) + 1;
+  // Fit: the animal spans x 37 → 137 and y 14 → 88 of its box; feet on the ground at y = −0.62.
+  const S = 0.027;
+  const cx = 87;
+  const foot = 87.5;
+  // The skin's folds: behind the shoulder, before the hip, and at the neck. Grooves, not straps.
+  const folds = [
+    { x: 97, w: 1.6, depth: 0.9 },
+    { x: 62, w: 1.8, depth: 0.8 },
+    { x: 108, w: 1.4, depth: 0.6 },
+  ];
+  // The legs stand at the body's sides, not in one plane: the near pair (hind 43–58, fore 98–113)
+  // forward, the far pair (hind 58–76, fore 80–98) back. Below the belly only.
+  const sstep = (a: number, b: number, x: number) => {
+    const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+  const legSide = (u: number) => 1 - 2 * (sstep(56, 60, u) - sstep(96, 100, u));
+  const legDepth = (v: number) => sstep(52, 64, v) * 9;
+  const verts: number[] = [];
+  const keep: boolean[] = [];
+  const cavs: number[] = [];
+  const sds: number[] = [];
+  const eps = 0.5;
+  for (const side of [1, -1]) {
+    for (let j = 0; j < ny; j++)
+      for (let i = 0; i < nx; i++) {
+        let u = -1 + i * step;
+        let v = -1 + j * step;
+        let d = sample(sd, u, v);
+        if (d <= 0 && d > -1.6 * step) {
+          // Onto the outline, along the distance field's gradient.
+          const gx = sample(sd, u + eps, v) - sample(sd, u - eps, v);
+          const gy = sample(sd, u, v + eps) - sample(sd, u, v - eps);
+          const g = Math.hypot(gx, gy) || 1;
+          u += (gx / g) * -d;
+          v += (gy / g) * -d;
+          d = 0;
+        }
+        keep.push(d >= 0);
+        sds.push(d);
+        const r = Math.max(sample(rad, u, v), Math.max(d, 0.5));
+        const dd = Math.max(0, d);
+        let h = Math.sqrt(Math.max(0, 2 * r * dd - dd * dd));
+        let crease = 0;
+        const body = sstep(8, 14, r) * (1 - sstep(56, 64, v));
+        for (const f of folds) crease += Math.exp(-(((u - f.x + (v - 40) * 0.12) / f.w) ** 2)) * f.depth * body;
+        const lump = (fbm(u * 0.09 + 4, v * 0.09, 3, 3) - 0.5) * 1.1 + (fbm(u * 0.45, v * 0.45, 2, 8) - 0.5) * 0.18;
+        const edge = Math.min(1, dd / 3);
+        h = Math.max(0, h + (lump - crease) * edge);
+        const z = side * h * 1.08 + legSide(u) * legDepth(v) * Math.min(1, r / 6);
+        verts.push((u - cx) * S, (foot - v) * S - 0.62, z * S);
+        cavs.push(Math.min(1, crease * 0.45 + Math.max(0, -lump) * 0.5));
+      }
   }
-  geometry.setAttribute('aCav', new THREE.BufferAttribute(cav, 1));
+  const index: number[] = [];
+  const sheet = nx * ny;
+  for (let s = 0; s < 2; s++)
+    for (let j = 0; j < ny - 1; j++)
+      for (let i = 0; i < nx - 1; i++) {
+        const a = s * sheet + j * nx + i;
+        const b = a + 1;
+        const c = a + nx;
+        const d = c + 1;
+        const ok = (...k: number[]) => k.every((x) => keep[x]) && k.some((x) => sds[x] > 0);
+        if (s === 0) {
+          if (ok(a, c, b)) index.push(a, c, b);
+          if (ok(b, c, d)) index.push(b, c, d);
+        } else {
+          if (ok(a, b, c)) index.push(a, b, c);
+          if (ok(b, d, c)) index.push(b, d, c);
+        }
+      }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geometry.setAttribute('aCav', new THREE.Float32BufferAttribute(cavs, 1));
+  geometry.setIndex(index);
   geometry.computeVertexNormals();
+  const solid: number[] = [];
+  for (let k = 0; k < sds.length; k++) if (sds[k] > 0.4) solid.push(k);
   const points = (count: number, rand: () => number) => {
     const out = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const k = Math.floor(rand() * pos.count);
-      out.set([pos.getX(k), pos.getY(k), pos.getZ(k)], i * 3);
+      const k = solid[Math.floor(rand() * solid.length)];
+      out.set([verts[k * 3], verts[k * 3 + 1], verts[k * 3 + 2]], i * 3);
     }
     return out;
   };
@@ -355,7 +499,7 @@ export async function createFloodplain({ species, tier }: WorldContext): Promise
   const groundAt = (x: number, z: number) => ground.height(x, z);
 
   /* the form */
-  const form = buildForm(tier === 'high' ? 6 : 5);
+  const form = buildForm(tier === 'high');
   const formMat = new THREE.ShaderMaterial({
     vertexShader: FORM_VERTEX,
     fragmentShader: FORM_FRAGMENT,
@@ -564,17 +708,17 @@ export async function createFloodplain({ species, tier }: WorldContext): Promise
   const path: Shot[] = [
     { at: 0, pos: [-34, 10, 28], look: [-15, 7, -30], fov: 38 },
     { at: at(0), pos: [-31, 8.5, 23], look: [-15, 7.5, -30], fov: 38 },
-    { at: at(1), pos: [32, 4.6, 8], look: [-2, 6.5, -30], fov: 40 },
+    { at: at(1), pos: [32, 4.6, 8], look: [9, 6.5, -30], fov: 40 },
     { at: at(2), pos: [-4, 46, 44], look: [6, 0, -32], fov: 42 },
     { at: at(3), pos: [30, 170, 40], look: [30, 0, -32], fov: 44 },
     { at: at(4), pos: [0, 118, 58], look: [0, 0, -32], fov: 44 },
     { at: at(5), pos: [PHOTO_AT.x + 13, PHOTO_AT.y, PHOTO_AT.z + 70], look: [PHOTO_AT.x + 13, PHOTO_AT.y, PHOTO_AT.z], fov: 40 },
-    { at: at(6), pos: [-27, 7, 24], look: [0, 7.5, -30], fov: 38 },
-    { at: 1, pos: [-33, 8.5, 32], look: [0, 7.5, -30], fov: 38 },
+    { at: at(6), pos: [-27, 7, 24], look: [12, 8, -30], fov: 38 },
+    { at: 1, pos: [-33, 8.5, 32], look: [12, 8, -30], fov: 38 },
   ];
   const rig = new CameraRig(camera, {
-    preview: { at: 0, pos: [-36, 11, 36], look: [-8, 7, -30], fov: 36 },
-    engage: { at: 0, pos: [-31, 9.5, 29], look: [-8, 7.5, -30], fov: 34 },
+    preview: { at: 0, pos: [-36, 11, 36], look: [1, 5.5, -30], fov: 36 },
+    engage: { at: 0, pos: [-31, 9.5, 29], look: [1, 6, -30], fov: 34 },
     path,
     sway: [5, 2.5],
     lambda: 4,

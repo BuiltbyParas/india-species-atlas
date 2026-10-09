@@ -432,7 +432,7 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
     <>
       <Chapter i={0} {...c} align="low-right">
         <Lede>{s.summary}</Lede>
-        <Note>An abstract form, not a model of the animal.</Note>
+        <Note gesture>A form raised from the atlas's schematic outline of the species: body plan and posture only, not a model of the animal.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
@@ -462,7 +462,7 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
         <Body>{s.image.alt}</Body>
         <PhotoCredit species={s} className="fs-credit" />
       </Chapter>
-      <Chapter i={6} {...c} align="centre" hold>
+      <Chapter i={6} {...c} align="right" hold>
         <Status s={s} />
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />

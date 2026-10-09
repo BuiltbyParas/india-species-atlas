@@ -192,6 +192,17 @@ function Study({ study }: { study: FieldStudy }) {
 
         <StudyInstrument study={study} current={current} stage={stage} />
 
+        <p className="sr-only" aria-live="polite">
+          Chapter {current + 1} of {N}: {stageLabel}
+        </p>
+      </div>
+
+      <div ref={runwayRef} className="fs-runway">
+        <StudyChapters study={study} current={current} next={next} onNext={goNext} onExit={exit} />
+      </div>
+
+      {/* The frame's furniture sits above the chapters, so a long chapter scrolls under it, not over it. */}
+      <div className="fs-hud-layer">
         <div className="fs-hud">
           <StudyProgress study={study} current={current} onJump={jumpTo} />
           <p className="fs-hud-coord tabular-nums" aria-hidden="true">
@@ -204,13 +215,6 @@ function Study({ study }: { study: FieldStudy }) {
             <span className="sr-only">: leave the {study.species.commonName} study (Esc)</span>
           </button>
         </div>
-        <p className="sr-only" aria-live="polite">
-          Chapter {current + 1} of {N}: {stageLabel}
-        </p>
-      </div>
-
-      <div ref={runwayRef} className="fs-runway">
-        <StudyChapters study={study} current={current} next={next} onNext={goNext} onExit={exit} />
       </div>
     </article>
   );
