@@ -15,8 +15,8 @@ import { SPECIES_BY_ID } from '../data/species';
  * carries over it:
  *
  *   TRACE      the bustard: the Thar's arid grassland, followed on foot
- *   ASCEND     the snow leopard: the camera climbs through a mountain drawn
- *              as contours
+ *   ASCEND     the snow leopard: a drawn Himalayan valley and ranges, the
+ *              record's photograph on a snowy ledge
  *   DRAG       the river dolphin: the hand moves the water, and drags the
  *              study along the recorded localities
  *   REVEAL     the tiger: a dark forest, a light the hand carries
@@ -64,7 +64,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
     verb: 'Ascend',
     env: 'himalaya',
     place: 'The higher Himalaya',
-    stages: [s('Low ground'), s('Contour'), s('Ascent'), s('Habitat'), s('Photograph'), s('Range'), s('Conservation'), s('Descent')],
+    stages: [s('The mountain'), s('Habitat'), s('Altitude'), s('Distribution'), s('Photograph'), s('Range'), s('Conservation'), s('Why it matters')],
     sweep: [0, 1],
   },
   {
@@ -122,7 +122,7 @@ export const MISSING_CONTENT: Record<string, string[]> = {
     'The alignment of any transmission line in the Thar (none is drawn; the threat is in the words only).',
     'A dated population series (the record says only "low hundreds").',
   ],
-  'snow-leopard': ['A terrain model of a real valley (the mountain is procedural and labelled so).'],
+  'snow-leopard': ['A terrain model of a real valley (the mountains are drawn and labelled so).'],
   'ganges-river-dolphin': [
     'River centre-lines (the thread joins recorded localities, not the river’s course).',
     'The sites of dams and barrages (marked schematically).',

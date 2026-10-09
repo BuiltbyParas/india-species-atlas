@@ -14,7 +14,7 @@ import { SpeciesMap } from '../cinema/SpeciesMap';
 import { PHASE_VARS, setVars, type Phase } from '../cinema/SpeciesScene';
 import { StatusIndicator } from '../cinema/StatusIndicator';
 import type { FieldStage } from '../../world/field/stage';
-import { approximateFigure, habitatBand, habitatBandMetres, populationFigures, sentenceWith } from './studyFacts';
+import { approximateFigure, habitatBand, populationFigures, sentenceWith } from './studyFacts';
 
 /**
  * The words of the five field studies, chapter by chapter.
@@ -298,15 +298,14 @@ function SnowLeopard({ study, current, next, onNext, onExit }: ChapterProps) {
     <>
       <Chapter i={0} {...c} align="low">
         <Lede>{s.summary}</Lede>
-        <Note>The mountain is procedural, drawn as contours: an impression of high country, not a terrain model.</Note>
+        <Note>The mountains are drawn, an impression of high Himalayan country and not a map of any valley. The leopard is a photograph.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{firstSentence(s.habitatNote)}</Lede>
       </Chapter>
       <Chapter i={2} {...c} align="right">
-        <Lede>The camera climbs.</Lede>
-        <Body>{habitatBand(s) ? `The record places the species typically between ${habitatBand(s)}.` : s.habitatNote}</Body>
-        <Note>The ascent is schematic. The band on the scale is the record&rsquo;s; the mountain&rsquo;s heights are not measured.</Note>
+        <Lede>{habitatBand(s) ? `Typically between ${habitatBand(s)}.` : s.habitatNote}</Lede>
+        <Body>That band is the record&rsquo;s. The heights of the mountains drawn here are not measured.</Body>
       </Chapter>
       <Chapter i={3} {...c} align="right" hold>
         <Lede>{firstSentence(s.indianDistribution)}</Lede>
@@ -474,13 +473,12 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
 /* ---------------------------------------------------- study instruments */
 
 /**
- * The one study-specific control in the frame: the river's drag band, the
- * ascent's altitude scale. The others carry their gesture in the world itself
+ * The one study-specific control in the frame: the river's drag band. The
+ * others carry their gesture in the world itself
  * (the light, the line, the form).
  */
 export function StudyInstrument({ study, current, stage }: { study: FieldStudy; current: number; stage: FieldStage | null }) {
   if (study.id === 'ganges-river-dolphin') return <RiverBand study={study} on={current === 2} stage={stage} />;
-  if (study.id === 'snow-leopard') return <AscentScale study={study} on={current >= 1 && current <= 3} current={current} />;
   return null;
 }
 
@@ -559,33 +557,6 @@ function RiverBand({ study, on, stage }: { study: FieldStudy; on: boolean; stage
         <span>Drag</span>
         <span>East</span>
       </p>
-    </div>
-  );
-}
-
-/** ASCEND: the record's habitat band on a schematic altitude scale. */
-function AscentScale({ study, on, current }: { study: FieldStudy; on: boolean; current: number }) {
-  const band = habitatBandMetres(study.species);
-  if (!band) return null;
-  // The scale runs a little below and above the band; the marker climbs it chapter by chapter.
-  const lo = Math.max(0, band[0] - 2000);
-  const hi = band[1] + 1500;
-  const y = (m: number) => 100 - ((m - lo) / (hi - lo)) * 100;
-  const marker = [0, 0.15, 0.55, 0.78, 0.8][Math.min(4, current)] ?? 0;
-  const ticks: number[] = [];
-  for (let m = Math.ceil(lo / 1000) * 1000; m <= hi; m += 1000) ticks.push(m);
-  return (
-    <div className={cn('fs-ascent', on && 'is-on')} aria-hidden="true">
-      <div className="fs-ascent-scale">
-        <span className="fs-ascent-band" style={{ top: `${y(band[1])}%`, bottom: `${100 - y(band[0])}%` }} />
-        {ticks.map((m) => (
-          <span key={m} className="fs-ascent-tick tabular-nums" style={{ top: `${y(m)}%` }}>
-            {m.toLocaleString('en-IN')} m
-          </span>
-        ))}
-        <span className="fs-ascent-mark" style={{ top: `${100 - marker * 100}%` }} />
-      </div>
-      <p className="fs-ascent-k">Habitat band, from the record · schematic ascent</p>
     </div>
   );
 }

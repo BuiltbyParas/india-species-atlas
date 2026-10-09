@@ -40,15 +40,42 @@ export function grassland(x: number, z: number): number {
   return swell + roll + hum;
 }
 
-export const MOUNTAIN_MAX = 92;
+/** Where the snow leopard's ledge lies in the Himalayan ground (x, z, height of the terrace). */
+export const LEDGE = { x: 0, z: -40, y: 16 };
 
-/** The high Himalaya: a valley in front, ranges rising behind it. */
+const sstep = (a: number, b: number, v: number) => {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * The high Himalaya: a snowy terrace in front, a valley that meanders away,
+ * its walls rising, and ranges standing behind it, taller and sharper with
+ * distance. The terrace is the leopard's ledge.
+ */
 export function mountains(x: number, z: number): number {
-  const far = Math.min(1, Math.max(0, (40 - z) / 280));
-  const valley = Math.min(1, Math.abs(x + Math.sin(z * 0.012) * 30) / 90);
-  const r = Math.pow(ridged(x * 0.0052, z * 0.0052, 6, 9), 1.25);
-  const lift = 0.22 + 0.78 * far * (0.35 + 0.65 * valley);
-  return r * MOUNTAIN_MAX * lift + fbm(x * 0.03, z * 0.03, 3, 4) * 3.5;
+  const dist = Math.min(1, Math.max(0, (-z - 30) / 1500));
+  const axis = Math.sin(z * 0.006) * 40 + Math.sin(z * 0.0021 + 1) * 90;
+  const wall = sstep(50, 380, Math.abs(x - axis));
+  // Broad massifs, then the spurs and gullies cut into them. Detail fades with distance: the far
+  // sheet's cells are too wide to carry it, and it would alias into needles.
+  const farMix = sstep(200, 800, -z);
+  const massif = Math.pow(ridged(x * 0.0017 + 3, z * 0.0017, 5, 9), 1.15);
+  const spurs = (1 - farMix) * ridged(x * 0.011 + 5, z * 0.011, 4, 4) + farMix * ridged(x * 0.0042 + 5, z * 0.0042, 3, 4);
+  const gully = (1 - farMix) * ridged(x * 0.04, z * 0.04 + 9, 3, 6);
+  const relief = 30 + 560 * Math.pow(dist, 0.85) + 150 * wall;
+  let h = massif * relief * (0.5 + 0.4 * spurs + 0.12 * gully);
+  // The range behind the terrace: a long snow slope that climbs to a ridge.
+  h += sstep(30, 170, -z) * (1 - sstep(170, 330, -z)) * 55 * (0.65 + 0.35 * fbm(x * 0.01, z * 0.01, 3, 12));
+  // Broken crags across the middle ground, behind the terrace and along the valley's walls.
+  h += sstep(40, 130, -z) * (1 - sstep(300, 620, -z)) * 36 * Math.pow(ridged(x * 0.013 + 1, z * 0.013, 4, 15), 1.5) * (0.4 + wall);
+  h += fbm(x * 0.03, z * 0.03, 3, 4) * 4;
+  // The terrace: flat enough to stand on, tilted back, with a lip toward the viewer.
+  const lx = Math.abs(x - LEDGE.x) / 52;
+  const lz = Math.abs(z - LEDGE.z) / 40;
+  const m = 1 / (1 + lx ** 4 + lz ** 4);
+  const terrace = LEDGE.y + Math.min(40, Math.max(-30, LEDGE.z - z)) * 0.14 + (fbm(x * 0.05, z * 0.05, 3, 7) - 0.5) * 2.4;
+  return h + (terrace - h) * Math.min(1, m * 1.25);
 }
 
 /** The floodplain: almost flat, a little swell. */

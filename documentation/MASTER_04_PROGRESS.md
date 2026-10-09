@@ -8,7 +8,7 @@
 |---|---|
 | Worktree | `~/india-species-atlas-premium` |
 | Branch | `atlas/master-04-visual-quality`, safe to continue on |
-| Checkpoint | `f9c1c92` (Master 03). The branch has **no commits of its own yet**. |
+| Checkpoint | `eec3bc4` (checkpoint 1, bustard); checkpoint 2 (snow leopard) follows it. |
 | Working tree | Clean at the time of this audit. This file is the only change. |
 | Main checkout | `~/india-species-atlas` on `reel-60` holds uncommitted reel work. It is not touched by Master 04. |
 | Pushed / merged | Nothing. |
@@ -224,11 +224,41 @@ Known limitations after this checkpoint:
 - The verb labels (TRACE, ASCEND, DRAG, REVEAL, TRANSFORM) and the index previews still describe the old gimmicks. They are changed together in the copy task for all five studies.
 - Only 1280 × 800 was checked. Phone, tablet, reduced motion and the no-WebGL fallback have not been re-tested for this world. No performance measurement was taken.
 
+### 8.2 Checkpoint 2: Snow Leopard (the high Himalaya) — done
+
+What changed (files):
+
+| File | Change |
+|---|---|
+| `src/world/field/worlds/himalaya.ts` | Rewritten. Removed: contour isolines, the habitat-band wash, falling snow, the contour-ink photograph reveal, the altitude-driven camera climb. Added: a lit terrain shader (rock in grey, brown and slate fields with strata; snow on gentle slopes and ledges, off the steep faces; a low side sun, blue shadow; fine relief from noise; aerial perspective that goes paler and bluer with distance); a clear sky with thin cirrus; a near ground sheet (1000 × 560) and a far sheet (5200 × 2400) so ranges stand behind the valley; 12 faceted boulders (snow only on their upward faces) around the panel's edges and foot; the leopard as a habitat panel on a snowy terrace; a new camera path; the sun warms and lowers as the study closes. |
+| `src/world/field/grounds.ts` | `mountains()` rewritten (valley that meanders, rising walls, massifs, spurs and gullies that fade with distance so the far sheet does not alias, broken crags across the middle ground, and a flat-ish terrace for the leopard). New export `LEDGE`. `MOUNTAIN_MAX` removed (nothing else used it). |
+| `src/assets/field/snow-leopard-habitat.webp` | New (158 KB, 1955 × 1381): the record's whole photograph (Irbis4.JPG, public domain), padded with blurred, snow-tinted reflection on the left, right and top so the panel's edges can fade without touching the animal. The bottom is not padded, so the tail is kept to the frame's edge. |
+| `src/assets/field/CREDITS.md` | Row for the new asset. |
+| `src/components/field/chapters.tsx` | Removed the altitude scale (`AscentScale`) and the study-instrument entry. Chapter 1 note and chapter 3 copy rewritten (no contours, no "the camera climbs"; the band is stated as the record's and the drawn heights as not measured). |
+| `src/content/fieldStudies.ts` | Chapter labels (The mountain, Habitat, Altitude, Distribution, Photograph, Range, Conservation, Why it matters); header comment and missing-content note updated. |
+| `src/components/field/field.css` | Snow-leopard colours for a light tone; all `.fs-ascent*` rules removed. |
+| `src/pages/FieldStudyPage.tsx`, `src/components/field/FieldStudiesIndex.tsx` | The snow leopard now uses the light tone (dark ink on a pale world). |
+
+Validation:
+
+- `npx tsc -b`: pass. `npx oxlint src/world/field src/components/field src/content src/pages`: pass (one existing warning in `SpeciesWorldPage.tsx`, not touched). `npm run build`: pass.
+- One sequential headless Chromium pass at 1280 × 800 over all eight chapters (GPU through ANGLE/GL): **0 console errors, 0 failed requests**. Reviewed as screenshots:
+  - leopard visible, recognisable and whole in chapters 1–5, 7 and 8, tail included; small by design in the aerial chapter 6;
+  - mountains: three planes (terrace, valley walls, ranges) with snow, exposed rock and strata; the far ranges are paler and bluer; no contour lines, scale, particles or overlays;
+  - chapter text sits beside the leopard and not on it in every frame.
+- Defects found in the first renders and fixed: needle-like peaks (aliasing on the far sheet's coarse cells: detail now fades with distance); a rectangular card around the photograph (padding, longer fades, rock and snow terrain around it, boulders on its flanks); the leopard too large and cut off in the close-up; the title overlapping the head; boulders that read as white plastic (snow now only on upward faces, darker rock); a GLSL reserved word (`flat`).
+
+Known limitations after this checkpoint:
+
+- The leopard is a **photograph panel, not a cut-out**. From a steep or side angle it is a standing picture, and its top edge shows a faint pale haze where the padding fades.
+- The boulders are soft and lumpy rather than hard-edged; the foreground snow is smooth and bright, with little texture beyond a noise bump.
+- The mid-ground is mostly desaturated grey and brown: the rock reads as rock but has little colour variety. The aerial "Range" chapter is hazy and low in contrast.
+- There is no cast shadow from the mountains: shading is from the surface normal only.
+- Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback, the index preview and performance were not re-tested for this world.
+- The site header's dark gradient over the light world is the Master 03 navigation, left alone.
+
+**Environment lesson (browser checks).** Headless Chromium failed (`ERR_INSUFFICIENT_RESOURCES`, lost WebGL contexts, "Page crashed", truncated screenshots) once `/tmp` was 80% full: `/tmp` is a RAM-backed tmpfs and holds about 2.2 GB of earlier sessions' scratch folders. What worked: run the browser with `TMPDIR` on disk (`TMPDIR=$HOME/.cache/ispa-tmp node cap.mjs …`) and write screenshots to disk (`~/.cache/…`), not to `/tmp`. Nothing in `/tmp` belonging to earlier sessions was deleted.
+
 ## 9. The exact next task
 
-**Checkpoint 2: Snow Leopard (Himalaya).** Same method as the bustard. Remove the contour isolines as the main source of detail and the ascent scale, and build the landscape from the terrain itself:
-
-1. Rock and snow shading from slope and altitude (lit and shadowed faces, strata, snow on gentle slopes and ledges), with several layered ranges behind the valley in atmospheric perspective and a cold, clear sky.
-2. Place the leopard as a **habitat panel** from `exports/master04-sources/originals/snow-leopard.jpg` (full frame, so the tail is kept), standing on a ledge, with its edges given to the snow. Do not cut it out. The snow already surrounds it in the photograph.
-3. Keep the contours faint or remove them; remove the snow particles and the altitude scale if they do not earn their place.
-4. Update the chapter notes and labels for this study only, validate with `tsc`, `oxlint`, the build and one sequential screenshot pass, update this document and commit.
+**Checkpoint 3: Ganges River Dolphin (river).** Same method. The river world is an abstract blue ribbon in black with a blurred photograph rectangle under the water. Give it banks, sandbars (char), a land and vegetation strip, depth colour and reflections; the dolphin surfaces in the channel (a habitat panel from `exports/master04-sources/originals/ganges-river-dolphin.jpg`, or the record's photograph, edges given to the water); remove the glowing threads and markers that do not earn their place, and the drag band if it does not (its copy and its `RiverBand` instrument are in `chapters.tsx`). Use the light tone if the world is bright. Validate with `tsc`, `oxlint`, the build and one sequential screenshot pass (with `TMPDIR` on disk), update this document and commit. Then the tiger, then the rhino, then the navigation and end-of-study state.

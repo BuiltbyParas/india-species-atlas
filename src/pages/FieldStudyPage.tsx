@@ -162,7 +162,7 @@ function Study({ study }: { study: FieldStudy }) {
       ref={articleRef}
       className={cn('fs-study', leaving && 'is-leaving', arrived && 'is-arrived')}
       data-study={study.id}
-      data-tone={study.id === 'great-indian-bustard' ? 'light' : 'dark'}
+      data-tone={study.id === 'great-indian-bustard' || study.id === 'snow-leopard' ? 'light' : 'dark'}
       data-env={study.env}
       data-current={current}
       data-status={status}
