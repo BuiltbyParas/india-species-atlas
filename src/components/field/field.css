@@ -39,14 +39,15 @@
 [data-tone] {
   --fs-ink: var(--color-canvas);
   --fs-muted: color-mix(in srgb, var(--color-canvas) 62%, transparent);
-  --fs-faint: color-mix(in srgb, var(--color-canvas) 38%, transparent);
+  /* Faint is still for reading (the notes say what is drawn and what is data): ≥ 4.5:1 on each ground. */
+  --fs-faint: color-mix(in srgb, var(--color-canvas) 56%, transparent);
   --fs-scrim: rgba(6, 9, 8, 0.62);
   --fs-ground: #0e1411;
 }
 [data-tone='light'] {
   --fs-ink: #2a1b10;
   --fs-muted: rgba(42, 27, 16, 0.7);
-  --fs-faint: rgba(42, 27, 16, 0.46);
+  --fs-faint: rgba(42, 27, 16, 0.66);
   --fs-scrim: rgba(238, 224, 198, 0.66);
 }
 [data-study='great-indian-bustard'] {

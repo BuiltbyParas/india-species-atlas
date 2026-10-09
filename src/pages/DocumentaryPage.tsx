@@ -39,6 +39,7 @@ export function DocumentaryPage() {
   const [t, setT] = useState(() => Math.min(DURATION, Math.max(0, Number(params.get('t')) || 0)));
   const [playing, setPlaying] = useState(!capture);
   const [scale, setScale] = useState(1);
+  const [portrait, setPortrait] = useState(false);
   const [chrome, setChrome] = useState(true);
   const tRef = useRef(t);
   useEffect(() => {
@@ -47,7 +48,10 @@ export function DocumentaryPage() {
 
   // Fit the 1920×1080 frame to the window.
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => {
+      setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+      setPortrait(window.innerHeight > window.innerWidth * 1.1);
+    };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
@@ -161,6 +165,14 @@ export function DocumentaryPage() {
         >
           <DocumentaryStage t={t} />
         </div>
+        {portrait && !capture && (
+          <p
+            className="absolute inset-x-0 px-6 text-center text-small text-canvas/55"
+            style={{ top: `calc(50% + ${(1080 * scale) / 2}px + 1.5rem)` }}
+          >
+            The documentary is a wide picture. Turn your phone sideways to see it larger.
+          </p>
+        )}
       </main>
 
       {!capture && (

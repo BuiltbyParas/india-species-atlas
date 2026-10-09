@@ -726,6 +726,7 @@ export async function createFloodplain({ species, tier }: WorldContext): Promise
 
   let turn = 0;
   let viewHeight = 900;
+  let viewWidth = 1440;
   let rung = 0;
 
   return {
@@ -736,6 +737,11 @@ export async function createFloodplain({ species, tier }: WorldContext): Promise
       const p = i.progress;
       const e = i.enter;
       rig.update({ engage: i.engage, enter: e, progress: p, pointer: i.pointer, dt: i.dt, snap: i.snap || i.reduced });
+      // A tall screen sets the name low and large over the preview: lift the form clear of it.
+      const lift = viewWidth / viewHeight < 0.8 ? viewHeight * 0.06 * (1 - e) : 0;
+      if (lift > 0.5) camera.setViewOffset(viewWidth, viewHeight, 0, lift, viewWidth, viewHeight);
+      else if (camera.view?.enabled) camera.clearViewOffset();
+      camera.updateProjectionMatrix();
       groundMat.uniforms.uCam.value.copy(camera.position);
       formMat.uniforms.uCam.value.copy(camera.position);
       grassMat.uniforms.uCam.value.copy(camera.position);
@@ -790,6 +796,7 @@ export async function createFloodplain({ species, tier }: WorldContext): Promise
       camera.aspect = width / Math.max(1, height);
       camera.updateProjectionMatrix();
       viewHeight = height;
+      viewWidth = width;
       if (pointsMat) pointsMat.uniforms.uPixelRatio.value = dpr;
       rings.material.uniforms.uPixelRatio.value = dpr;
     },
