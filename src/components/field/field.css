@@ -907,6 +907,16 @@
   align-self: center;
   padding-block: 12svh;
 }
+@media (min-width: 901px) {
+  /* A chapter becomes current when its top reaches the middle of the screen. Centred in its
+     stretch, a tall list then began at y 700-830 of 900, under the foot, with nothing to read until
+     the reader scrolled. Starting it near its top puts its first lines just below the middle at that
+     moment; the stretch (and so the world's pacing) is unchanged. */
+  .fs-ch.is-long .fs-ch-inner {
+    align-self: flex-start;
+    padding-block: 8svh 12svh;
+  }
+}
 .fs-ch[data-align='right'] {
   justify-content: flex-end;
 }

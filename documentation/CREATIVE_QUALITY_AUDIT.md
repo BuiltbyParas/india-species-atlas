@@ -107,7 +107,7 @@ Ratings: V = visual impact, U = user-experience impact, R = technical risk of fi
 | 2 | HUD and progress stay clear of chapter text | P1 | M | H | L | S | H | Done |
 | 3 | Snow leopard photograph edge | P1 | M | L | M | S | M | Done (two chapters checked) |
 | 4 | Stage retries after give-up when idle | P0/P1 | H | H | H | M | ? | Proposed, not built |
-| 5 | Chapter arrives higher on short screens | P2 | M | M | M | M | M | Proposed |
+| 5 | Long chapters start near their top, not centred | P2 | M | M | L | S | H | Done (§9) |
 | 6 | Study title reveal tied to scroll (United Carriers idea, one element only) | P3 | M | L | M | M | L | Not proposed for now |
 | 7 | Hero "start" gate as on Edolus | P3 | L | L | M | S | L | No: costs a click per visit |
 
@@ -149,3 +149,11 @@ Swap was in use (about 2.4 GB of 5.7 GB), load average about 3.4 with nothing of
 1. Re-run `MODE=video accept.mjs` three times on an idle machine and record the pass rate. If it passes cleanly, item 4 drops to P2; if not, build the idle retry in its own branch.
 2. Chapter arrival height (item 5), all five studies together, measured with `creative-collide.mjs`.
 3. Capture 1280 × 800 and 1920 × 1080 of the same chapters (`W=1280 H=800 node scripts/audit/creative-walk.mjs`) and compare.
+
+## 9. Long chapters arrive readable (10 October 2026, desktop)
+
+- **Observed** (`scripts/audit/creative-arrival.mjs`, 1440 × 900, 1.5 s after each chapter becomes current): 20 of the 23 long chapters (lists, maps) had their first line at y = 471–834, and 19 ran under the foot (bottom 965–1493). Only the pinned chapters (first line y ≈ 210–290) were readable on arrival. So the world changed and the reader saw an empty column until they scrolled. Cause: `.is-long .fs-ch-inner` was centred in a 165 svh stretch, and a chapter becomes current when its top reaches mid-screen.
+- **Change:** `src/components/field/field.css`, `@media (min-width: 901px)`: `.fs-ch.is-long .fs-ch-inner { align-self: flex-start; padding-block: 8svh 12svh }`. The stretch, the progress calculation and the worlds' pacing are untouched. Mobile rules untouched.
+- **After:** first lines at y = 265–360 on arrival for all 20 (sampling scrolls on while it settles, so these are slightly higher than the true arrival). 11 of 20 still extend into the foot at their bottom (tall lists), which is read by scrolling as before; none is hidden at its start. The tiger "Reserves" frame shows the whole list clear of the progress line and coordinates.
+- **Checks:** `tsc -b` and `npm run build` pass. `creative-scroll.mjs` (fast, reversed, zig-zag; bustard, rhinoceros, tiger): console empty; 3 runs, 2 fully OK. In one run the rhinoceros stage's governor abandoned the stage on the fast-up leg (`failed=true`, rung 2) on this loaded machine; the two reruns passed. A stylesheet change cannot alter the governor, but I did not run the unmodified build to compare, so I do not claim it is unrelated beyond that.
+- **Not checked:** 1280 × 800, 1920 × 1080, whether the lower edge of tall lists feels right to a reader, the home index.

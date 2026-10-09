@@ -636,3 +636,7 @@ Reproduction: `ROUNDS=4 node scripts/audit/lifecycle.mjs`. Test conditions for *
 - Unfixed and not observed: after a long idle, the first sampled frame can carry a stale timestamp and register as one slow window (needs two in a row to abandon). No failure seen; left alone.
 - A device on which one world is genuinely too slow still ends on the photograph, by design. The tier is still lowered permanently by `noteStrain` and never raised.
 - One machine, GPU, browser build, 60 Hz, DPR 1. No Chrome stable, Firefox, Safari, DPR 2.
+
+## 16. Long chapters arrive readable (10 October 2026)
+
+Detail and measurements: `CREATIVE_QUALITY_AUDIT.md` §9. One CSS rule (`field.css`, desktop only): chapters that hold a list or map start near the top of their stretch instead of centred, so their first lines appear just below mid-screen when the chapter becomes current (before: y 471–834 of 900, mostly under the foot). Five studies, footage, WebGL recovery and photograph fallbacks untouched. `tsc -b` and build pass; scroll test 2 of 3 runs fully OK, one rhinoceros governor abandonment under load on a fast reverse scroll (reruns passed; baseline not re-run). New `scripts/audit/creative-arrival.mjs`.
