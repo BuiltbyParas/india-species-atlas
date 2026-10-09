@@ -37,7 +37,7 @@ const ITEMS = [
     to: '/#field-studies',
     label: 'Field studies',
     figure: `${FIELD_STUDIES.length} worlds`,
-    strip: FIELD_STUDIES.map((f) => `${f.verb} · ${f.species.commonName}`),
+    strip: FIELD_STUDIES.map((f) => `${f.habitat} · ${f.species.commonName}`),
   },
   {
     to: '/atlas',

@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { FieldStudy } from '../../content/fieldStudies';
-import { firstSentence } from '../../content/fieldStudies';
+import { FIELD_STUDIES, firstSentence } from '../../content/fieldStudies';
 import type { Species } from '../../types';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
 import { STATUS_INFO } from '../../data/statusInfo';
@@ -199,20 +199,30 @@ function Sources({ s }: { s: Species }) {
   );
 }
 
-function Onward({ study, next, onNext, onExit }: { study: FieldStudy; next: FieldStudy; onNext: () => void; onExit: () => void }) {
+function Onward({ study, next, previous, onNext, onPrevious, onExit }: { study: FieldStudy; next: FieldStudy; previous: FieldStudy; onNext: () => void; onPrevious: () => void; onExit: () => void }) {
+  const last = next.n === FIELD_STUDIES[0].n;
   return (
     <div className="fs-onward">
-      <button type="button" className="fs-next" onClick={onNext} data-cursor={next.verb}>
-        <span className="fs-next-k">Next field study · {next.n}</span>
+      <p className="fs-onward-done tabular-nums">
+        Field study {study.n} complete <span aria-hidden="true">·</span> {String(study.stages.length).padStart(2, '0')} / {String(study.stages.length).padStart(2, '0')}
+      </p>
+      <button type="button" className="fs-next" onClick={onNext} data-cursor="Enter">
+        <span className="fs-next-k">{last ? 'Begin again' : 'Next field study'} · {next.n}</span>
         <span className="fs-next-name">{next.species.commonName}</span>
         <span className="fs-next-place">
-          {next.place} · {next.verb}
+          {next.place} · {next.habitat}
         </span>
       </button>
       <div className="fs-onward-links">
-        <button type="button" className="text-link" onClick={onExit} data-cursor="Return">
-          Back to the field studies
+        <button type="button" className="text-link" onClick={onPrevious} data-cursor="Enter">
+          Previous: {previous.species.commonName}
         </button>
+        <button type="button" className="text-link" onClick={onExit} data-cursor="Return">
+          All field studies
+        </button>
+        <Link to="/atlas" className="text-link" data-cursor="Enter">
+          Open the map
+        </Link>
         <Link to={`/species/${study.id}`} className="text-link" data-cursor="Enter">
           The {study.species.commonName}&rsquo;s page
         </Link>
@@ -227,7 +237,9 @@ interface ChapterProps {
   study: FieldStudy;
   current: number;
   next: FieldStudy;
+  previous: FieldStudy;
   onNext: () => void;
+  onPrevious: () => void;
   onExit: () => void;
 }
 
@@ -246,7 +258,7 @@ export function StudyChapters(props: ChapterProps) {
   }
 }
 
-function Bustard({ study, current, next, onNext, onExit }: ChapterProps) {
+function Bustard({ study, current, next, previous, onNext, onPrevious, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
   return (
@@ -283,13 +295,13 @@ function Bustard({ study, current, next, onNext, onExit }: ChapterProps) {
       <Chapter i={6} {...c} align="centre" hold>
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />
-        <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
+        <Onward study={study} next={next} previous={previous} onNext={onNext} onPrevious={onPrevious} onExit={onExit} />
       </Chapter>
     </>
   );
 }
 
-function SnowLeopard({ study, current, next, onNext, onExit }: ChapterProps) {
+function SnowLeopard({ study, current, next, previous, onNext, onPrevious, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
   const spai = sentenceWith(s, 'SPAI');
@@ -328,13 +340,13 @@ function SnowLeopard({ study, current, next, onNext, onExit }: ChapterProps) {
       <Chapter i={7} {...c} align="centre" hold>
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />
-        <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
+        <Onward study={study} next={next} previous={previous} onNext={onNext} onPrevious={onPrevious} onExit={onExit} />
       </Chapter>
     </>
   );
 }
 
-function Dolphin({ study, current, next, onNext, onExit }: ChapterProps) {
+function Dolphin({ study, current, next, previous, onNext, onPrevious, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
   return (
@@ -370,13 +382,13 @@ function Dolphin({ study, current, next, onNext, onExit }: ChapterProps) {
       <Chapter i={6} {...c} align="centre" hold>
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />
-        <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
+        <Onward study={study} next={next} previous={previous} onNext={onNext} onPrevious={onPrevious} onExit={onExit} />
       </Chapter>
     </>
   );
 }
 
-function Tiger({ study, current, next, onNext, onExit }: ChapterProps) {
+function Tiger({ study, current, next, previous, onNext, onPrevious, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
   const pt = s.conservationProgrammes.map((id) => PROGRAMME_BY_ID[id]).find((p) => p?.startedYear);
@@ -413,7 +425,7 @@ function Tiger({ study, current, next, onNext, onExit }: ChapterProps) {
       <Chapter i={6} {...c} align="centre" hold>
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />
-        <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
+        <Onward study={study} next={next} previous={previous} onNext={onNext} onPrevious={onPrevious} onExit={onExit} />
       </Chapter>
     </>
   );
@@ -427,7 +439,7 @@ const RHINO_CUTOUT_CREDIT = {
   sourceUrl: 'https://commons.wikimedia.org/wiki/File:Indian_rhinoceros_in_Kaziranga_National_Park_March_2025_by_Tisha_Mukherjee_08.jpg',
 };
 
-function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
+function Rhino({ study, current, next, previous, onNext, onPrevious, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
   const figures = populationFigures(s);
@@ -471,7 +483,7 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
         <Status s={s} />
         <Lede>{s.whyItMatters}</Lede>
         <Sources s={s} />
-        <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
+        <Onward study={study} next={next} previous={previous} onNext={onNext} onPrevious={onPrevious} onExit={onExit} />
       </Chapter>
     </>
   );

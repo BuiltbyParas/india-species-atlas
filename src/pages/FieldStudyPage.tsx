@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { nextStudy as nextOf, STUDY_BY_ID, type FieldStudy } from '../content/fieldStudies';
+import { nextStudy as nextOf, previousStudy as previousOf, STUDY_BY_ID, type FieldStudy } from '../content/fieldStudies';
 import { formatDeg } from '../geo/india';
 import { onScroll } from '../interaction/scroll';
 import { useOpenMedia } from '../interaction/media';
@@ -53,6 +53,7 @@ function Study({ study }: { study: FieldStudy }) {
   const { stage, status } = useFieldStage(hostRef);
   const N = study.stages.length;
   const next = nextOf(study.id);
+  const previous = previousOf(study.id);
   const [current, setCurrent] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [arrived, setArrived] = useState(false);
@@ -117,6 +118,10 @@ function Study({ study }: { study: FieldStudy }) {
       stage?.set({ progress: reduced ? (i + 0.5) / N : p });
       typeRef.current?.style.setProperty('--p', p.toFixed(4));
       if (i !== last) setCurrent((last = i));
+      // Once the study's end is on screen the page below takes over: the furniture steps aside
+      // instead of riding up over the way on.
+      const end = articleRef.current?.getBoundingClientRect().bottom ?? Infinity;
+      articleRef.current?.toggleAttribute('data-ended', end < window.innerHeight - 2);
     };
     measure();
     update();
@@ -134,6 +139,7 @@ function Study({ study }: { study: FieldStudy }) {
 
   const exit = () => void exitStudy(navigate, study.id, () => setLeaving(true));
   const goNext = () => void nextStudy(navigate, study.id, next.id, () => setLeaving(true));
+  const goPrevious = () => void nextStudy(navigate, study.id, previous.id, () => setLeaving(true));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -175,7 +181,7 @@ function Study({ study }: { study: FieldStudy }) {
 
         <div ref={typeRef} className="fs-type">
           <p className="fs-type-n tabular-nums">
-            Field study {study.n} <span aria-hidden="true">·</span> {study.verb}
+            Field study {study.n} <span aria-hidden="true">·</span> {study.habitat}
           </p>
           <h1 id="fs-title" className="fs-title">
             {study.species.commonName.split(' ').map((w, i) => (
@@ -197,7 +203,7 @@ function Study({ study }: { study: FieldStudy }) {
       </div>
 
       <div ref={runwayRef} className="fs-runway">
-        <StudyChapters study={study} current={current} next={next} onNext={goNext} onExit={exit} />
+        <StudyChapters study={study} current={current} next={next} previous={previous} onNext={goNext} onPrevious={goPrevious} onExit={exit} />
       </div>
 
       {/* The frame's furniture sits above the chapters, so a long chapter scrolls under it, not over it. */}

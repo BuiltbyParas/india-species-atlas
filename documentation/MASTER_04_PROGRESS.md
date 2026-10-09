@@ -356,3 +356,62 @@ Known limitations after this checkpoint:
 ## 9. The exact next task
 
 **Navigation and end-of-study state** (shared header/progress, the hold-chapter overlap with the progress bar, the end screen), then the copy task (verbs and index previews: "Transform", "Reveal", "Drag"), performance, and final QA across all five studies and at phone/tablet sizes. All five environments are now rebuilt.
+
+## 10. Final integration and cross-site QA (9 October 2026)
+
+Starting commit `fe96c40` (checkpoint 5). All five checkpoints (bustard `eec3bc4`, snow leopard `59bf48f`, dolphin `e43a39e`, tiger `9625c63`, rhinoceros `fe96c40`) were present and committed; the tree was clean. Nothing pushed or merged.
+
+### 10.1 Audit, in priority order (measured on a production build, `vite preview`, headless Chromium with GPU)
+
+1. **Content that was out of date.** The five verbs (TRACE, ASCEND, DRAG, REVEAL, TRANSFORM) still named removed devices, and showed in the index list, each index composition, each study's header, the menu strip and the next-study block. The tiger's index title was drawn at 42% opacity ("lost in the dark until the light finds it").
+2. **Overlap.** At 1280 × 800, hold chapters scrolled under the progress line, the coordinates and the exit link (bustard 5, snow leopard 6 and 7, tiger 6, rhinoceros 7). The final links sat on the exit link. On a phone the HUD rode up over the final links once the footer arrived.
+3. **Navigation.** Next study and a back link existed; no Previous study, no completion state, no route to the map.
+4. **Titles.** The word mask clipped the tops of capitals ("Tiger" read as `'Iiger`) on every large title.
+5. **Index.** The snow leopard's title sat on the animal's head; the tiger's on its body; the list was weak over the rhinoceros's light scene.
+6. **Contrast.** The amber IUCN status name was faint on the four pale worlds.
+
+### 10.2 Changes
+
+| File | Change |
+|---|---|
+| `src/content/fieldStudies.ts` | `verb` → `habitat` (Grassland, Mountain, River, Forest, Floodplain); `previousStudy()`; header comment. |
+| `src/components/field/chapters.tsx` | End state: "Field study 0N complete · 07 / 07", Next (or "Begin again" after study 05), then Previous, All field studies, Open the map, species page; 44 px targets. |
+| `src/pages/FieldStudyPage.tsx` | Previous wired through the existing study-to-study transition; HUD steps aside (`data-ended`) once the study's end is on screen; header and index use the habitat label. |
+| `src/components/field/field.css` | A foot of the world's ground under the HUD at every width; last chapter ends clear of it; status name takes the ink on pale worlds; word mask no longer clips capitals; index compositions 02 and 04 moved clear of the animals, tiger title at full opacity; veil behind the index list on desktop. |
+| `src/components/field/FieldStudiesIndex.tsx`, `src/components/layout/FlowingMenu.tsx` | Habitat label; cursor word "Enter". |
+
+### 10.3 Commands and results
+
+| Command | Result |
+|---|---|
+| `npx tsc -b` | Pass (exit 0) |
+| `npx oxlint` (whole repo) | One **existing** error: `video/src/scenes/himalaya.ts:92` (the apostrophe in "India's", already logged in Master 03; belongs to the video work, not touched). |
+| `npx oxlint src` | 0 errors, 17 warnings (the same count as the Master 03 baseline) |
+| `npm run build` | Pass; 23 route pages written |
+
+### 10.4 Browser coverage (sequential, one server, one browser; Chromium only)
+
+- **All five studies, every chapter plus the page end:** 1280 × 800 (before and after), 1440 × 900, 390 × 844 (touch), 360 × 800, 768 × 1024, 1024 × 768. Result: no horizontal overflow, no console errors, no failed requests. At 1280 × 800 the screenshots were read for the HUD overlaps above (fixed); at 390 contact sheets of snow leopard and tiger were read. The 1440, 768, 1024 and 360 runs were checked by script only (overflow, errors, requests), not by reading every frame.
+- **Routes** at 1440 × 900 and 390 × 844: `/`, `/atlas`, `/species`, `/species/snow-leopard`, `/compare`, `/conservation`, `/documentary`, `/about`, `/sources`, all five `/field/*`, and a 404: no overflow, no errors, no failed requests.
+- **Index** (`/#field-studies`), all five studies at 1440 × 900 and 390 × 844, read as screenshots (before and after the fixes).
+- **Keyboard** (tiger study): skip link → header → chapter content → next / previous / all / map / species links → chapter ticks; every stop has a visible focus style (computed outline or shadow).
+- **History:** chapter tick jump, Previous study, Back, Forward, Esc → the index opens at the study just left (dolphin): all behaved.
+- **Reduced motion** (tiger, 1280 × 800): chapters change, no overflow, no errors. **No WebGL** (`--disable-webgl`): the study falls back to its photograph (`data-status="flat"`), the index list renders its five items, no errors.
+- End state read as screenshots on desktop (rhinoceros, tiger, snow leopard) and phone (rhinoceros).
+
+### 10.5 Known remaining defects
+
+- The site header's dark gradient over the four pale worlds (Master 03 navigation, left as it was).
+- In long hold chapters the top of the text still scrolls under the header; the HUD now has a ground, the header does not on the study pages.
+- Per-checkpoint limitations in §8 stand: photograph panels not true 3D, soft shrubs and trees, no cast shadows. The tiger's tail and hindquarters are cut by the left edge in chapter 6.
+- The index's list over the rhinoceros's grass is readable but sits over the busiest part of the scene.
+- Chapter-by-chapter prev/next arrows were not added: the progress ticks are the chapter navigation (buttons, keyboard-reachable).
+- `intent.ts` still lists `ascend`, `reveal`, `transform` as cursor words; harmless and unused now.
+
+### 10.6 Not tested
+
+Real phones and tablets (touch was emulated); Safari and Firefox; a screen reader; the low and balanced quality tiers (only the high tier rendered); the Thar, Himalaya and river worlds under reduced motion and at 360 px by eye (script checks only); performance (no frame-time measurement in this pass; the checkpoints added instanced geometry that has not been profiled on the laptop's idle GPU); Lighthouse.
+
+### 10.7 Recommended next step
+
+Profile the five studies and the home page on an idle machine, as Master 03 did; then test on a real phone. After that, decide whether the header's dark gradient should follow each study's tone.

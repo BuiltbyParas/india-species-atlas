@@ -140,7 +140,9 @@
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: 0.08em;
+  /* The mask must not shave the capitals: the line box is tighter than the glyphs. */
+  padding-block: 0.14em 0.08em;
+  margin-top: -0.14em;
   margin-right: 0.22em;
 }
 .fs-word > span {
@@ -387,21 +389,19 @@
   top: 46%;
 }
 
-/* 02 · ASCEND: high on the mountain, set right; the meta climbs above it. */
+/* 02 · Mountain: high on the left, clear of the leopard on its terrace. */
 .fs-comp--02 .fs-comp-n {
-  right: clamp(16rem, 24vw, 22rem);
-  top: 22svh;
-  text-align: right;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 20svh;
 }
 .fs-comp--02 .fs-comp-name {
-  right: clamp(16rem, 24vw, 22rem);
-  top: calc(22svh + 2rem);
-  text-align: right;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: calc(20svh + 2rem);
   max-width: 7ch;
 }
 .fs-comp--02 .fs-comp-place {
-  right: clamp(16rem, 24vw, 22rem);
-  top: calc(22svh + 2.4rem + 2 * 0.88 * clamp(3.2rem, 8.6vw, 9.4rem));
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: calc(20svh + 3rem + 2 * 0.88 * clamp(3.2rem, 8.6vw, 9.4rem));
 }
 .fs-comp--02 .fs-comp-meta {
   left: clamp(1.25rem, 3.4vw, 3rem);
@@ -409,12 +409,7 @@
 }
 .fs-comp--02 .fs-comp-verb {
   left: clamp(1.25rem, 3.4vw, 3rem);
-  top: 30svh;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-.fs-comp--02.is-active .fs-comp-verb {
-  transform: rotate(180deg);
+  top: calc(20svh + 5.6rem + 2 * 0.88 * clamp(3.2rem, 8.6vw, 9.4rem));
 }
 
 /* 03 · DRAG: carried by the current, the words step downstream. */
@@ -444,40 +439,28 @@
   bottom: calc(18svh + 2.6rem);
 }
 
-/* 04 · REVEAL: small, centred, nearly lost in the dark until the light finds it. */
+/* 04 · Forest: low on the left, the tiger standing clear of it in the clearing. */
 .fs-comp--04 .fs-comp-n {
-  left: 50%;
-  top: 40svh;
-  translate: -50% 0;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(14svh + 2 * 0.88 * clamp(3.2rem, 7vw, 7.4rem) + 2.4rem);
 }
 .fs-comp--04 .fs-comp-name {
-  left: 50%;
-  top: calc(40svh + 1.8rem);
-  translate: -50% 0;
-  text-align: center;
-  white-space: nowrap;
-  font-size: clamp(2.4rem, 4.6vw, 4.6rem);
-  opacity: 0.42;
-  transition: opacity 1.2s var(--ease-out-expo);
-}
-.fs-index-stage:hover .fs-comp--04 .fs-comp-name,
-.fs-comp--04 .fs-comp-name:focus-within {
-  opacity: 1;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 14svh;
+  max-width: 7ch;
+  font-size: clamp(3.2rem, 7vw, 7.4rem);
 }
 .fs-comp--04 .fs-comp-place {
-  left: 50%;
-  top: calc(40svh + 2.6rem + clamp(2.4rem, 4.6vw, 4.6rem));
-  translate: -50% 0;
-  white-space: nowrap;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(14svh - 2.6rem);
 }
 .fs-comp--04 .fs-comp-meta {
   left: clamp(1.25rem, 3.4vw, 3rem);
-  bottom: 6svh;
+  bottom: 4.5svh;
 }
 .fs-comp--04 .fs-comp-verb {
-  left: 50%;
-  bottom: 14svh;
-  translate: -50% 0;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 24svh;
 }
 
 /* 05 · TRANSFORM: heavy, low and wide, set in a firmer weight; its facts stand above it like a plinth's label. */
@@ -514,6 +497,17 @@
   translate: 0 -50%;
   z-index: 3;
   width: clamp(13rem, 19vw, 18rem);
+}
+@media (min-width: 901px) {
+  /* The list stands over whatever world is behind it; a soft veil of the world's tone keeps it readable. */
+  .fs-index-list::before {
+    content: '';
+    position: absolute;
+    inset: -2.5rem -3rem;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(closest-side, var(--fs-scrim) 55%, transparent);
+  }
 }
 .fs-index-list ol {
   list-style: none;
@@ -685,6 +679,17 @@
   position: absolute;
   pointer-events: auto;
 }
+/* A foot of the world's own ground under the furniture, so a long chapter scrolls away beneath
+   the progress line and the way out instead of printing over them. */
+.fs-hud-layer::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 6rem;
+  background: linear-gradient(to top, var(--fs-ground) 46%, transparent);
+  opacity: 0.88;
+  pointer-events: none;
+}
 .fs-progress {
   left: clamp(1.25rem, 3.4vw, 3rem);
   bottom: clamp(1.25rem, 3.6svh, 2.4rem);
@@ -809,6 +814,13 @@
   width: 2.8rem;
 }
 
+.fs-hud-layer {
+  transition: opacity 0.3s;
+}
+.fs-study[data-ended] .fs-hud-layer {
+  opacity: 0;
+  visibility: hidden;
+}
 .fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud) {
   opacity: 0 !important;
   transition: opacity 0.45s;
@@ -1094,6 +1106,22 @@
 .fs-onward {
   margin-top: 3rem;
 }
+.fs-onward-done {
+  margin: 0 0 1rem;
+  font-size: var(--text-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fs-muted);
+}
+/* The last chapter ends clear of the furniture, so its way on is never under it. */
+.fs-ch:last-child {
+  padding-bottom: 7rem;
+}
+/* On a pale world the status name takes the ink; the status colours are pale against it. */
+[data-tone='light'] .fs-status-line > span {
+  color: var(--fs-ink) !important;
+  font-weight: 400;
+}
 .fs-next {
   display: block;
   width: 100%;
@@ -1138,9 +1166,14 @@
 .fs-onward-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem 2rem;
-  margin-top: 1.4rem;
+  gap: 0.2rem 1.75rem;
+  margin-top: 1.2rem;
   font-size: var(--text-small);
+}
+.fs-onward-links > * {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .fs-study .text-link {
   color: var(--fs-ink);
@@ -1220,12 +1253,6 @@
     top: 22svh !important;
     bottom: auto !important;
   }
-  .fs-comp--04 .fs-comp-name {
-    opacity: 0.75;
-  }
-  .fs-comp--02.is-active .fs-comp-verb {
-    transform: none;
-  }
   /* The count at the top already says which study this is. */
   .fs-comp-n {
     display: none;
@@ -1279,11 +1306,8 @@
   }
   /* On a phone the chapters run full width: the furniture gets a foot of the world's ground to stand on. */
   .fs-hud-layer::before {
-    content: '';
-    position: absolute;
-    inset: auto 0 0 0;
     height: 6.5rem;
-    background: linear-gradient(to top, var(--fs-ground) 40%, transparent);
+    background: linear-gradient(to top, var(--fs-ground) 62%, transparent);
     opacity: 0.94;
   }
   .fs-progress {

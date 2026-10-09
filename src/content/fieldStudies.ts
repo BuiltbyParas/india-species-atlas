@@ -11,20 +11,16 @@ import { SPECIES_BY_ID } from '../data/species';
  * programmes (`data/programmes.ts`) at render time; nothing numeric is
  * written here.
  *
- * The verb is the study's interaction grammar, and the word the instrument
- * carries over it:
+ * Each study is named for the habitat it is set in, and the label is the word
+ * the index, the menu and the study's own header carry:
  *
- *   TRACE      the bustard: the Thar's arid grassland, followed on foot
- *   ASCEND     the snow leopard: a drawn Himalayan valley and ranges, the
- *              record's photograph on a snowy ledge
- *   DRAG       the river dolphin: a drawn lowland river with banks and
- *              sandbars, the record's photograph standing in the channel
- *   REVEAL     the tiger: a drawn central Indian forest in morning light,
- *              the record's photograph cut out and standing in it
- *   TRANSFORM  the rhinoceros: a heavy form that becomes its own population,
- *              one point per animal
+ *   Grassland   the bustard: the Thar's arid grassland
+ *   Mountain    the snow leopard: a drawn Himalayan valley and ranges
+ *   River       the river dolphin: a drawn lowland river with banks and sandbars
+ *   Forest      the tiger: a drawn central Indian forest in morning light
+ *   Floodplain  the rhinoceros: a drawn Brahmaputra floodplain
  */
-export type StudyVerb = 'Trace' | 'Ascend' | 'Drag' | 'Reveal' | 'Transform';
+export type StudyHabitat = 'Grassland' | 'Mountain' | 'River' | 'Forest' | 'Floodplain';
 
 export interface StudyStage {
   /** The chapter's name in the running progress, set in capitals by CSS. */
@@ -34,7 +30,7 @@ export interface StudyStage {
 export interface FieldStudy {
   id: string;
   n: string;
-  verb: StudyVerb;
+  habitat: StudyHabitat;
   species: Species;
   env: Environment;
   /** The landscape, as the record names it. */
@@ -53,7 +49,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
   {
     id: 'great-indian-bustard',
     speciesId: 'great-indian-bustard',
-    verb: 'Trace',
+    habitat: 'Grassland',
     env: 'thar',
     place: 'The Thar · Rajasthan',
     stages: [s('Thar'), s('Range'), s('Threat'), s('Photograph'), s('Evidence'), s('Protection'), s('Return')],
@@ -62,7 +58,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
   {
     id: 'snow-leopard',
     speciesId: 'snow-leopard',
-    verb: 'Ascend',
+    habitat: 'Mountain',
     env: 'himalaya',
     place: 'The higher Himalaya',
     stages: [s('The mountain'), s('Habitat'), s('Altitude'), s('Distribution'), s('Photograph'), s('Range'), s('Conservation'), s('Why it matters')],
@@ -71,7 +67,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
   {
     id: 'ganges-river-dolphin',
     speciesId: 'ganges-river-dolphin',
-    verb: 'Drag',
+    habitat: 'River',
     env: 'river',
     place: 'The Ganga and the Brahmaputra',
     stages: [s('The river'), s('Habitat'), s('Distribution'), s('The dolphin'), s('Pressure'), s('Conservation'), s('Why it matters')],
@@ -80,7 +76,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
   {
     id: 'bengal-tiger',
     speciesId: 'bengal-tiger',
-    verb: 'Reveal',
+    habitat: 'Forest',
     env: 'forest',
     place: 'Central Indian forests',
     stages: [s('The forest'), s('Habitat'), s('Project Tiger'), s('Reserves'), s('Estimate'), s('Pressure'), s('Why it matters')],
@@ -89,7 +85,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
   {
     id: 'indian-rhinoceros',
     speciesId: 'indian-rhinoceros',
-    verb: 'Transform',
+    habitat: 'Floodplain',
     env: 'floodplain',
     place: 'The Brahmaputra floodplain · Assam',
     stages: [s('The floodplain'), s('Habitat'), s('Pressure'), s('Protection'), s('Population'), s('Photograph'), s('Why it matters')],
@@ -107,6 +103,11 @@ export const STUDY_BY_ID: Record<string, FieldStudy> = Object.fromEntries(FIELD_
 export function nextStudy(id: string): FieldStudy {
   const i = FIELD_STUDIES.findIndex((f) => f.id === id);
   return FIELD_STUDIES[(i + 1) % FIELD_STUDIES.length];
+}
+
+export function previousStudy(id: string): FieldStudy {
+  const i = FIELD_STUDIES.findIndex((f) => f.id === id);
+  return FIELD_STUDIES[(i - 1 + FIELD_STUDIES.length) % FIELD_STUDIES.length];
 }
 
 /** The record's first sentence of a field, verbatim. */

@@ -207,7 +207,7 @@ export function FieldStudiesIndex() {
                 <Link
                   to={`/field/${f.id}`}
                   data-transition="none"
-                  data-cursor={f.verb}
+                  data-cursor="Enter"
                   aria-current={f.id === active.id ? 'true' : undefined}
                   className={cn('fs-list-item', f.id === active.id && 'is-active')}
                   onPointerEnter={(e) => e.pointerType === 'mouse' && setHoverId(f.id)}
@@ -224,7 +224,7 @@ export function FieldStudiesIndex() {
                 >
                   <span className="fs-list-n tabular-nums">{f.n}</span>
                   <span className="fs-list-name">{f.species.commonName}</span>
-                  <span className="fs-list-verb">{f.verb}</span>
+                  <span className="fs-list-verb">{f.habitat}</span>
                 </Link>
               </li>
             ))}
@@ -245,7 +245,7 @@ function Composition({ study, active, entering, onEnter }: { study: FieldStudy; 
   const s = study.species;
   const anchor = s.distributionPoints[0];
   const status = STATUS_INFO[s.status];
-  const band = study.verb === 'Ascend' ? habitatBand(s) : null;
+  const band = study.id === 'snow-leopard' ? habitatBand(s) : null;
   return (
     <div className={cn('fs-comp', `fs-comp--${study.n}`, active && 'is-active', entering && 'is-entering')} aria-hidden={!active}>
       <p className="fs-comp-n tabular-nums">Field study {study.n}</p>
@@ -253,7 +253,7 @@ function Composition({ study, active, entering, onEnter }: { study: FieldStudy; 
         <Link
           to={`/field/${study.id}`}
           data-transition="none"
-          data-cursor={study.verb}
+          data-cursor="Enter"
           tabIndex={active ? 0 : -1}
           onClick={(e) => {
             e.preventDefault();
@@ -291,9 +291,9 @@ function Composition({ study, active, entering, onEnter }: { study: FieldStudy; 
         )}
       </dl>
       {/* The verb is also the visible way in (the name is the keyboard's; this one is for the eye and the hand). */}
-      <button type="button" className="fs-comp-verb" aria-hidden="true" tabIndex={-1} data-cursor={study.verb} onClick={onEnter}>
+      <button type="button" className="fs-comp-verb" aria-hidden="true" tabIndex={-1} data-cursor="Enter" onClick={onEnter}>
         <span className="fs-verb-rule" />
-        {study.verb}
+        {study.habitat}
         <span className="fs-comp-enter">
           Enter
           <svg viewBox="0 0 16 8" aria-hidden="true">
