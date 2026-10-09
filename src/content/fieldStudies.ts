@@ -19,7 +19,8 @@ import { SPECIES_BY_ID } from '../data/species';
  *              record's photograph on a snowy ledge
  *   DRAG       the river dolphin: a drawn lowland river with banks and
  *              sandbars, the record's photograph standing in the channel
- *   REVEAL     the tiger: a dark forest, a light the hand carries
+ *   REVEAL     the tiger: a drawn central Indian forest in morning light,
+ *              the record's photograph cut out and standing in it
  *   TRANSFORM  the rhinoceros: a heavy form that becomes its own population,
  *              one point per animal
  */
@@ -82,7 +83,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
     verb: 'Reveal',
     env: 'forest',
     place: 'Central Indian forests',
-    stages: [s('Forest'), s('Presence'), s('Evidence'), s('Protection'), s('Estimate'), s('Present'), s('Return')],
+    stages: [s('The forest'), s('Habitat'), s('Project Tiger'), s('Reserves'), s('Estimate'), s('Pressure'), s('Why it matters')],
     sweep: [0, -1],
   },
   {

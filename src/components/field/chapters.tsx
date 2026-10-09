@@ -384,7 +384,7 @@ function Tiger({ study, current, next, onNext, onExit }: ChapterProps) {
   return (
     <>
       <Chapter i={0} {...c} align="low">
-        <Note gesture>Move the light.</Note>
+        <Note>The forest is drawn, an impression of a central Indian forest and not of any one reserve. The tiger is the record’s photograph, cut out of its background.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
@@ -395,9 +395,9 @@ function Tiger({ study, current, next, onNext, onExit }: ChapterProps) {
         {pt && <Body>{pt.description}</Body>}
       </Chapter>
       <Chapter i={3} {...c} align="right" hold>
-        <Lede>The forest seen from above becomes the map: each mark a reserve the record names.</Lede>
+        <Lede>The crowns seen from above. These are the reserves the record names.</Lede>
         <Localities s={s} />
-        <Note>Reserves are placed at their anchor coordinates; the marks are not reserve boundaries.</Note>
+        <Note>The reserves are listed, not drawn: the forest here is not a map of them.</Note>
       </Chapter>
       <Chapter i={4} {...c} hold>
         {estimate && <Figure value={estimate.value} label="Tigers in India, the 2022 national estimate" note="as the record gives it: roughly" />}

@@ -290,6 +290,38 @@ Known limitations after this checkpoint:
 - The verb label "DRAG" and the index preview still describe the old gesture, and the dolphin's index preview was not re-checked. Both are changed together in the copy task.
 - Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback and the index preview were not tested for this world. No performance measurement was taken. The two lower quality tiers were not rendered.
 
+### 8.4 Checkpoint 4: Bengal Tiger (a central Indian forest) — done
+
+Causes of the pillar-like look in the old scene (`forest.ts` at `59bf48f`/`e43a39e`): bark lit only by a hand-carried lantern (ambient 0.035), so the forest was black; 230 identical open cylinders as the only vegetation (no canopy, understory, litter or grass); a near-black floor; the photograph visible only inside the lantern's falloff, as a rectangle; and trunks that collapsed into map marks.
+
+What changed (files):
+
+| File | Change |
+|---|---|
+| `src/world/field/worlds/forest.ts` | Rewritten. Removed: the lantern and the hand light, the motes and halo, the trunk-to-map collapse, rings and map lines, the photograph in the dark. Added: morning sun, low and warm, from the camera's side, broken by the canopy into patches of light on the floor, trunks and grass, with cool green shade between; 440 / 310 / 190 tapering trunks with buttress feet, fissured bark and per-tree colour, in clumps and gaps, with a clear lane for the camera and a small clearing for the tiger; a roof of 460 / 320 / 190 crowns (seen from above in the Reserves chapter); 120 / 85 / 50 low shrubs; 6,000 / 4,000 / 2,300 grass tufts, dry at the tip, and a row in front of the tiger's feet; six fallen logs; a leaf-litter floor with bare earth and green cover; haze for distance (thinner when the camera is high); a new camera path (eye level in the clearing, alongside, above the crowns, back). The tiger is the earlier cut-out, a camera-facing panel that stands in the clearing with a soft ground shadow, colour-matched to the light, with its faint feet hidden in grass. |
+| `src/assets/field/bengal-tiger-cutout.webp` | New (290 KB, 1500 × 750, transparent): the earlier ISNet cut-out (`exports/master04-sources/masks/bengal-tiger-isnet.png`) cropped to the animal. Edges checked over a mid-green ground: clean; the lower legs are faint and are covered by grass in the scene. No segmentation model was run in this checkpoint. |
+| `src/assets/field/CREDITS.md` | Row for the cut-out (Tisha Mukherjee, CC BY-SA 4.0). |
+| `src/components/field/chapters.tsx` | Tiger chapter 1 note ("Move the light") replaced by a note that the forest is drawn and the tiger is a cut-out photograph; chapter 4 lede and note rewritten (the reserves are listed, not drawn). The 1973 Project Tiger chapter is unchanged. |
+| `src/components/field/field.css` | Tiger ground and line colours; the title sits lower (13svh; 12svh on narrow screens) so the tiger stands above it. |
+| `src/content/fieldStudies.ts` | Chapter labels (The forest, Habitat, Project Tiger, Reserves, Estimate, Pressure, Why it matters); header comment updated. |
+
+Validation:
+
+- `npx tsc -b`: pass. `npx oxlint src/world/field src/components/field src/content src/pages`: pass (the one existing warning in `SpeciesWorldPage.tsx`). `npm run build`: pass.
+- Sequential headless Chromium pass at 1280 × 800 (TMPDIR and screenshots on disk; about 2.1 GB available beforehand), all seven chapters plus the end, repeated after each fix: **0 console errors, 0 failed requests**, no lost WebGL context.
+- Reviewed as screenshots: the tiger is recognisable, whole and above the title in chapter 1; it stands beside the text in chapters 2, 3, 5 and 7 and sits in the left of the frame in chapter 6. The forest has trunks at several distances in haze, understory, grass, litter and patches of light; it looks nothing like the grassland, mountains or river. No lantern, particles, marks or overlays.
+- Defects found and fixed along the way: a fallen log scaled to a wall by the trunk shader's foot flare (logs now share the same footing); trunks and crowns drawn into the camera's lane; floating foliage blobs (removed); flat-faceted crowns (welded and smoothed); crowns melting into smears (coarser leaf pattern, higher up); a trunk beside the camera in chapter 6; the tiger cut by the frame in chapter 5.
+
+Known limitations after this checkpoint:
+
+- The tiger is a **photograph cut-out on a flat panel**. It turns to face the camera (not past about 35°) and fades from above, so from a steep or side angle it is a standing picture. The cut leaves its lower legs and paws faint; grass hides them, but in close frames they look soft. Its light is the photograph's own, only tinted.
+- The crowns seen from above (chapter 4) read as a carpet of green blobs with a hatched leaf pattern; there is no individual tree structure, and a few shrubs read as smooth domes.
+- Trunks have no branches; bark is a fissure pattern, and nearer trunks smear a little vertically. No cast shadows: the patches of light are a noise mask.
+- In chapter 6 the tiger is cropped by the left edge (its tail and hindquarters); in chapter 5 its face is large.
+- "Hold" chapters (4, 5, 6) overlap the progress bar at 1280 × 800 (the Master 03 layout issue, left for the navigation task).
+- The verb label "REVEAL" and the index preview still describe the old lantern; changed in the copy task. The index preview was not re-checked.
+- Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback and the lower quality tiers were not tested; no performance measurement was taken (the scene draws about 7,000 grass blades-tufts, 500 trunks and 500 crown meshes on the high tier).
+
 ## 9. The exact next task
 
-**Checkpoint 4: Bengal Tiger (central Indian forest).** Same method, and the same safe execution: one task at a time, no segmentation model, one sequential screenshot pass with `TMPDIR` on disk. The forest is mostly black with dark cylinders and a lantern. Give it ambient dawn or moonlit light so the bark has form, fewer and more varied trunks clear of the subject, undergrowth and leaf litter, and a clear key light on the tiger (the record's photograph as a habitat panel, or the recovered `exports/master04-sources/masks/bengal-tiger-isnet.png` if it shows well). Remove the lantern mechanic. Chapter 3 ("1973") keeps the tiger in view. Validate, update this document and commit. Then the rhino, then the navigation and end-of-study state.
+**Checkpoint 5: Indian Rhinoceros (the Brahmaputra floodplain).** Same method and the same safe execution (one task at a time, no segmentation model, one sequential screenshot pass with `TMPDIR` on disk). Remove the clay form and the point morph. Place the rhino (the recovered `exports/master04-sources/masks/indian-rhinoceros-isnet.png`, cut from the Mukherjee Kaziranga photograph, to be converted to WebP and checked) in tall elephant grass with wallows, a distant tree line and a hazy sky; add a sky dome. Then the navigation and end-of-study state, the copy task, performance and final QA.
