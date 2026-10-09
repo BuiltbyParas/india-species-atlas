@@ -92,7 +92,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
     verb: 'Transform',
     env: 'floodplain',
     place: 'The Brahmaputra floodplain · Assam',
-    stages: [s('Form'), s('Landscape'), s('Pressure'), s('Protection'), s('Recovery'), s('Photograph'), s('Present')],
+    stages: [s('The floodplain'), s('Habitat'), s('Pressure'), s('Protection'), s('Population'), s('Photograph'), s('Why it matters')],
     sweep: [-1, 0.1],
   },
 ];

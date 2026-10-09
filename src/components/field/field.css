@@ -79,8 +79,14 @@
   --fs-ground: #4a5a3c;
 }
 [data-study='indian-rhinoceros'] {
-  --fs-line: #c2a27a;
-  --fs-ground: #2f271e;
+  --fs-line: #6d5a3a;
+  --fs-ground: #cfd2b4;
+}
+[data-tone='light'][data-study='indian-rhinoceros'] {
+  --fs-ink: #1f2417;
+  --fs-muted: rgba(31, 36, 23, 0.76);
+  --fs-faint: rgba(31, 36, 23, 0.72);
+  --fs-scrim: rgba(222, 224, 200, 0.74);
 }
 
 /* The header floats over a light world on the Thar: its type turns to ink, its veil to sand. */
@@ -661,6 +667,9 @@
 [data-study='indian-rhinoceros'] .fs-title {
   font-weight: 400;
   letter-spacing: -0.05em;
+}
+[data-study='indian-rhinoceros'] .fs-type {
+  bottom: 12svh;
 }
 
 /* The frame's furniture. */

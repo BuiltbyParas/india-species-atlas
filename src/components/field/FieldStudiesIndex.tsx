@@ -176,7 +176,7 @@ export function FieldStudiesIndex() {
         ref={hostRef}
         className="fs-index-stage"
         data-study={active.id}
-        data-tone={active.id === 'great-indian-bustard' || active.id === 'snow-leopard' || active.id === 'ganges-river-dolphin' ? 'light' : 'dark'}
+        data-tone={active.id === 'great-indian-bustard' || active.id === 'snow-leopard' || active.id === 'ganges-river-dolphin' || active.id === 'indian-rhinoceros' ? 'light' : 'dark'}
         onPointerEnter={(e) => {
           if (e.pointerType !== 'mouse') return;
           setEngaged(true);

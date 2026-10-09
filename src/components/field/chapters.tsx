@@ -419,6 +419,14 @@ function Tiger({ study, current, next, onNext, onExit }: ChapterProps) {
   );
 }
 
+/** The photograph the drawn rhinoceros is cut from (src/assets/field/CREDITS.md). */
+const RHINO_CUTOUT_CREDIT = {
+  credit: 'Tisha Mukherjee',
+  license: 'CC BY-SA 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+  sourceUrl: 'https://commons.wikimedia.org/wiki/File:Indian_rhinoceros_in_Kaziranga_National_Park_March_2025_by_Tisha_Mukherjee_08.jpg',
+};
+
 function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
   const s = study.species;
   const c = { study, current };
@@ -429,35 +437,35 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
     <>
       <Chapter i={0} {...c} align="low-right">
         <Lede>{s.summary}</Lede>
-        <Note gesture>A form raised from the atlas's schematic outline of the species: body plan and posture only, not a model of the animal.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
         <Body>{firstSentence(s.indianDistribution)}</Body>
+        <Note>The floodplain is drawn, an impression of a Brahmaputra floodplain and not of any one park. The rhinoceros is a photograph, cut out of its background.</Note>
       </Chapter>
       <Chapter i={2} {...c} hold>
         {concentration && <Lede>{concentration}</Lede>}
         <Body>{s.threatNote}</Body>
-        <Note>The form breaks into its points; each point stands for one animal of the record&rsquo;s figure.</Note>
       </Chapter>
       <Chapter i={3} {...c} align="right" hold>
         {irv && <Figure value={irv.startedYear} label={irv.name} note={irv.authority} />}
         {irv && <Body>{irv.description}</Body>}
         <Localities s={s} />
+        <Note>The sites are listed, not drawn: the floodplain here is not a map of them.</Note>
       </Chapter>
       <Chapter i={4} {...c} hold>
         {figures && (
           <div className="fs-figures">
-            <Figure value={`< ${figures.past.toLocaleString('en-IN')}`} label="a century ago" note="drawn as its upper bound" />
-            <Figure value={`~ ${figures.now.toLocaleString('en-IN')}`} label="today, India and Nepal" note="one point each" />
+            <Figure value={`< ${figures.past.toLocaleString('en-IN')}`} label="a century ago" note="the record: fewer than" />
+            <Figure value={`~ ${figures.now.toLocaleString('en-IN')}`} label="today, India and Nepal" note="the record: around" />
           </div>
         )}
         {figures && <Body>{figures.pastSentence}</Body>}
-        <Note>Two figures, two states. Nothing between them is drawn, because the record gives nothing between them.</Note>
+        <Note>Two figures, two states. The record gives nothing between them, so no trend is drawn.</Note>
       </Chapter>
       <Chapter i={5} {...c} align="right">
-        <Body>{s.image.alt}</Body>
-        <PhotoCredit species={s} className="fs-credit" />
+        <Body>An Indian rhinoceros in Kaziranga National Park, Assam, photographed in March 2025 and cut out of its background. It is not the photograph the species record carries, which has branches across the animal.</Body>
+        <PhotoCredit species={{ ...s, image: { ...s.image, ...RHINO_CUTOUT_CREDIT } }} className="fs-credit" />
       </Chapter>
       <Chapter i={6} {...c} align="right" hold>
         <Status s={s} />

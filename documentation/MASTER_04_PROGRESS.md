@@ -322,6 +322,37 @@ Known limitations after this checkpoint:
 - The verb label "REVEAL" and the index preview still describe the old lantern; changed in the copy task. The index preview was not re-checked.
 - Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback and the lower quality tiers were not tested; no performance measurement was taken (the scene draws about 7,000 grass blades-tufts, 500 trunks and 500 crown meshes on the high tier).
 
+### 8.5 Checkpoint 5: Greater One-horned Rhinoceros (the Brahmaputra floodplain) — done
+
+Causes of the weak old scene (`floodplain.ts` at `9625c63`): the animal was a heavy matte form raised from the atlas's schematic silhouette (grey-boulder / clay look, by construction), on dark wet earth; the story was told by a point morph (one point per animal), a route, rings and map lines instead of a habitat; the ground was near-black; and the real photograph appeared only at the end as a flat plane.
+
+What changed (files):
+
+| File | Change |
+|---|---|
+| `src/world/field/worlds/floodplain.ts` | Rewritten. Removed: the clay form, the point morph and its figures, the route, rings, map lines, the photograph plane, the heightfield. Added: a sky dome (haze at the horizon, pale zenith, thin cloud, hazy low sun); a ground shader of turf, trodden earth and dark wet mud, with three wallows and a long shallow beel behind (turbid olive water that takes the sky at low angles, with a reflected far tree line); short turf (9,000 / 6,200 / 3,600 tufts), medium grass, tall elephant-grass stands standing over the animal (6,500 / 4,600 / 2,800), reeds at the wallows and the beel edge; a low line of riverine-forest canopy on the far shore (260 / 180 / 110 broad crowns), softened by haze; a new camera path (eye level beside the animal, the whole floodplain from a raised view for the programme and sites, close, pull-back). The rhinoceros is the cut-out, a camera-facing panel (turn limited to about 29°) that fades when seen steeply from above, with a soft ground shadow, a warm light match, mud tint on legs and belly, and its feet in short grass. |
+| `src/assets/field/indian-rhinoceros-cutout.webp` | New (252 KB, 1400 × 711, transparent): the earlier ISNet cut-out (`exports/master04-sources/masks/indian-rhinoceros-isnet.png`) cropped to the animal. Edges checked over a green ground before use and in the scene: clean, no halo; feet complete. No segmentation model was run. |
+| `src/assets/field/CREDITS.md` | Row for the cut-out: **Tisha Mukherjee, CC BY-SA 4.0** (Kaziranga, March 2025). This is *not* the species record's photograph (Payamfarahani). |
+| `src/components/field/chapters.tsx` | Rhino chapters rewritten without the point morph: the note that the floodplain is drawn and the animal is a cut-out photograph; the record's two population figures shown as text only ("the record: fewer than / around"); the sites listed, not drawn; the Photograph chapter now describes and credits the Mukherjee photograph (the record's own photograph is not what is on screen, and the chapter says so). |
+| `src/components/field/field.css`, `src/pages/FieldStudyPage.tsx`, `src/components/field/FieldStudiesIndex.tsx` | The rhinoceros uses the light tone (new ink/scrim); title sits at 12svh. |
+| `src/content/fieldStudies.ts` | Chapter labels (The floodplain, Habitat, Pressure, Protection, Population, Photograph, Why it matters). |
+
+Validation:
+
+- `npx tsc -b`: pass. `npx oxlint src/world/field src/components/field src/content src/pages`: pass (the one existing warning in `SpeciesWorldPage.tsx`). `npm run build`: pass.
+- Sequential headless Chromium pass at 1280 × 800 (TMPDIR and screenshots on disk; about 1.7 GB available), all seven chapters plus the end, repeated after each fix (5 passes): **0 console errors, 0 failed requests**.
+- Reviewed as screenshots: the rhinoceros is recognisable and whole in chapters 1, 2, 3, 5, 6, 7; small by design in 4 (raised view). Chapter text sits beside the animal, not on it. The habitat (tall grass, turf, wet mud, wallow and beel, low far tree line, pale hazy sky) does not resemble the grassland, mountains, river or forest.
+- Defects found and fixed: far trees reading as mossy boulders (now flat, broad, low-contrast crowns); a bare, paddy-like foreground (denser turf and more ground cover); a white water slab at the horizon (reflection capped); rhino cut by the frame in chapters 2, 3, 6; the aerial shot fading the animal to a ghost (lowered the camera); the chapter 1 note colliding with the coordinates mark (moved to chapter 2).
+
+Known limitations after this checkpoint:
+
+- The rhinoceros is a **photograph cut-out on a flat panel**; from a steep angle it is a standing picture (fades above ~24° elevation). Its light is the photograph's own, only tinted. The animal shows no horn in this photograph (the cut-out is of the animal as photographed).
+- The tall grass is flat-shaded blades with no seed heads; the short turf reads as separate tufts in the near foreground. The far-shore canopy is smooth blobs; the beel has no refraction, foam or birds. No cast shadows other than the soft one under the animal.
+- Wallow and beel positions are an impression, not a place; nothing claims Kaziranga's layout.
+- "Hold" chapters (3, 4, 5, 7) overlap the progress bar / coordinates mark at 1280 × 800 (the Master 03 layout issue, left for the navigation task).
+- The verb "Transform" and the index preview still describe the old morph; changed in the copy task. The index preview was not re-checked.
+- Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback and the lower quality tiers were not tested; no performance measurement (the scene draws about 27,000 grass tufts and 260 crowns on the high tier).
+
 ## 9. The exact next task
 
-**Checkpoint 5: Indian Rhinoceros (the Brahmaputra floodplain).** Same method and the same safe execution (one task at a time, no segmentation model, one sequential screenshot pass with `TMPDIR` on disk). Remove the clay form and the point morph. Place the rhino (the recovered `exports/master04-sources/masks/indian-rhinoceros-isnet.png`, cut from the Mukherjee Kaziranga photograph, to be converted to WebP and checked) in tall elephant grass with wallows, a distant tree line and a hazy sky; add a sky dome. Then the navigation and end-of-study state, the copy task, performance and final QA.
+**Navigation and end-of-study state** (shared header/progress, the hold-chapter overlap with the progress bar, the end screen), then the copy task (verbs and index previews: "Transform", "Reveal", "Drag"), performance, and final QA across all five studies and at phone/tablet sizes. All five environments are now rebuilt.
