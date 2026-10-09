@@ -37,6 +37,10 @@ const WORDS: Record<string, CursorIntent> = {
   play: 'play',
   pause: 'play',
   close: 'enter',
+  // The field studies' verbs (content/fieldStudies.ts). Trace and Drag keep their own reticles.
+  ascend: 'enter',
+  reveal: 'enter',
+  transform: 'enter',
 };
 
 export function intentOf(word: string | null | undefined): CursorIntent {

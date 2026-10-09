@@ -16,7 +16,8 @@ import { onScroll as subscribeScroll } from '../../interaction/scroll';
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
-  const home = pathname === '/';
+  // A field study is a documentary page too: the header floats over its world.
+  const home = pathname === '/' || pathname.startsWith('/field/');
   const chapter = useCurrentChapter();
   // Working pages carry the same running head as the documentary: where you are on the sheet.
   const page = home || pathname === '/documentary' ? null : describeRoute(pathname);

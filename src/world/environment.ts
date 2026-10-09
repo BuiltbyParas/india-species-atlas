@@ -25,7 +25,17 @@ import { onScroll } from '../interaction/scroll';
  * head's rule and the film; the home page's grounds are left as they are until
  * its recomposition is decided (documentation/HOMEPAGE_CREATIVE_DECONSTRUCTION.md §4, §16).
  */
-export type Environment = 'calibration' | 'atlas' | 'thar' | 'himalaya' | 'river' | 'forest' | 'data' | 'cinema' | 'final';
+export type Environment =
+  | 'calibration'
+  | 'atlas'
+  | 'thar'
+  | 'himalaya'
+  | 'river'
+  | 'forest'
+  | 'floodplain'
+  | 'data'
+  | 'cinema'
+  | 'final';
 
 let page: Environment = 'atlas';
 let held: Environment | null = null;

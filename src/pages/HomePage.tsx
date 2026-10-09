@@ -1,18 +1,18 @@
 import { useLayoutEffect } from 'react';
 import { holdScrollTrigger } from '../motion/gsap';
 import { SPECIES } from '../data/species';
-import { FEATURED, FEATURED_ENV } from '../content/featured';
+import { FEATURED } from '../content/featured';
+import { FIELD_STUDIES } from '../content/fieldStudies';
 import { REGIONS } from '../data/regions';
 import { STATUS_INFO } from '../data/statusInfo';
 import { countByStatus } from '../utils/stats';
 import { CinematicHero } from '../components/cinema/CinematicHero';
 import { CurvedLoop } from '../components/cinema/CurvedLoop';
 import { ChapterIntro } from '../components/cinema/ChapterIntro';
-import { SpeciesScene } from '../components/cinema/SpeciesScene';
 import { DomeGallery } from '../components/cinema/DomeGallery';
 import { ConservationChapter } from '../components/cinema/ConservationMap';
 import { FinalChapter } from '../components/cinema/FinalChapter';
-import { BustardPrologue } from '../components/cinema/BustardPrologue';
+import { FieldStudiesIndex } from '../components/field/FieldStudiesIndex';
 import { GeoProgress } from '../components/cinema/GeoProgress';
 import { InteractiveStat } from '../components/cinema/InteractiveStat';
 
@@ -50,13 +50,8 @@ export function HomePage() {
         </div>
       </ChapterIntro>
 
-      <BustardPrologue species={FEATURED[0]} />
-
-      {FEATURED.map((s, i) => (
-        <div key={s.id} data-route-stop={i} data-env={FEATURED_ENV[s.id]}>
-          <SpeciesScene species={s} index={i} total={FEATURED.length} />
-        </div>
-      ))}
+      {/* The five flagship species as featured field studies: each a world of its own, entered from here. */}
+      <FieldStudiesIndex />
 
       <ChapterIntro
         index={3}
@@ -77,7 +72,7 @@ export function HomePage() {
 
       <ConservationChapter />
       <FinalChapter />
-      <GeoProgress stops={FEATURED} />
+      <GeoProgress stops={FIELD_STUDIES.map((f) => f.species)} />
     </div>
   );
 }

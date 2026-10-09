@@ -49,12 +49,15 @@ export const GLSL_GRAIN = /* glsl */ `
 /**
  * `inkEdge(value, progress, softness)`: 0 → 1 coverage for a reveal that
  * advances through a field (noise, a distance, a luminance) the way ink runs
- * along paper fibres. `progress` 0 shows nothing, 1 everything.
+ * along paper fibres, lowest values first. `progress` 0 shows nothing, 1
+ * everything. (Master 02 corrected the front, which ran backwards; nothing used
+ * it before the field studies.)
  */
 export const GLSL_DISSOLVE = /* glsl */ `
   float inkEdge(float value, float progress, float softness) {
-    float p = progress * (1.0 + softness) - softness;
-    return smoothstep(p, p + softness, 1.0 - value);
+    // The front sits at progress·(1 + softness), so 0 covers nothing and 1 covers the whole field.
+    float f = progress * (1.0 + softness);
+    return 1.0 - smoothstep(f - softness, f, value);
   }
 `;
 

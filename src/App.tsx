@@ -24,6 +24,7 @@ const ConservationPage = lazy(() => import('./pages/ConservationPage').then((m) 
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 const SourcesPage = lazy(() => import('./pages/SourcesPage').then((m) => ({ default: m.SourcesPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const FieldStudyPage = lazy(() => import('./pages/FieldStudyPage').then((m) => ({ default: m.FieldStudyPage })));
 const DocumentaryPage = lazy(() => import('./pages/DocumentaryPage').then((m) => ({ default: m.DocumentaryPage })));
 // The cinema is only needed once something is opened (interaction/media.ts); the film entry prefetches it.
 const MediaStage = lazy(() => import('./components/cinema/MediaStage').then((m) => ({ default: m.MediaStage })));
@@ -57,6 +58,7 @@ function PageFallback() {
 function Shell() {
   const { pathname } = useLocation();
   const home = pathname === '/';
+  const field = pathname.startsWith('/field/');
   const documentary = pathname === '/documentary';
   const [loading, setLoading] = useState(() => home && shouldShowLoader());
   const done = useCallback(() => setLoading(false), []);
@@ -81,7 +83,7 @@ function Shell() {
       >
         Skip to content
       </a>
-      {home && <SmoothScroll />}
+      {(home || field) && <SmoothScroll key={home ? 'home' : 'field'} />}
       <InteractionProvider />
       <CustomCursor />
       <RouteTransition />
@@ -96,6 +98,7 @@ function Shell() {
               <Route path="/atlas" element={<AtlasPage />} />
               <Route path="/species" element={<SpeciesPage />} />
               <Route path="/species/:id" element={<SpeciesWorldPage />} />
+              <Route path="/field/:id" element={<FieldStudyPage />} />
               <Route path="/compare" element={<ComparePage />} />
               <Route path="/conservation" element={<ConservationPage />} />
               <Route path="/about" element={<AboutPage />} />

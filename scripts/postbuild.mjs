@@ -51,7 +51,15 @@ async function speciesRoutes() {
   return ids.map((id) => `/species/${id}`);
 }
 
-const routes = [...(await staticRoutes()), ...(await speciesRoutes())];
+/** The field studies (/field/:id), read from their editorial list the same way. */
+async function fieldRoutes() {
+  const content = await readFile(join(root, 'src/content/fieldStudies.ts'), 'utf8');
+  const ids = [...content.matchAll(/^ {4}id: '([a-z0-9-]+)',$/gm)].map((m) => m[1]);
+  if (ids.length === 0) throw new Error('postbuild: no field studies found in src/content/fieldStudies.ts');
+  return ids.map((id) => `/field/${id}`);
+}
+
+const routes = [...(await staticRoutes()), ...(await speciesRoutes()), ...(await fieldRoutes())];
 for (const route of routes) {
   const dir = join(dist, route);
   await mkdir(dir, { recursive: true });

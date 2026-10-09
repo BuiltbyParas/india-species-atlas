@@ -1,0 +1,1367 @@
+/*
+ * The field studies: the index of five featured works on the home page and
+ * each study's own page. One frame language for all five — the same type,
+ * spacing, progress line, exit and notes — with each study's tone and line
+ * colour, so the worlds differ and the frame does not.
+ *
+ * The world itself is painted by the field stage's own fixed layer
+ * (world/field/stage.ts) at z-index 1, behind the host element; everything
+ * here sits above it.
+ */
+
+/* ---------------------------------------------------------- the layer */
+
+.field-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+  contain: strict;
+  will-change: transform;
+}
+.field-layer[data-mode='off'] {
+  display: none;
+}
+.field-layer[data-mode='front'] {
+  z-index: 1300;
+  height: 100vh;
+}
+.field-canvas {
+  display: block;
+}
+
+/* ---------------------------------------------------------- tones */
+
+[data-tone] {
+  --fs-ink: var(--color-canvas);
+  --fs-muted: color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  --fs-faint: color-mix(in srgb, var(--color-canvas) 38%, transparent);
+  --fs-scrim: rgba(6, 9, 8, 0.62);
+  --fs-ground: #0e1411;
+}
+[data-tone='light'] {
+  --fs-ink: #2a1b10;
+  --fs-muted: rgba(42, 27, 16, 0.7);
+  --fs-faint: rgba(42, 27, 16, 0.46);
+  --fs-scrim: rgba(238, 224, 198, 0.66);
+}
+[data-study='great-indian-bustard'] {
+  --fs-line: #7a3f1d;
+  --fs-ground: #e6d4b2;
+}
+[data-study='snow-leopard'] {
+  --fs-line: #a9c6d3;
+  --fs-ground: #151b1f;
+}
+[data-study='ganges-river-dolphin'] {
+  --fs-line: #7ea3b5;
+  --fs-ground: #0f2a3c;
+}
+[data-study='bengal-tiger'] {
+  --fs-line: #86a593;
+  --fs-ground: #050806;
+}
+[data-study='indian-rhinoceros'] {
+  --fs-line: #c2a27a;
+  --fs-ground: #2f271e;
+}
+
+/* The header floats over a light world on the Thar: its type turns to ink, its veil to sand. */
+:root[data-env='thar'] .site-header[data-open='false'] {
+  --color-canvas: #2a1b10;
+}
+:root[data-env='thar'] .geo-progress {
+  --color-canvas: #2a1b10;
+  --color-forest-950: #e6d4b2;
+}
+:root[data-env='thar'] .site-header[data-open='false']::before {
+  background: linear-gradient(to bottom, #eadbbf 0%, color-mix(in srgb, #eadbbf 85%, transparent) 50%, transparent 100%);
+}
+
+/* ---------------------------------------------------------- shared */
+
+.fs-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--fs-scrim) 0%, transparent 46%), linear-gradient(0deg, var(--fs-scrim) 0%, transparent 34%);
+  opacity: 0.85;
+  transition: background 0.9s var(--ease-out-expo);
+}
+.fs-flat {
+  position: absolute;
+  inset: 0;
+  background: var(--fs-ground);
+  transition: background-color 0.9s var(--ease-out-expo);
+}
+.fs-flat-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  animation: fs-fade 0.9s var(--ease-out-expo);
+}
+[data-tone='light'] .fs-flat-img {
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+}
+@keyframes fs-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.fs-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.08em;
+  margin-right: 0.22em;
+}
+.fs-word > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1.1s var(--ease-out-expo) calc(var(--i) * 80ms);
+}
+
+.fs-kicker,
+.fs-comp-n,
+.fs-type-n,
+.fs-ch-label,
+.fs-figure-label,
+.fs-progress-label,
+.fs-comp-meta dt,
+.fs-next-k {
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fs-muted);
+}
+
+/* ---------------------------------------------------------- the index */
+
+.fs-index {
+  position: relative;
+  height: calc((var(--n) + 1) * 100svh);
+}
+.fs-index-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  z-index: 2;
+  color: var(--fs-ink);
+  transition: color 0.9s var(--ease-out-expo);
+}
+.fs-index-runway {
+  margin-top: -100svh;
+  padding-bottom: 100svh;
+}
+.fs-index-panel {
+  height: 100svh;
+}
+
+.fs-index-head {
+  position: absolute;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  top: clamp(5.5rem, 12svh, 7.5rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  z-index: 3;
+}
+.fs-index-head .fs-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--fs-ink);
+}
+.fs-index-head .fs-kicker::before {
+  content: '';
+  width: 2.2rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+.fs-index-count {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  letter-spacing: 0.08em;
+  color: var(--fs-ink);
+}
+.fs-index-count span {
+  color: var(--fs-faint);
+}
+
+/* The compositions: one per study, the same facts set in different places. */
+.fs-comp {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0s linear 0.7s;
+}
+.fs-comp.is-active {
+  visibility: visible;
+  transition-delay: 0s;
+}
+.fs-comp > * {
+  position: absolute;
+}
+.fs-comp-name {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  font-size: clamp(3.2rem, 8.6vw, 9.4rem);
+  pointer-events: auto;
+}
+.fs-comp-name a {
+  color: inherit;
+  text-decoration: none;
+  display: inline-block;
+}
+.fs-comp-name a:focus-visible {
+  outline-offset: 12px;
+}
+.fs-comp.is-active .fs-word > span {
+  transform: translateY(0);
+}
+.fs-comp.is-entering .fs-word > span {
+  transform: translateY(-108%);
+  transition-duration: 0.9s;
+  transition-timing-function: var(--ease-cinema);
+}
+.fs-comp-n,
+.fs-comp-place,
+.fs-comp-meta,
+.fs-comp-verb {
+  opacity: 0;
+  transform: translateY(0.6rem);
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    transform 0.9s var(--ease-out-expo);
+}
+.fs-comp.is-active :is(.fs-comp-n, .fs-comp-place, .fs-comp-meta, .fs-comp-verb) {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.35s;
+}
+.fs-comp.is-entering :is(.fs-comp-n, .fs-comp-place, .fs-comp-meta, .fs-comp-verb) {
+  opacity: 0;
+  transition-delay: 0s;
+  transition-duration: 0.35s;
+}
+.fs-comp-place {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lede);
+  color: var(--fs-muted);
+}
+.fs-comp-meta {
+  display: flex;
+  gap: 2rem;
+  margin: 0;
+}
+.fs-comp-meta dd {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-small);
+  color: var(--fs-ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fs-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+}
+.fs-comp-verb {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--fs-ink);
+}
+.fs-verb-rule {
+  width: 2.6rem;
+  height: 1px;
+  background: var(--fs-line);
+  transform-origin: left;
+  transition: width 0.9s var(--ease-out-expo);
+}
+.fs-index-stage:hover .fs-comp.is-active .fs-verb-rule {
+  width: 6.5rem;
+}
+
+/* 01 · TRACE: the name lies on the horizon, low left; the verb runs out along the line. */
+.fs-comp--01 .fs-comp-n {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(14svh + 2 * 0.88 * clamp(3.2rem, 8.6vw, 9.4rem) + 2.4rem);
+}
+.fs-comp--01 .fs-comp-name {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 14svh;
+  max-width: 12ch;
+}
+.fs-comp--01 .fs-comp-place {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(14svh - 2.6rem);
+}
+.fs-comp--01 .fs-comp-meta {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 4.5svh;
+}
+.fs-comp--01 .fs-comp-verb {
+  left: 50%;
+  top: 46%;
+}
+
+/* 02 · ASCEND: high on the mountain, set right; the meta climbs above it. */
+.fs-comp--02 .fs-comp-n {
+  right: clamp(16rem, 24vw, 22rem);
+  top: 22svh;
+  text-align: right;
+}
+.fs-comp--02 .fs-comp-name {
+  right: clamp(16rem, 24vw, 22rem);
+  top: calc(22svh + 2rem);
+  text-align: right;
+  max-width: 7ch;
+}
+.fs-comp--02 .fs-comp-place {
+  right: clamp(16rem, 24vw, 22rem);
+  top: calc(22svh + 2.4rem + 2 * 0.88 * clamp(3.2rem, 8.6vw, 9.4rem));
+}
+.fs-comp--02 .fs-comp-meta {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 6svh;
+}
+.fs-comp--02 .fs-comp-verb {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 30svh;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.fs-comp--02.is-active .fs-comp-verb {
+  transform: rotate(180deg);
+}
+
+/* 03 · DRAG: carried by the current, the words step downstream. */
+.fs-comp--03 .fs-comp-n {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 30svh;
+}
+.fs-comp--03 .fs-comp-name {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: calc(30svh + 2rem);
+  white-space: nowrap;
+}
+.fs-comp--03 .fs-comp-name .fs-word {
+  display: block;
+  margin-left: calc(var(--i) * 9vw);
+}
+.fs-comp--03 .fs-comp-place {
+  right: clamp(16rem, 24vw, 22rem);
+  bottom: 18svh;
+}
+.fs-comp--03 .fs-comp-meta {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 6svh;
+}
+.fs-comp--03 .fs-comp-verb {
+  right: clamp(16rem, 24vw, 22rem);
+  bottom: calc(18svh + 2.6rem);
+}
+
+/* 04 · REVEAL: small, centred, nearly lost in the dark until the light finds it. */
+.fs-comp--04 .fs-comp-n {
+  left: 50%;
+  top: 40svh;
+  translate: -50% 0;
+}
+.fs-comp--04 .fs-comp-name {
+  left: 50%;
+  top: calc(40svh + 1.8rem);
+  translate: -50% 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: clamp(2.4rem, 4.6vw, 4.6rem);
+  opacity: 0.42;
+  transition: opacity 1.2s var(--ease-out-expo);
+}
+.fs-index-stage:hover .fs-comp--04 .fs-comp-name,
+.fs-comp--04 .fs-comp-name:focus-within {
+  opacity: 1;
+}
+.fs-comp--04 .fs-comp-place {
+  left: 50%;
+  top: calc(40svh + 2.6rem + clamp(2.4rem, 4.6vw, 4.6rem));
+  translate: -50% 0;
+  white-space: nowrap;
+}
+.fs-comp--04 .fs-comp-meta {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 6svh;
+}
+.fs-comp--04 .fs-comp-verb {
+  left: 50%;
+  bottom: 14svh;
+  translate: -50% 0;
+}
+
+/* 05 · TRANSFORM: heavy, low and wide, set in a firmer weight; its facts stand above it like a plinth's label. */
+.fs-comp--05 .fs-comp-n {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(8svh + 2 * 0.88 * clamp(3.2rem, 7.4vw, 8.4rem) + 1.6rem);
+}
+.fs-comp--05 .fs-comp-name {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 8svh;
+  font-weight: 400;
+  font-size: clamp(3.2rem, 7.4vw, 8.4rem);
+  max-width: 17ch;
+  letter-spacing: -0.05em;
+}
+.fs-comp--05 .fs-comp-place {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 24svh;
+}
+.fs-comp--05 .fs-comp-meta {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: calc(24svh + 2.6rem);
+}
+.fs-comp--05 .fs-comp-verb {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: calc(24svh + 6.6rem);
+}
+
+/* The list: all five, the keyboard's way through. */
+.fs-index-list {
+  position: absolute;
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 3;
+  width: clamp(13rem, 19vw, 18rem);
+}
+.fs-index-list ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--fs-faint);
+}
+.fs-list-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--fs-faint);
+  color: var(--fs-faint);
+  text-decoration: none;
+  transition: color 0.5s var(--ease-out-expo);
+}
+.fs-list-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 1px;
+  width: 100%;
+  background: var(--fs-line);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.8s var(--ease-out-expo);
+}
+.fs-list-item.is-active,
+.fs-list-item:hover,
+.fs-list-item:focus-visible {
+  color: var(--fs-ink);
+}
+.fs-list-item.is-active::after {
+  transform: scaleX(1);
+}
+.fs-list-n {
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+}
+.fs-list-name {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+.fs-list-verb {
+  font-size: var(--text-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.fs-index.is-leaving .fs-index-list,
+.fs-index.is-leaving .fs-index-head {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+/* ---------------------------------------------------------- a study */
+
+.fs-study {
+  position: relative;
+  color: var(--fs-ink);
+}
+.fs-study-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+}
+.fs-study-stage > * {
+  pointer-events: none;
+}
+.fs-runway {
+  position: relative;
+  z-index: 3;
+  margin-top: -100svh;
+  pointer-events: none;
+}
+
+/* The study's name: it comes in with the world and goes when the first chapter does. */
+.fs-type {
+  position: absolute;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: 15svh;
+  --stage0: clamp(0, 1 - (var(--p, 0) * var(--n) - 0.5) * 2.4, 1);
+  opacity: var(--stage0);
+  translate: 0 calc((1 - var(--stage0)) * -3rem);
+}
+.fs-title {
+  margin: 0.8rem 0 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(3.2rem, 8.2vw, 9rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  max-width: 12ch;
+}
+.fs-study.is-arrived .fs-title .fs-word > span {
+  transform: none;
+}
+.fs-type-n,
+.fs-type-sci {
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-out-expo) 0.5s;
+}
+.fs-study.is-arrived :is(.fs-type-n, .fs-type-sci, .fs-type-place) {
+  opacity: 1;
+}
+.fs-type-sci {
+  margin-top: 1rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lede);
+  color: var(--fs-muted);
+}
+.fs-type-place {
+  position: fixed;
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  top: 50svh;
+  writing-mode: vertical-rl;
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--fs-muted);
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-out-expo) 0.7s;
+}
+[data-study='snow-leopard'] .fs-type {
+  bottom: auto;
+  top: 20svh;
+}
+[data-study='bengal-tiger'] .fs-type {
+  text-align: center;
+  bottom: 38svh;
+}
+[data-study='bengal-tiger'] .fs-title {
+  margin-inline: auto;
+  font-size: clamp(2.6rem, 5vw, 5rem);
+  max-width: none;
+}
+[data-study='indian-rhinoceros'] .fs-title {
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+/* The frame's furniture. */
+.fs-hud > * {
+  position: absolute;
+  pointer-events: auto;
+}
+.fs-progress {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: clamp(1.25rem, 3.6svh, 2.4rem);
+  width: clamp(12rem, 20vw, 17rem);
+}
+.fs-progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 0.55rem;
+  color: var(--fs-ink);
+}
+.fs-progress-name {
+  transition: opacity 0.4s;
+}
+.fs-progress-line {
+  position: relative;
+  height: 16px;
+}
+.fs-progress-line svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.fs-progress-line .gl[data-role='survey'] {
+  --gl-stroke: var(--fs-faint);
+}
+.fs-progress-route {
+  --gl-stroke: var(--fs-line);
+}
+.fs-progress-route .gl-path {
+  transition: stroke-dashoffset 0.9s var(--ease-out-expo);
+}
+.fs-progress-line ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fs-progress-line li {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+}
+.fs-tick {
+  display: block;
+  width: 22px;
+  height: 22px;
+  position: relative;
+}
+.fs-tick::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 7px;
+  translate: -50% -50%;
+  background: var(--fs-faint);
+  transition:
+    height 0.4s var(--ease-out-expo),
+    background-color 0.4s;
+}
+.fs-tick.is-passed::before {
+  background: var(--fs-line);
+}
+.fs-tick.is-current::before {
+  height: 13px;
+  width: 1.5px;
+  background: var(--fs-ink);
+}
+.fs-tick:hover::before {
+  height: 13px;
+}
+
+.fs-hud-coord {
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(clamp(1.25rem, 3.6svh, 2.4rem) + 2.6rem);
+  margin: 0;
+  text-align: right;
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  color: var(--fs-muted);
+  pointer-events: none !important;
+}
+.fs-hud-coord span {
+  display: block;
+  color: var(--fs-ink);
+  margin-bottom: 0.2rem;
+}
+.fs-exit {
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: clamp(1.25rem, 3.6svh, 2.4rem);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  font-size: var(--text-small);
+  color: var(--fs-ink);
+}
+.fs-exit-rule {
+  width: 1.6rem;
+  height: 1px;
+  background: currentColor;
+  position: relative;
+  transition: width 0.6s var(--ease-out-expo);
+}
+.fs-exit-rule::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  rotate: 45deg;
+  transform-origin: 0 100%;
+  translate: 1px 0;
+}
+.fs-exit:hover .fs-exit-rule {
+  width: 2.8rem;
+}
+
+.fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud, .fs-band, .fs-ascent) {
+  opacity: 0 !important;
+  transition: opacity 0.45s;
+}
+
+/* ---------------------------------------------------------- chapters */
+
+.fs-ch {
+  position: relative;
+  min-height: 125svh;
+  display: flex;
+  padding-inline: clamp(1.25rem, 3.4vw, 3rem);
+}
+.fs-ch.is-long {
+  min-height: 165svh;
+}
+.fs-ch-inner {
+  position: sticky;
+  top: 22svh;
+  align-self: flex-start;
+  width: min(31rem, 100%);
+  pointer-events: auto;
+  opacity: 0;
+  translate: 0 1.6rem;
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    translate 1s var(--ease-out-expo);
+}
+.fs-ch.is-current .fs-ch-inner {
+  opacity: 1;
+  translate: 0 0;
+}
+/* A long chapter (a list, a map) is not pinned: it sits centred in its stretch of the page, so its
+   middle is on screen exactly when its moment in the world is, and the rest is read by scrolling. */
+.fs-ch.is-long .fs-ch-inner {
+  position: relative;
+  top: auto;
+  align-self: center;
+  padding-block: 12svh;
+}
+.fs-ch[data-align='right'] {
+  justify-content: flex-end;
+}
+.fs-ch[data-align='right'] .fs-ch-inner {
+  margin-right: clamp(0rem, 4vw, 4rem);
+}
+.fs-ch[data-align='centre'] {
+  justify-content: center;
+}
+.fs-ch[data-align='centre'] .fs-ch-inner {
+  width: min(40rem, 100%);
+}
+.fs-ch[data-align='low'] .fs-ch-inner {
+  top: 54svh;
+}
+.fs-ch[data-align='low-right'] {
+  justify-content: flex-end;
+}
+.fs-ch[data-align='low-right'] .fs-ch-inner,
+.fs-ch:first-child[data-align='low-right'] .fs-ch-inner {
+  top: 64svh;
+  margin-right: clamp(0rem, 4vw, 4rem);
+}
+.fs-ch:first-child .fs-ch-inner {
+  /* The first chapter shares the screen with the study's name, so it sits clear of it. */
+  top: 58svh;
+}
+.fs-ch:first-child[data-align='right'] .fs-ch-inner {
+  top: 26svh;
+}
+.fs-study.is-arrived .fs-ch:first-child .fs-ch-inner {
+  transition-delay: 0.9s;
+}
+.fs-ch-label {
+  margin: 0 0 1.4rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  color: var(--fs-ink);
+}
+.fs-ch-label::before {
+  content: '';
+  width: 1.8rem;
+  height: 1px;
+  background: var(--fs-line);
+}
+.fs-lede {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(1.35rem, 2.1vw, 1.9rem);
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+}
+.fs-body {
+  margin: 1rem 0 0;
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--fs-muted);
+  text-wrap: pretty;
+}
+.fs-note {
+  margin: 1.2rem 0 0;
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-size: var(--text-label);
+  line-height: 1.45;
+  color: var(--fs-faint);
+}
+.fs-note-rule {
+  flex: none;
+  width: 1.2rem;
+  border-top: 1px dashed var(--fs-line);
+  translate: 0 -0.25em;
+}
+.fs-study:not([data-status='ready']) .fs-note--gesture {
+  /* Without the world there is nothing to move. */
+  display: none;
+}
+.fs-credit {
+  margin-top: 1rem;
+  color: var(--fs-faint) !important;
+}
+.fs-list {
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--fs-faint);
+}
+.fs-list li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--fs-faint) 55%, transparent);
+  font-size: var(--text-small);
+  color: var(--fs-ink);
+}
+.fs-list--actions li {
+  align-items: baseline;
+  line-height: 1.45;
+}
+.fs-list--actions li::before {
+  content: '';
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  border: 1px solid var(--fs-line);
+  border-radius: 50%;
+  translate: 0 -0.05em;
+}
+.fs-programmes {
+  list-style: none;
+  margin: 1.2rem 0 0;
+  padding: 0;
+}
+.fs-programmes li {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  font-size: var(--text-small);
+  line-height: 1.4;
+}
+.fs-programme-year {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--fs-line);
+}
+.fs-programme-by {
+  display: block;
+  font-size: var(--text-micro);
+  color: var(--fs-faint);
+}
+.fs-localities {
+  list-style: none;
+  margin: 1.2rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--fs-faint);
+}
+.fs-localities li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--fs-faint) 55%, transparent);
+  font-size: var(--text-small);
+}
+.fs-localities li span:last-child {
+  flex: none;
+  font-size: var(--text-micro);
+  color: var(--fs-muted);
+}
+.fs-figure {
+  margin-top: 0.4rem;
+}
+.fs-figure-value {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+.fs-figure-label {
+  margin: 0.8rem 0 0;
+  color: var(--fs-ink);
+}
+.fs-figure-note {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-label);
+  color: var(--fs-faint);
+}
+.fs-figures {
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+}
+.fs-figures .fs-figure-value {
+  font-size: clamp(3rem, 6.4vw, 5.8rem);
+}
+.fs-status {
+  margin-bottom: 0.4rem;
+}
+.fs-status-line {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 300;
+}
+.fs-map {
+  margin-top: 1.4rem;
+  width: min(100%, 26rem);
+}
+.fs-sources {
+  margin-top: 2rem;
+}
+.fs-sources ul {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+.fs-sources li {
+  padding: 0.3rem 0;
+  font-size: var(--text-label);
+  color: var(--fs-faint);
+}
+.fs-sources a {
+  color: var(--fs-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--fs-faint);
+  text-underline-offset: 3px;
+}
+.fs-onward {
+  margin-top: 3rem;
+}
+.fs-next {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1.6rem 0;
+  border-top: 1px solid var(--fs-faint);
+  border-bottom: 1px solid var(--fs-faint);
+  color: var(--fs-ink);
+  position: relative;
+}
+.fs-next::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 1px;
+  width: 100%;
+  background: var(--fs-line);
+  transform: scaleX(0.12);
+  transform-origin: left;
+  transition: transform 1s var(--ease-out-expo);
+}
+.fs-next:hover::after,
+.fs-next:focus-visible::after {
+  transform: scaleX(1);
+}
+.fs-next-name {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.6vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+.fs-next-place {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: var(--text-small);
+  color: var(--fs-muted);
+}
+.fs-onward-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  margin-top: 1.4rem;
+  font-size: var(--text-small);
+}
+.fs-study .text-link {
+  color: var(--fs-ink);
+}
+
+/* ---------------------------------------------------------- instruments */
+
+.fs-band {
+  left: 50%;
+  bottom: calc(clamp(1.25rem, 3.6svh, 2.4rem) + 4.8rem);
+  translate: -50% 0;
+  width: min(34rem, calc(100vw - 2.5rem));
+  opacity: 0;
+  transition: opacity 0.7s var(--ease-out-expo);
+  pointer-events: none;
+}
+.fs-band.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.fs-study-stage .fs-band.is-on {
+  pointer-events: auto;
+}
+.fs-band,
+.fs-ascent {
+  position: absolute;
+  z-index: 4;
+}
+.fs-band-read {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.8rem;
+  font-size: var(--text-small);
+}
+.fs-band-read .tabular-nums {
+  font-size: var(--text-micro);
+  color: var(--fs-muted);
+}
+.fs-band-name {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+.fs-band-track {
+  position: relative;
+  height: 44px;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.fs-band-track:active {
+  cursor: grabbing;
+}
+.fs-band-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--fs-line);
+  opacity: 0.7;
+}
+.fs-band-stop {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--fs-line);
+  background: var(--fs-ground);
+  translate: -50% -50%;
+}
+.fs-band-stop.is-near {
+  background: var(--fs-line);
+}
+.fs-band-handle {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--fs-ink);
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+.fs-band-handle::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--fs-ink);
+}
+.fs-band-ends {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.2rem 0 0;
+  font-size: var(--text-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fs-faint);
+}
+
+.fs-ascent {
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 22svh;
+  height: 50svh;
+  width: 9rem;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-out-expo);
+}
+.fs-ascent.is-on {
+  opacity: 1;
+}
+.fs-ascent-scale {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: var(--fs-faint);
+}
+.fs-ascent-band {
+  position: absolute;
+  left: -3px;
+  width: 7px;
+  background: color-mix(in srgb, var(--fs-line) 45%, transparent);
+  border-top: 1px solid var(--fs-line);
+  border-bottom: 1px solid var(--fs-line);
+}
+.fs-ascent-tick {
+  position: absolute;
+  left: 0.9rem;
+  translate: 0 -50%;
+  font-size: var(--text-micro);
+  color: var(--fs-muted);
+  white-space: nowrap;
+}
+.fs-ascent-tick::before {
+  content: '';
+  position: absolute;
+  left: -0.9rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--fs-faint);
+}
+.fs-ascent-mark {
+  position: absolute;
+  left: -6px;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--fs-ink);
+  border-radius: 50%;
+  translate: 0 -50%;
+  transition: top 1.4s var(--ease-out-expo);
+}
+.fs-ascent-k {
+  position: absolute;
+  top: calc(100% + 1rem);
+  left: 0;
+  width: 12rem;
+  font-size: var(--text-micro);
+  color: var(--fs-faint);
+}
+
+/* ---------------------------------------------------------- narrow screens */
+
+@media (max-width: 900px) {
+  .fs-index-list {
+    top: auto;
+    translate: none;
+    left: clamp(1.25rem, 3.4vw, 3rem);
+    right: clamp(1.25rem, 3.4vw, 3rem);
+    bottom: 1rem;
+    width: auto;
+  }
+  .fs-index-list ol {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 0;
+  }
+  .fs-list-item {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 0.7rem 0 0.8rem;
+    border-bottom: 1px solid var(--fs-faint);
+    min-height: 44px;
+  }
+  .fs-list-name,
+  .fs-list-verb {
+    display: none;
+  }
+  .fs-comp :is(.fs-comp-n, .fs-comp-name, .fs-comp-place, .fs-comp-meta, .fs-comp-verb) {
+    left: clamp(1.25rem, 3.4vw, 3rem) !important;
+    right: clamp(1.25rem, 3.4vw, 3rem) !important;
+    translate: none !important;
+    text-align: left !important;
+    writing-mode: horizontal-tb !important;
+    transform: none;
+    white-space: normal !important;
+  }
+  .fs-comp-name {
+    top: auto !important;
+    bottom: 30svh !important;
+    font-size: clamp(2.8rem, 13vw, 5rem) !important;
+    max-width: none !important;
+  }
+  .fs-comp--03 .fs-comp-name .fs-word {
+    display: inline-block;
+    margin-left: 0;
+  }
+  .fs-comp-n {
+    top: auto !important;
+    bottom: calc(30svh + 2 * 0.9 * clamp(2.8rem, 13vw, 5rem) + 1.4rem) !important;
+  }
+  .fs-comp-place {
+    top: auto !important;
+    bottom: calc(30svh - 2.4rem) !important;
+  }
+  .fs-comp-meta {
+    top: auto !important;
+    bottom: 12svh !important;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .fs-comp-verb {
+    top: 22svh !important;
+    bottom: auto !important;
+  }
+  .fs-comp--04 .fs-comp-name {
+    opacity: 0.75;
+  }
+  .fs-comp--02.is-active .fs-comp-verb {
+    transform: none;
+  }
+  /* The count at the top already says which study this is. */
+  .fs-comp-n {
+    display: none;
+  }
+  .fs-band {
+    top: 5.25rem;
+    bottom: auto;
+  }
+  .fs-scrim {
+    background: linear-gradient(0deg, var(--fs-scrim) 0%, transparent 70%);
+  }
+  .fs-ch {
+    min-height: 115svh;
+  }
+  .fs-ch.is-long {
+    min-height: 150svh;
+  }
+  .fs-ch-inner,
+  .fs-ch[data-align] .fs-ch-inner {
+    width: 100%;
+    margin: 0;
+    top: 34svh;
+  }
+  .fs-ch[data-align='low'] .fs-ch-inner {
+    top: 52svh;
+  }
+  /* The first chapter goes above the study's name, which sits low on a narrow screen. */
+  .fs-ch:first-child .fs-ch-inner,
+  .fs-ch:first-child[data-align] .fs-ch-inner {
+    top: 13svh;
+  }
+  [data-study='snow-leopard'] .fs-type {
+    top: auto;
+    bottom: 15svh;
+  }
+  .fs-ch.is-long .fs-ch-inner {
+    padding-block: 8svh;
+  }
+  .fs-ch-inner {
+    padding: 1rem 0 1.25rem;
+  }
+  .fs-ch-inner::before {
+    /* On a phone the words sit over the world: give them a ground. */
+    content: '';
+    position: absolute;
+    inset: -1rem -1.25rem;
+    z-index: -1;
+    background: linear-gradient(180deg, transparent, var(--fs-scrim) 18%, var(--fs-scrim) 82%, transparent);
+  }
+  .fs-type-place {
+    display: none;
+  }
+  .fs-ascent {
+    left: auto;
+    right: 1.25rem;
+    width: 5.5rem;
+    top: 16svh;
+    height: 36svh;
+  }
+  .fs-ascent-k {
+    display: none;
+  }
+  .fs-hud-coord {
+    display: none;
+  }
+  .fs-progress {
+    width: calc(100vw - 9.5rem);
+  }
+  .fs-figures {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  [data-study='bengal-tiger'] .fs-type {
+    bottom: 30svh;
+  }
+}
+
+/* ---------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-word > span,
+  .fs-comp *,
+  .fs-ch-inner,
+  .fs-type,
+  .fs-ascent-mark {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  .fs-flat-img {
+    animation: none;
+  }
+}
