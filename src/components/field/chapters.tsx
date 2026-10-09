@@ -254,17 +254,16 @@ function Bustard({ study, current, next, onNext, onExit }: ChapterProps) {
     <>
       <Chapter i={0} {...c} align="right">
         <Lede>{s.summary}</Lede>
-        <Note>The ground is procedural: an impression of the Thar, not a terrain model.</Note>
+        <Note>The grassland is drawn: an impression of the Thar, not a terrain model. The birds are the record&rsquo;s photograph, set into it.</Note>
       </Chapter>
       <Chapter i={1} {...c} hold>
         <Lede>{firstSentence(s.indianDistribution)}</Lede>
         <Body>{s.habitatNote}</Body>
         <Localities s={s} />
-        <Note>The survey line stands for the record&rsquo;s range in words; it is not a mapped boundary.</Note>
       </Chapter>
       <Chapter i={2} {...c} align="right">
         <Lede>{firstSentence(s.threatNote)}</Lede>
-        <Note>The power line is schematic: the dataset records the threat for the species, not the route of any line.</Note>
+        <Note>The record names this threat for the species; it does not give the route of any line, so none is drawn.</Note>
       </Chapter>
       <Chapter i={3} {...c} align="low">
         <Body>{s.image.alt}</Body>

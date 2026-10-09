@@ -14,8 +14,7 @@ import { SPECIES_BY_ID } from '../data/species';
  * The verb is the study's interaction grammar, and the word the instrument
  * carries over it:
  *
- *   TRACE      the bustard: a survey line laid across the Thar that becomes
- *              a power line, then a protected route
+ *   TRACE      the bustard: the Thar's arid grassland, followed on foot
  *   ASCEND     the snow leopard: the camera climbs through a mountain drawn
  *              as contours
  *   DRAG       the river dolphin: the hand moves the water, and drags the
@@ -56,7 +55,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
     verb: 'Trace',
     env: 'thar',
     place: 'The Thar · Rajasthan',
-    stages: [s('Thar'), s('Range'), s('Power line'), s('Photograph'), s('Evidence'), s('Protection'), s('Return')],
+    stages: [s('Thar'), s('Range'), s('Threat'), s('Photograph'), s('Evidence'), s('Protection'), s('Return')],
     sweep: [1, 0.15],
   },
   {
@@ -120,7 +119,7 @@ export function firstSentence(text: string): string {
  */
 export const MISSING_CONTENT: Record<string, string[]> = {
   'great-indian-bustard': [
-    'The alignment of any transmission line in the Thar (the line is drawn as a labelled schematic).',
+    'The alignment of any transmission line in the Thar (none is drawn; the threat is in the words only).',
     'A dated population series (the record says only "low hundreds").',
   ],
   'snow-leopard': ['A terrain model of a real valley (the mountain is procedural and labelled so).'],

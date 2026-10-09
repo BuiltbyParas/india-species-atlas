@@ -28,6 +28,18 @@ export function dunes(x: number, z: number): number {
   return profile * 7.5 * field + floor;
 }
 
+/**
+ * The Thar's arid grassland: a gravelly plain that swells a few metres over
+ * hundreds, with low sand hummocks gathered where scrub holds them. No
+ * crests, no slip faces — the open ground the bustard walks.
+ */
+export function grassland(x: number, z: number): number {
+  const swell = (fbm(x * 0.0045 + 7, z * 0.0045, 3, 21) - 0.5) * 7;
+  const roll = (fbm(x * 0.018, z * 0.018, 3, 22) - 0.5) * 1.6;
+  const hum = Math.pow(Math.max(0, fbm(x * 0.05 + 2, z * 0.05, 2, 23) - 0.52) * 4, 1.6) * 0.9;
+  return swell + roll + hum;
+}
+
 export const MOUNTAIN_MAX = 92;
 
 /** The high Himalaya: a valley in front, ranges rising behind it. */
@@ -44,7 +56,7 @@ export function floodplain(x: number, z: number): number {
   return (fbm(x * 0.012, z * 0.012, 3, 6) - 0.5) * 3;
 }
 
-export const GROUNDS = { dunes, mountains, floodplain } as const;
+export const GROUNDS = { dunes, grassland, mountains, floodplain } as const;
 export type GroundName = keyof typeof GROUNDS;
 
 export interface GridSpec {
