@@ -65,8 +65,14 @@
   --fs-scrim: rgba(226, 236, 245, 0.72);
 }
 [data-study='ganges-river-dolphin'] {
-  --fs-line: #7ea3b5;
-  --fs-ground: #0f2a3c;
+  --fs-line: #4a6670;
+  --fs-ground: #d9dccb;
+}
+[data-tone='light'][data-study='ganges-river-dolphin'] {
+  --fs-ink: #16221f;
+  --fs-muted: rgba(22, 34, 31, 0.76);
+  --fs-faint: rgba(22, 34, 31, 0.72);
+  --fs-scrim: rgba(226, 230, 218, 0.74);
 }
 [data-study='bengal-tiger'] {
   --fs-line: #86a593;
@@ -794,7 +800,7 @@
   width: 2.8rem;
 }
 
-.fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud, .fs-band) {
+.fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud) {
   opacity: 0 !important;
   transition: opacity 0.45s;
 }
@@ -1041,6 +1047,12 @@
 .fs-status {
   margin-bottom: 0.4rem;
 }
+.fs-status .status-indicator .text-canvas {
+  color: var(--fs-ink);
+}
+.fs-status .status-indicator [class*='text-canvas/'] {
+  color: var(--fs-muted);
+}
 .fs-status-line {
   margin: 0.6rem 0 0;
   font-family: var(--font-serif);
@@ -1123,100 +1135,6 @@
 }
 .fs-study .text-link {
   color: var(--fs-ink);
-}
-
-/* ---------------------------------------------------------- instruments */
-
-.fs-band {
-  left: 50%;
-  bottom: calc(clamp(1.25rem, 3.6svh, 2.4rem) + 4.8rem);
-  translate: -50% 0;
-  width: min(34rem, calc(100vw - 2.5rem));
-  opacity: 0;
-  transition: opacity 0.7s var(--ease-out-expo);
-  pointer-events: none;
-}
-.fs-band.is-on {
-  opacity: 1;
-  pointer-events: auto;
-}
-.fs-study-stage .fs-band.is-on {
-  pointer-events: auto;
-}
-.fs-band {
-  position: absolute;
-  z-index: 4;
-}
-.fs-band-read {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 0 0 0.8rem;
-  font-size: var(--text-small);
-}
-.fs-band-read .tabular-nums {
-  font-size: var(--text-micro);
-  color: var(--fs-muted);
-}
-.fs-band-name {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-}
-.fs-band-track {
-  position: relative;
-  height: 44px;
-  touch-action: pan-y;
-  cursor: grab;
-}
-.fs-band-track:active {
-  cursor: grabbing;
-}
-.fs-band-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  background: var(--fs-line);
-  opacity: 0.7;
-}
-.fs-band-stop {
-  position: absolute;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid var(--fs-line);
-  background: var(--fs-ground);
-  translate: -50% -50%;
-}
-.fs-band-stop.is-near {
-  background: var(--fs-line);
-}
-.fs-band-handle {
-  position: absolute;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--fs-ink);
-  border-radius: 50%;
-  translate: -50% -50%;
-}
-.fs-band-handle::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  background: var(--fs-ink);
-}
-.fs-band-ends {
-  display: flex;
-  justify-content: space-between;
-  margin: 0.2rem 0 0;
-  font-size: var(--text-micro);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--fs-faint);
 }
 
 /* A laptop's list is narrow: the names keep the room, the verbs go (each study's composition says its verb). */
@@ -1302,10 +1220,6 @@
   /* The count at the top already says which study this is. */
   .fs-comp-n {
     display: none;
-  }
-  .fs-band {
-    top: 5.25rem;
-    bottom: auto;
   }
   .fs-scrim {
     background: linear-gradient(0deg, var(--fs-scrim) 0%, transparent 70%);

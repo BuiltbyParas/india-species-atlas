@@ -11,7 +11,7 @@ import { useFieldStage } from '../components/field/useFieldStage';
 import { exitStudy, nextStudy, releaseOnArrival } from '../components/field/fieldNav';
 import { FlatGround } from '../components/field/FieldStudiesIndex';
 import { StudyProgress } from '../components/field/StudyProgress';
-import { StudyChapters, StudyInstrument } from '../components/field/chapters';
+import { StudyChapters } from '../components/field/chapters';
 import { NotFoundPage } from './NotFoundPage';
 
 /**
@@ -162,7 +162,7 @@ function Study({ study }: { study: FieldStudy }) {
       ref={articleRef}
       className={cn('fs-study', leaving && 'is-leaving', arrived && 'is-arrived')}
       data-study={study.id}
-      data-tone={study.id === 'great-indian-bustard' || study.id === 'snow-leopard' ? 'light' : 'dark'}
+      data-tone={study.id === 'great-indian-bustard' || study.id === 'snow-leopard' || study.id === 'ganges-river-dolphin' ? 'light' : 'dark'}
       data-env={study.env}
       data-current={current}
       data-status={status}
@@ -190,7 +190,6 @@ function Study({ study }: { study: FieldStudy }) {
           </p>
         </div>
 
-        <StudyInstrument study={study} current={current} stage={stage} />
 
         <p className="sr-only" aria-live="polite">
           Chapter {current + 1} of {N}: {stageLabel}

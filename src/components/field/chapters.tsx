@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { FieldStudy } from '../../content/fieldStudies';
 import { firstSentence } from '../../content/fieldStudies';
@@ -13,7 +13,6 @@ import { PhotoCredit } from '../ui/PhotoCredit';
 import { SpeciesMap } from '../cinema/SpeciesMap';
 import { PHASE_VARS, setVars, type Phase } from '../cinema/SpeciesScene';
 import { StatusIndicator } from '../cinema/StatusIndicator';
-import type { FieldStage } from '../../world/field/stage';
 import { approximateFigure, habitatBand, populationFigures, sentenceWith } from './studyFacts';
 
 /**
@@ -342,15 +341,15 @@ function Dolphin({ study, current, next, onNext, onExit }: ChapterProps) {
     <>
       <Chapter i={0} {...c} align="right">
         <Lede>{s.summary}</Lede>
-        <Note gesture>Move the hand through the water; press and drag to push it.</Note>
+        <Note>The river, its banks and sandbars are drawn, an impression of a lowland river and not of any reach. The dolphin is the record’s photograph.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
       </Chapter>
       <Chapter i={2} {...c} hold>
         <Lede>{firstSentence(s.indianDistribution)}</Lede>
-        <Body>Drag along the band to move between the localities the record gives, west to east.</Body>
-        <Note>The thread joins recorded localities. It is not the course of the river.</Note>
+        <Localities s={s} />
+        <Note>These are the localities the record gives. The river drawn behind them is not their course.</Note>
       </Chapter>
       <Chapter i={3} {...c} align="right">
         <Lede>{sentenceWith(s, 'echolocation', ['description']) ?? s.description}</Lede>
@@ -360,7 +359,7 @@ function Dolphin({ study, current, next, onNext, onExit }: ChapterProps) {
       <Chapter i={4} {...c} hold>
         <Lede>{firstSentence(s.threatNote)}</Lede>
         <Threats s={s} />
-        <Note>The barrages are marked schematically: the record names dams and barrages, not their sites.</Note>
+        <Note>The record names dams and barrages as a threat, not their sites, so none is drawn.</Note>
       </Chapter>
       <Chapter i={5} {...c} align="right" hold>
         <Status s={s} />
@@ -467,96 +466,5 @@ function Rhino({ study, current, next, onNext, onExit }: ChapterProps) {
         <Onward study={study} next={next} onNext={onNext} onExit={onExit} />
       </Chapter>
     </>
-  );
-}
-
-/* ---------------------------------------------------- study instruments */
-
-/**
- * The one study-specific control in the frame: the river's drag band. The
- * others carry their gesture in the world itself
- * (the light, the line, the form).
- */
-export function StudyInstrument({ study, current, stage }: { study: FieldStudy; current: number; stage: FieldStage | null }) {
-  if (study.id === 'ganges-river-dolphin') return <RiverBand study={study} on={current === 2} stage={stage} />;
-  return null;
-}
-
-/**
- * DRAG: the river's localities, west to east, on a band the hand drags.
- * The value is continuous (the world moves the camera along the thread);
- * the readout names the nearest locality. Keyboard: arrows step between
- * localities. Touch: a horizontal drag on the band; the page still scrolls
- * vertically (`touch-action: pan-y`).
- */
-function RiverBand({ study, on, stage }: { study: FieldStudy; on: boolean; stage: FieldStage | null }) {
-  const points = useMemo(() => [...study.species.distributionPoints].sort((a, b) => a.lng - b.lng), [study]);
-  const [value, setValue] = useState(0);
-  const bandRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef(false);
-  const n = points.length;
-  const nearest = Math.round(value * (n - 1));
-  const p = points[nearest];
-
-  useEffect(() => {
-    stage?.set({ drag: value });
-  }, [stage, value]);
-
-  const fromEvent = (clientX: number) => {
-    const r = bandRef.current?.getBoundingClientRect();
-    if (!r) return;
-    setValue(Math.min(1, Math.max(0, (clientX - r.left) / r.width)));
-  };
-
-  return (
-    <div className={cn('fs-band', on && 'is-on')} aria-hidden={!on}>
-      <p className="fs-band-read">
-        <span className="fs-band-name">{p.label}</span>
-        <span className="tabular-nums">
-          {formatDeg(p.lat, 'lat')} {formatDeg(p.lng, 'lng')}
-        </span>
-      </p>
-      <div
-        ref={bandRef}
-        className="fs-band-track"
-        role="slider"
-        tabIndex={on ? 0 : -1}
-        aria-label="Recorded localities, west to east"
-        aria-valuemin={1}
-        aria-valuemax={n}
-        aria-valuenow={nearest + 1}
-        aria-valuetext={p.label}
-        data-cursor-drag
-        data-cursor-area="Drag"
-        onPointerDown={(e) => {
-          dragging.current = true;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          fromEvent(e.clientX);
-        }}
-        onPointerMove={(e) => dragging.current && fromEvent(e.clientX)}
-        onPointerUp={() => {
-          dragging.current = false;
-          setValue((v) => Math.round(v * (n - 1)) / (n - 1));
-        }}
-        onPointerCancel={() => (dragging.current = false)}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') setValue(Math.min(n - 1, nearest + 1) / (n - 1));
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') setValue(Math.max(0, nearest - 1) / (n - 1));
-          else return;
-          e.preventDefault();
-        }}
-      >
-        <span className="fs-band-line" />
-        {points.map((q, i) => (
-          <span key={q.label} className={cn('fs-band-stop', i === nearest && 'is-near')} style={{ left: `${(i / (n - 1)) * 100}%` }} />
-        ))}
-        <span className="fs-band-handle" style={{ left: `${value * 100}%` }} />
-      </div>
-      <p className="fs-band-ends" aria-hidden="true">
-        <span>West</span>
-        <span>Drag</span>
-        <span>East</span>
-      </p>
-    </div>
   );
 }

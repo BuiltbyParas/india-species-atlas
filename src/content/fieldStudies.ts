@@ -17,8 +17,8 @@ import { SPECIES_BY_ID } from '../data/species';
  *   TRACE      the bustard: the Thar's arid grassland, followed on foot
  *   ASCEND     the snow leopard: a drawn Himalayan valley and ranges, the
  *              record's photograph on a snowy ledge
- *   DRAG       the river dolphin: the hand moves the water, and drags the
- *              study along the recorded localities
+ *   DRAG       the river dolphin: a drawn lowland river with banks and
+ *              sandbars, the record's photograph standing in the channel
  *   REVEAL     the tiger: a dark forest, a light the hand carries
  *   TRANSFORM  the rhinoceros: a heavy form that becomes its own population,
  *              one point per animal
@@ -73,7 +73,7 @@ const DEFS: Array<Omit<FieldStudy, 'species' | 'n'> & { speciesId: string }> = [
     verb: 'Drag',
     env: 'river',
     place: 'The Ganga and the Brahmaputra',
-    stages: [s('Source'), s('Flow'), s('Geography'), s('Species'), s('Pressure'), s('Conservation'), s('Flow back')],
+    stages: [s('The river'), s('Habitat'), s('Distribution'), s('The dolphin'), s('Pressure'), s('Conservation'), s('Why it matters')],
     sweep: [1, -0.2],
   },
   {
@@ -124,8 +124,8 @@ export const MISSING_CONTENT: Record<string, string[]> = {
   ],
   'snow-leopard': ['A terrain model of a real valley (the mountains are drawn and labelled so).'],
   'ganges-river-dolphin': [
-    'River centre-lines (the thread joins recorded localities, not the river’s course).',
-    'The sites of dams and barrages (marked schematically).',
+    'River centre-lines (the river drawn is an impression, not the course of the Ganga or the Brahmaputra).',
+    'The sites of dams and barrages (none is drawn).',
   ],
   'bengal-tiger': ['Earlier national estimates, for a sourced recovery series (only the 2022 estimate is in the record).'],
   'indian-rhinoceros': ['The number of animals translocated under IRV2020, and the population split by site beyond "more than two-thirds in Kaziranga".'],

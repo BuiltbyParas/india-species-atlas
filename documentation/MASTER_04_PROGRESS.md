@@ -259,6 +259,37 @@ Known limitations after this checkpoint:
 
 **Environment lesson (browser checks).** Headless Chromium failed (`ERR_INSUFFICIENT_RESOURCES`, lost WebGL contexts, "Page crashed", truncated screenshots) once `/tmp` was 80% full: `/tmp` is a RAM-backed tmpfs and holds about 2.2 GB of earlier sessions' scratch folders. What worked: run the browser with `TMPDIR` on disk (`TMPDIR=$HOME/.cache/ispa-tmp node cap.mjs …`) and write screenshots to disk (`~/.cache/…`), not to `/tmp`. Nothing in `/tmp` belonging to earlier sessions was deleted.
 
+### 8.3 Checkpoint 3: Ganges River Dolphin (a lowland river) — done
+
+What changed (files):
+
+| File | Change |
+|---|---|
+| `src/world/field/worlds/river.ts` | Rewritten. Removed: the ripple simulation and the hand-writes-into-the-water gesture, the river line, the dashed barrages, the silt particles, the thread and rings of localities, the map lines, the photograph refracted under the water, and the black ground. Added: a drawn lowland river (a meandering channel of changing width) with a long gentle sand beach and a green levee on the near side, a steeper layered-silt cut bank and a tree line on the far side, six sandbars in the channel, and open floodplain behind; water shaded by the depth of the bed beneath each point (pale and sandy where it shoals, darker olive where deep; turbid, grey-green), reflecting a soft sky and the dark far bank, with fine current streaks and a quiet low-sun glint; reed and grass at the water's edge, on the bars and on the levee (7,000 / 4,600 / 2,600); 560 / 400 / 230 trees; a hazy sky with soft layered cloud; the light lowers and warms as the study closes; a new camera path (low on the water, a wider habitat view, the whole bend from above for the record's localities, in close, wide, and a pull-back). The dolphin is a photograph panel that turns to face the camera; its waterline is the drawn surface, the part below is hidden by the water, and a faint ring spreads from it. |
+| `src/assets/field/ganges-river-dolphin-habitat.webp` | New (126 KB, 1700 × 730): the record's photograph cropped to the animal and its water. No background-removal model was run. |
+| `src/assets/field/CREDITS.md` | Row for the new asset (Anant.wildlife, CC BY 4.0). |
+| `src/components/field/chapters.tsx` | Dolphin chapters: the gesture note, the drag band text and the schematic-barrage note replaced by notes that the river is drawn, that the thread is gone and the localities are listed, and that no barrage is drawn. The `RiverBand` drag control and `StudyInstrument` removed. |
+| `src/pages/FieldStudyPage.tsx`, `src/components/field/FieldStudiesIndex.tsx` | The dolphin uses the light tone. `StudyInstrument` no longer rendered. |
+| `src/components/field/field.css` | River colours for a light tone; the unused `.fs-band*` rules removed; the IUCN status mark takes the study's ink (it was pale on a light ground, illegible on this world; this also helps the bustard and snow leopard, whose scenes are untouched). |
+| `src/content/fieldStudies.ts` | Chapter labels (The river, Habitat, Distribution, The dolphin, Pressure, Conservation, Why it matters); header comment and missing-content note updated. |
+
+Validation:
+
+- `npx tsc -b`: pass. `npx oxlint src/world/field src/components/field src/content src/pages`: pass (the one existing warning in `SpeciesWorldPage.tsx`, not touched). `npm run build`: pass.
+- Sequential headless Chromium pass at 1280 × 800 (TMPDIR and screenshots on disk; 2.1 GB available beforehand), all seven chapters plus the page end, repeated after each fix: **0 console errors, 0 failed requests**, no lost WebGL context.
+- Reviewed as screenshots: the dolphin is recognisable and whole in chapters 1, 2, 4, 5, 6 and 7 (small by design in 2, 6 and 7); hidden by design in chapter 3, the aerial view. The title in chapter 1 sits below the dolphin, and the chapter text sits beside it in every frame. The water has depth colour, shoaling over the bars and a reflected sky; banks, bars and a tree line give three planes; the scene does not resemble the grassland or the mountains.
+- Defects found in the first renders and fixed: a shader reserved word (`patch`); trees that read as boulders (smaller, many more, diagonal striping removed); sand too bright and cream; a pale halo around the photograph (tighter oval; the photograph's own water is recoloured to the river's, keyed on a blurred copy so the animal is not speckled); the title over the dolphin; the dolphin cut by the screen edge; the last chapter's text covering the dolphin; the IUCN mark unreadable.
+
+Known limitations after this checkpoint:
+
+- The dolphin is a **photograph panel, not a cut-out**. A faint lighter patch of the picture's water is still visible around it, most in the close chapter. Seen from the side the billboard turns only up to about 70°, so the animal is slightly rotated in the wide shots; from above the panel fades out.
+- The photograph is one pose (the head and back above water). It is the record's only picture.
+- The trees are soft, smooth blobs of leaf noise; the reeds are flat blades. At the aerial height the trees are dots.
+- The water has no refraction, no seabed texture and no shoreline foam; the far bank's silt layers are subtle at distance. There is no cast shadow.
+- Chapters 3 and 5 are "hold" chapters: their lists overlap the progress bar at 1280 × 800 (the Master 03 layout problem noted in 8.1, left for the navigation task).
+- The verb label "DRAG" and the index preview still describe the old gesture, and the dolphin's index preview was not re-checked. Both are changed together in the copy task.
+- Only 1280 × 800 was checked. Phone, tablet, reduced motion, the no-WebGL fallback and the index preview were not tested for this world. No performance measurement was taken. The two lower quality tiers were not rendered.
+
 ## 9. The exact next task
 
-**Checkpoint 3: Ganges River Dolphin (river).** Same method. The river world is an abstract blue ribbon in black with a blurred photograph rectangle under the water. Give it banks, sandbars (char), a land and vegetation strip, depth colour and reflections; the dolphin surfaces in the channel (a habitat panel from `exports/master04-sources/originals/ganges-river-dolphin.jpg`, or the record's photograph, edges given to the water); remove the glowing threads and markers that do not earn their place, and the drag band if it does not (its copy and its `RiverBand` instrument are in `chapters.tsx`). Use the light tone if the world is bright. Validate with `tsc`, `oxlint`, the build and one sequential screenshot pass (with `TMPDIR` on disk), update this document and commit. Then the tiger, then the rhino, then the navigation and end-of-study state.
+**Checkpoint 4: Bengal Tiger (central Indian forest).** Same method, and the same safe execution: one task at a time, no segmentation model, one sequential screenshot pass with `TMPDIR` on disk. The forest is mostly black with dark cylinders and a lantern. Give it ambient dawn or moonlit light so the bark has form, fewer and more varied trunks clear of the subject, undergrowth and leaf litter, and a clear key light on the tiger (the record's photograph as a habitat panel, or the recovered `exports/master04-sources/masks/bengal-tiger-isnet.png` if it shows well). Remove the lantern mechanic. Chapter 3 ("1973") keeps the tiger in view. Validate, update this document and commit. Then the rhino, then the navigation and end-of-study state.
