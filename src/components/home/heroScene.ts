@@ -138,7 +138,7 @@ const STEM = 0.115;
  * Distance is interpolated geometrically rather than linearly, so the approach
  * feels like a constant rate of descent instead of racing in and then crawling.
  */
-const START_DISTANCE = 24;
+const START_DISTANCE = 19;
 const END_DISTANCE = 2.35;
 const START_PITCH = 1.24;
 const END_PITCH = 0.26;
@@ -398,7 +398,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   /* ----------------------------------------------------------- stars & motes */
 
   const random = seededRandom(20260906);
-  const STAR_COUNT = particleBudget(1400);
+  // A sparse, dim sky: enough to set the night, not a glitter of points competing with the relief.
+  const STAR_COUNT = particleBudget(520);
   const starPositions = new Float32Array(STAR_COUNT * 3);
   const starSizes = new Float32Array(STAR_COUNT);
   const starAlphas = new Float32Array(STAR_COUNT);
@@ -411,8 +412,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     starPositions[i * 3] = r * s * Math.cos(theta);
     starPositions[i * 3 + 1] = r * s * Math.sin(theta);
     starPositions[i * 3 + 2] = r * u;
-    starSizes[i] = 1.5 + random() * 2.9;
-    starAlphas[i] = 0.35 + random() * 0.65;
+    starSizes[i] = 1.2 + random() * 2.2;
+    starAlphas[i] = 0.18 + random() * 0.42;
   }
   const stars = makePointCloud(starPositions, starSizes, starAlphas, '#cfe0ff', dpr);
   scene.add(stars.points);
@@ -822,7 +823,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     rightVector.crossVectors(forward, camera.up).normalize();
     if (aspect > 1.15) {
       // Wide screens put the copy beside the relief, so slide it right.
-      const shift = lerp(0.4, 0.2, j) * halfHeightAtTarget * aspect;
+      const shift = lerp(0.46, 0.2, j) * halfHeightAtTarget * aspect;
       camera.position.addScaledVector(rightVector, -shift);
       lookTarget.addScaledVector(rightVector, -shift);
     } else {

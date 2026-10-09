@@ -10,6 +10,7 @@ import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { openMedia } from '../../interaction/media';
 import { FILM, FILM_RUNTIME } from '../../content/film';
+import { FIELD_STUDIES } from '../../content/fieldStudies';
 
 const LOCALITY_COUNT = SPECIES.reduce((n, s) => n + s.distributionPoints.length, 0);
 const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => e.publisher)))];
@@ -22,7 +23,7 @@ const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => 
 const ITEMS = [
   {
     to: '/',
-    label: 'Atlas',
+    label: 'Home',
     figure: 'The documentary',
     strip: ['The map', 'The species', 'The selection', 'Fragmentation', 'Protection'],
   },
@@ -31,6 +32,12 @@ const ITEMS = [
     label: 'Species',
     figure: `${SPECIES.length} species`,
     strip: SPECIES.map((s) => s.commonName),
+  },
+  {
+    to: '/#field-studies',
+    label: 'Field studies',
+    figure: `${FIELD_STUDIES.length} worlds`,
+    strip: FIELD_STUDIES.map((f) => `${f.verb} · ${f.species.commonName}`),
   },
   {
     to: '/atlas',
@@ -65,6 +72,7 @@ const SECONDARY = [
 ];
 
 function isActive(pathname: string, search: string, to: string) {
+  if (to === '/#field-studies') return pathname.startsWith('/field/');
   const [path, query] = to.split('?');
   if (query) return pathname === path && search.includes(query);
   if (path === '/atlas') return pathname === '/atlas' && !search.includes('mode=threats');
@@ -81,19 +89,19 @@ function isActive(pathname: string, search: string, to: string) {
  * gesture as running a finger along a line on a map.
  */
 export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const { openRandom } = useSpeciesProfile();
   const geo = useIndiaGeo();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on navigation.
-  const lastPath = useRef(pathname + search);
+  const lastPath = useRef(pathname + search + hash);
   useEffect(() => {
-    if (lastPath.current !== pathname + search) {
-      lastPath.current = pathname + search;
+    if (lastPath.current !== pathname + search + hash) {
+      lastPath.current = pathname + search + hash;
       onClose();
     }
-  }, [pathname, search, onClose]);
+  }, [pathname, search, hash, onClose]);
 
   // Keyboard: Escape closes, Tab stays inside, first link takes focus.
   useEffect(() => {

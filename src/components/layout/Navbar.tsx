@@ -8,6 +8,18 @@ import { FlowingMenu } from './FlowingMenu';
 import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
+ * The four destinations a first-time visitor is looking for, always in view on
+ * a wide screen. The menu still holds everything (and is the only navigation
+ * on a phone, where these would crowd the wordmark).
+ */
+const PRIMARY = [
+  { to: '/atlas', label: 'Map' },
+  { to: '/species', label: 'Species' },
+  { to: '/#field-studies', label: 'Field studies' },
+  { to: '/about', label: 'About' },
+] as const;
+
+/**
  * The site header: a wordmark, the running title of the chapter on screen,
  * and the menu. On the documentary page it floats over the film; on the
  * working pages it is a quiet sticky bar, so the map and tables keep their
@@ -63,7 +75,7 @@ export function Navbar() {
           </Link>
 
           {home && (
-            <p className="chapter-title hidden text-small text-canvas/60 md:block" aria-live="polite">
+            <p className="chapter-title hidden text-small text-canvas/60 md:block lg:hidden xl:block" aria-live="polite">
               <span className={cn('chapter-title-inner', chapter && 'is-shown')} key={chapter?.index ?? -1}>
                 {chapter ? (
                   <>
@@ -76,7 +88,7 @@ export function Navbar() {
             </p>
           )}
           {page && (
-            <p className="chapter-title hidden text-small text-canvas/60 md:block">
+            <p className="chapter-title hidden text-small text-canvas/60 md:block lg:hidden xl:block">
               <span className="chapter-title-inner is-shown" key={pathname}>
                 <span className="text-canvas/40">{page.eyebrow}</span>
                 <span className="chapter-title-rule" aria-hidden="true" />
@@ -85,6 +97,22 @@ export function Navbar() {
             </p>
           )}
 
+          <div className="flex items-center gap-8 xl:gap-10">
+            <nav aria-label="Primary" className="hidden lg:block">
+              <ul className="primary-nav">
+                {PRIMARY.map((l) => {
+                  const here =
+                    l.to === '/#field-studies' ? pathname.startsWith('/field/') : pathname === l.to || pathname.startsWith(`${l.to}/`);
+                  return (
+                    <li key={l.to}>
+                      <Link to={l.to} className="primary-nav-link" aria-current={here ? 'page' : undefined}>
+                        {l.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
           <button
             type="button"
             className="menu-button"
@@ -101,6 +129,7 @@ export function Navbar() {
               <span />
             </span>
           </button>
+          </div>
         </div>
       </header>
       <FlowingMenu open={open} onClose={close} />

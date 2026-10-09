@@ -235,6 +235,10 @@ export function CustomCursor() {
     window.addEventListener('atlas:navigation:start', onScroll);
     window.addEventListener('atlas:navigation:end', onScroll);
     const offScroll = subscribeScroll(onScroll);
+    // So does the cinema opening over it, or folding away: never keep a stale word ("Play") over the film.
+    const later = () => window.setTimeout(recheck, 480);
+    const offMediaOpen = on('media:open', later);
+    const offMediaClose = on('media:close', later);
     window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('pointerup', onUp, { passive: true });
     return () => {
@@ -249,6 +253,8 @@ export function CustomCursor() {
       window.removeEventListener('atlas:navigation:start', onScroll);
       window.removeEventListener('atlas:navigation:end', onScroll);
       offScroll();
+      offMediaOpen();
+      offMediaClose();
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
     };

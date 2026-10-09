@@ -9,16 +9,19 @@ import { canRender3D } from '../../utils/canRender3D';
 import { GeoLine } from '../../geo/line/GeoLine';
 
 /**
- * The opening title sequence — about five seconds, once per session.
+ * The opening title sequence — under three seconds, once per session.
  *
- *   0.2 s  a survey mark at the middle of the sheet, with its coordinates
- *   0.4 s  the survey line is ruled through it, edge to edge
- *   0.9 s  the country's extent is written at the line's ends
- *   1.0 s  the state boundaries draw in until they resolve into India
- *   3.0 s  the route line is drawn by its nib through the five species the
+ *   0.1 s  a survey mark at the middle of the sheet, with its coordinates
+ *   0.1 s  the survey line is ruled through it, edge to edge
+ *   0.45 s the country's extent is written at the line's ends
+ *   0.5 s  the state boundaries draw in until they resolve into India
+ *   1.45 s the route line is drawn by its nib through the five species the
  *          documentary follows, west to east — the journey the page is about
  *          to take, at the same anchor localities the scenes ring
- *   ~5 s   the sheet lifts off the hero, which is already in place beneath
+ *   ~2.6 s the sheet lifts off the hero, which is already in place beneath
+ *
+ * (It ran about five seconds until Master 03: an opening should not make a
+ * visitor wait for it, so the same sequence is now told at twice the pace.)
  *
  * Every mark is the atlas's own: the sheet's centre is computed from the map
  * projection and labelled as the sheet's, not as India's centre; the extents
@@ -37,9 +40,9 @@ import { GeoLine } from '../../geo/line/GeoLine';
  * Shown once per session, when a visit starts on the home page. Reduced
  * motion skips it entirely.
  */
-const MIN_MS = 5200;
+const MIN_MS = 2600;
 /** The longest the sequence will wait for the hero's first frame. */
-const FRAME_CEILING_MS = 6000;
+const FRAME_CEILING_MS = 3500;
 const SEEN_KEY = 'isa-intro-seen';
 
 function alreadySeen(): boolean {
