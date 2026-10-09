@@ -1,0 +1,891 @@
+{
+ "label": "after",
+ "viewport": "1440x900",
+ "date": "2026-10-09T13:21:55.056Z",
+ "scenarios": {
+  "home": {
+   "load": {
+    "dcl": 310,
+    "load": 311,
+    "first-paint": 312,
+    "requests": 15,
+    "transferKB": 301,
+    "decodedKB": 845,
+    "lcp": 536
+   },
+   "idle": {
+    "seconds": 3,
+    "frames": 181,
+    "fps": 60.3,
+    "p50": 16.7,
+    "p95": 16.8,
+    "p99": 16.8,
+    "max": 16.8,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "longTasks": 0,
+    "longTaskMs": 0,
+    "longestTask": 0,
+    "heapMB": 12
+   },
+   "scroll": {
+    "seconds": 11.6,
+    "frames": 600,
+    "fps": 51.7,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 66.6,
+    "max": 83.3,
+    "over20": 72,
+    "over33": 21,
+    "over50": 9,
+    "longTasks": 7,
+    "longTaskMs": 431,
+    "longestTask": 84,
+    "heapMB": 36.1,
+    "field": {
+     "calls": 6,
+     "tris": 370764,
+     "geos": 30,
+     "tex": 9,
+     "failed": false
+    },
+    "scrolledPx": 16159,
+    "pageHeight": 16159
+   },
+   "errors": []
+  },
+  "studyEach": {
+   "great-indian-bustard": {
+    "status": "ready",
+    "readyMs": 648,
+    "load": {
+     "dcl": 106,
+     "load": 106,
+     "first-paint": 64,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.6,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 328,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.5,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "snow-leopard": {
+    "status": "ready",
+    "readyMs": 587,
+    "load": {
+     "dcl": 100,
+     "load": 100,
+     "first-paint": 44,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 13.9,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 6.2,
+     "frames": 372,
+     "fps": 60.1,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.6,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 10125
+    },
+    "errors": []
+   },
+   "ganges-river-dolphin": {
+    "status": "ready",
+    "readyMs": 1069,
+    "load": {
+     "dcl": 94,
+     "load": 95,
+     "first-paint": 60,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 60.3,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 18.2,
+     "field": {
+      "calls": 6,
+      "tris": 370764,
+      "geos": 6,
+      "tex": 3,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 329,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 15.9,
+     "field": {
+      "calls": 6,
+      "tris": 370764,
+      "geos": 6,
+      "tex": 3,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "bengal-tiger": {
+    "status": "ready",
+    "readyMs": 581,
+    "load": {
+     "dcl": 95,
+     "load": 95,
+     "first-paint": 56,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 9.8,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 329,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 10.1,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "indian-rhinoceros": {
+    "status": "ready",
+    "readyMs": 606,
+    "load": {
+     "dcl": 95,
+     "load": 96,
+     "first-paint": 56,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 60.2,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 11.4,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 6,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.7,
+     "frames": 324,
+     "fps": 57.2,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 50,
+     "max": 50.1,
+     "over20": 12,
+     "over33": 5,
+     "over50": 1,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 10.6,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 6,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   }
+  },
+  "studyToStudy": {
+   "steps": [
+    {
+     "from": "great-indian-bustard",
+     "to": "snow-leopard",
+     "seconds": 3.6,
+     "frames": 208,
+     "fps": 57.8,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 33.3,
+     "max": 100,
+     "over20": 4,
+     "over33": 1,
+     "over50": 1,
+     "longTasks": 1,
+     "longTaskMs": 83,
+     "longestTask": 83,
+     "heapMB": 15.5,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 11,
+      "tex": 5,
+      "failed": false
+     }
+    },
+    {
+     "from": "snow-leopard",
+     "to": "ganges-river-dolphin",
+     "seconds": 4.1,
+     "frames": 220,
+     "fps": 53.2,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 116.7,
+     "max": 133.3,
+     "over20": 7,
+     "over33": 5,
+     "over50": 4,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 32.4,
+     "field": {
+      "calls": 6,
+      "tris": 370764,
+      "geos": 17,
+      "tex": 7,
+      "failed": false
+     }
+    },
+    {
+     "from": "ganges-river-dolphin",
+     "to": "bengal-tiger",
+     "seconds": 3.6,
+     "frames": 211,
+     "fps": 59.3,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 33.3,
+     "over20": 2,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 24.4,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 24,
+      "tex": 8,
+      "failed": false
+     }
+    },
+    {
+     "from": "bengal-tiger",
+     "to": "indian-rhinoceros",
+     "seconds": 3.6,
+     "frames": 210,
+     "fps": 59.1,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 49.9,
+     "over20": 2,
+     "over33": 2,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 25.2,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 30,
+      "tex": 9,
+      "failed": false
+     }
+    },
+    {
+     "from": "indian-rhinoceros",
+     "to": "great-indian-bustard",
+     "seconds": 3.6,
+     "frames": 212,
+     "fps": 59.4,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 33.4,
+     "over20": 2,
+     "over33": 1,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 21.4,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 30,
+      "tex": 9,
+      "failed": false
+     }
+    },
+    {
+     "from": "great-indian-bustard",
+     "to": "snow-leopard",
+     "seconds": 3.6,
+     "frames": 212,
+     "fps": 59.7,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 33.3,
+     "over20": 2,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 21.9,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 30,
+      "tex": 9,
+      "failed": false
+     }
+    }
+   ],
+   "errors": []
+  },
+  "chapterChurn": {
+   "snow-leopard": {
+    "ticks": 8,
+    "rounds": 8,
+    "samples": [
+     {
+      "heapMB": 7.5,
+      "nodes": 1621,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.2,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.3,
+      "nodes": 1634,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.5,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.5,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     }
+    ],
+    "frameStats": {
+     "seconds": 62.5,
+     "frames": 3730,
+     "fps": 59.7,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 100,
+     "over20": 5,
+     "over33": 4,
+     "over50": 3,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.9,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "errors": []
+   },
+   "bengal-tiger": {
+    "ticks": 7,
+    "rounds": 8,
+    "samples": [
+     {
+      "heapMB": 7.4,
+      "nodes": 1566,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.1,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.2,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.3,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.4,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     }
+    ],
+    "frameStats": {
+     "seconds": 54.8,
+     "frames": 3279,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 50,
+     "over20": 4,
+     "over33": 3,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 9.8,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "errors": []
+   }
+  },
+  "routes": {
+   "/atlas": {
+    "load": {
+     "dcl": 90,
+     "load": 90,
+     "first-paint": 60,
+     "requests": 18,
+     "transferKB": 13,
+     "decodedKB": 807
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 10.2
+    },
+    "scroll": {
+     "seconds": 0.5,
+     "frames": 28,
+     "fps": 61,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 11.9,
+     "pageHeight": 849
+    },
+    "errors": []
+   },
+   "/compare": {
+    "load": {
+     "dcl": 102,
+     "load": 102,
+     "first-paint": 64,
+     "requests": 18,
+     "transferKB": 11,
+     "decodedKB": 798
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.4
+    },
+    "scroll": {
+     "seconds": 0.4,
+     "frames": 23,
+     "fps": 61.2,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.7,
+     "pageHeight": 1003
+    },
+    "errors": []
+   },
+   "/conservation": {
+    "load": {
+     "dcl": 91,
+     "load": 91,
+     "first-paint": 52,
+     "requests": 18,
+     "transferKB": 11,
+     "decodedKB": 804
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 7.4
+    },
+    "scroll": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 59.8,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 8.6,
+     "pageHeight": 8984
+    },
+    "errors": []
+   },
+   "/species/snow-leopard": {
+    "load": {
+     "dcl": 88,
+     "load": 88,
+     "first-paint": 56,
+     "requests": 20,
+     "transferKB": 11,
+     "decodedKB": 816
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 8.5
+    },
+    "scroll": {
+     "seconds": 1.7,
+     "frames": 101,
+     "fps": 59.8,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.9,
+     "pageHeight": 4981
+    },
+    "errors": []
+   },
+   "/#field-studies": {
+    "load": {
+     "dcl": 92,
+     "load": 92,
+     "first-paint": 56,
+     "requests": 15,
+     "transferKB": 4,
+     "decodedKB": 845
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 27.3,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 29,
+      "tex": 7,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 8.4,
+     "frames": 453,
+     "fps": 54.1,
+     "p50": 16.7,
+     "p95": 33.3,
+     "p99": 49.9,
+     "max": 66.7,
+     "over20": 43,
+     "over33": 11,
+     "over50": 3,
+     "longTasks": 1,
+     "longTaskMs": 51,
+     "longestTask": 51,
+     "heapMB": 25.1,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 30,
+      "tex": 9,
+      "failed": false
+     },
+     "pageHeight": 16159
+    },
+    "errors": []
+   }
+  }
+ },
+ "env": {
+  "browser": "153.0.8010.12",
+  "gl": "ANGLE (AMD, AMD Radeon Graphics (radeonsi renoir ACO), OpenGL ES 3.2)",
+  "cores": 8,
+  "cpu": "AMD Ryzen 3 7330U with Radeon Graphics"
+ }
+}

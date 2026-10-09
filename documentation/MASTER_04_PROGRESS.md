@@ -415,3 +415,70 @@ Real phones and tablets (touch was emulated); Safari and Firefox; a screen reade
 ### 10.7 Recommended next step
 
 Profile the five studies and the home page on an idle machine, as Master 03 did; then test on a real phone. After that, decide whether the header's dark gradient should follow each study's tone.
+
+## 11. Desktop performance and release audit (9 October 2026)
+
+Scope: desktop Chromium only. Phone, tablet, touch emulation and narrow layouts were not tested or changed. Starting commit `ffc2d20`, tree clean. Nothing pushed or merged; `video/` and the main checkout untouched.
+
+### 11.1 Environment
+
+AMD Ryzen 3 7330U (8 threads), integrated Radeon (ANGLE, radeonsi renoir), ~5.7 GB RAM, Chromium 153 (Playwright) with GPU on, 1 device pixel ratio, production build served by `vite preview`. **The laptop was not idle**: a Brave browser and this session were running (about 4.5 GB in use). Numbers are therefore indicative; a before/after pair was taken in the same session with the same procedure (baseline, a second baseline from a clean worktree of `ffc2d20`, then after), and the two baselines agree.
+
+Tools added in `scripts/audit/` (read-only measurement; output goes to the git-ignored `out/`): `desktop-perf.mjs` (frame intervals via rAF, long tasks, JS heap, three.js resource counts, per-scenario), `summarise.py`, `loaf.mjs` (long-animation-frame attribution), `cpuprofile.mjs`, `build-ms.mjs`, `regress.mjs`.
+
+### 11.2 Baseline (1440 × 900, 60 Hz display)
+
+| Scenario | Result |
+|---|---|
+| Five studies, idle 3 s and a wheel scroll through every chapter | 59.9–60 fps, 0 frames over 33 ms, 0 long tasks, except the rhinoceros scroll (56–57 fps, 2–5 frames of 33–50 ms in both baselines and after). All five load to `data-status="ready"` in 0.6–1.2 s (dolphin slowest). |
+| Study-to-study (Next link, one canvas, six hops) | 52–60 fps per hop; one frame of **517 ms** on snow leopard → dolphin (reproduced in the second baseline). |
+| Chapter churn (56 chapter jumps, snow leopard and tiger) | Three.js geometries and textures constant (5/2 and 7/2); DOM nodes constant; JS heap after forced GC rose 7.5 → 8.6 MB and 7.4 → 8.4 MB, flattening after the first round. No leak found. |
+| Other routes (`/atlas`, `/compare`, `/conservation`, `/species/snow-leopard`, idle) | 60 fps, 0 long tasks, no frame over 17 ms. |
+| Home page | Load 310–560 ms, LCP 540–770 ms, 15 requests, 301 KB transferred. Idle 60 fps. Scroll through the whole page: **50–51 fps, p99 66 ms, a 500–517 ms frame, long tasks 713–829 ms in total**. |
+| `/#field-studies` scroll | 53–54 fps, 10–11 frames of 33–50 ms (unchanged by the fix below; not investigated further). |
+
+### 11.3 Cause and fix
+
+`loaf.mjs` and `cpuprofile.mjs` traced the 500 ms frame to the dolphin world being built in an idle callback while the reader scrolls the home page (`prepareInIdle`). `createRiver` samples its own `ground()` about 420,000 times synchronously (400 × 294 land vertices, a 1000 × 300 bed texture, reed and tree placement); the world's measured main-thread build is 500–680 ms, one task. Terrain for the other worlds is already built in the worker; the river's ground was not.
+
+Change (`src/world/field/gl/turn.ts`, `worlds/river.ts`, 5 lines): `turn()` returns a function that hands the thread back to the browser once 8 ms have passed; `createRiver` calls it every 1,024 land vertices, once per bed row and every 1,024 reed tries. The loops run in the same order with the same random draws, so the world is the same. Moving the river's ground into the worker (as the others are) would also lift the cost, but needs the reed/tree placement moved too; not done.
+
+| Measurement (same procedure) | Before (two runs) | After |
+|---|---|---|
+| Home scroll, longest main-thread task | 516 ms, 502 ms | **84 ms** |
+| Home scroll, longest frame | 516.6 ms, 500 ms | **83.3 ms** |
+| Home scroll, total long-task time | 829 ms, 713 ms | 431 ms |
+| Home scroll, frames over 50 ms / p99 / fps | 9, 8 / 66.7, 66.6 / 50.8, 50.0 | 9 / 66.6 / 51.7 (no change) |
+| Snow leopard → dolphin hop, longest frame | 516.6 ms | 133.3 ms |
+| Dolphin study, direct load to ready | 1077, 1071 ms | 1069 ms (no change) |
+
+Honest reading: the single half-second freeze is gone. The home scroll's general roughness (about 20–28 frames over 33 ms in 12 s, p99 66 ms) is **not** improved; what remains in `loaf.mjs` is 50–150 ms tasks from shader linking (`compileAsync`'s timer, driver work) and the page's own scroll handlers, which I did not change.
+
+### 11.4 Rendering architecture review (no change needed)
+
+One `WebGLRenderer` and one frame loop for all five worlds; only the current world (two during a 1.3 s hand-over) is updated and drawn; the loop stops when the host is off screen, the tab is hidden or reduced motion has settled. A `FrameGovernor` steps pixel ratio down and falls back to the photograph if frames stay slow. Worlds are built lazily, compiled with `compileAsync` and warmed in a 16 px target, evicted to 3 on the low tier. Instanced grass, reeds, crowns (up to 27,000 tufts on the rhinoceros) hold 56–60 fps on this iGPU. The render loop reads one rectangle per frame (`place`, 130–200 ms of self time per 3 s in the profile, layout that would happen anyway). The context-loss handler calls `fail()` (flat photograph); there is no restore, which is a defensible choice. Other renderers (hero, gallery, conservation) were measured only through the page frame rates above, not read.
+
+### 11.5 Validation (sequential, after the change)
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npx oxlint src` | 0 errors, 17 warnings (the same count as before) |
+| `npx oxlint` (whole repo) | The one existing error, `video/src/scenes/himalaya.ts:92`, not touched |
+| `npm run build` | Pass, 23 route pages |
+| `regress.mjs` | 35 of 36 pass; the 36th is a probe false positive (below) |
+
+`regress.mjs` covered: all five `/field/*` studies × 1920 × 1080, 1440 × 900, 1280 × 800 and 1024 × 768 (ready, every chapter tick reached in order, no horizontal overflow, 0 console errors, 0 failed requests; 7 chapters, 8 for the snow leopard); Next → Back → Forward through browser history; Esc returns to the home page; reduced motion on all five (last chapter reached, no errors); `--disable-webgl` on all five (`data-status="flat"`, title present, no errors) and on the home page; losing the stage's WebGL context mid-study (falls back to `data-status="flat"`, title kept, no errors). Keyboard: the header, menu and links showed a focus ring; the range-map markers (`g.sm-point`) use a dot style (`index.css:2691`) which my computed-outline probe does not see, so that "fail" is a probe limit, not a defect; the markers were not inspected by eye.
+
+### 11.6 Remaining defects and unverified
+
+- Home scroll and the `/#field-studies` scroll are not smooth by this measure (above). Not investigated beyond the river stall.
+- The dolphin world still costs 500–680 ms of CPU in total, now spread over many frames; direct entry to the study is the slowest (1.07 s).
+- Measured on a non-idle machine, one browser, 60 Hz, headless Chromium, DPR 1. Not measured: DPR 2 displays, 120/144 Hz, discrete GPUs, Chrome headed, Firefox, Safari, the low and balanced tiers, long sessions beyond 56 chapter jumps, memory in the GPU process.
+- The compare map and conservation scene were only measured at idle and scroll (60 fps); their interactions were not driven.
+- Screenshots were not re-read in this pass; the river change does not alter the drawn output (same loops and random draws) but I did not compare images.
+- Existing defects from §10.5 stand.
+
+### 11.7 Verdict
+
+**Ready for desktop acceptance testing**, with one fix applied. The five studies, their transitions and the route changes hold 60 fps on this integrated GPU without leaks or errors across 1024–1920 px wide viewports. The home page's scroll smoothness is the item to watch in acceptance, and is measured but not fixed.

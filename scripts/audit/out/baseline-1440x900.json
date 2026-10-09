@@ -1,0 +1,745 @@
+{
+ "label": "baseline",
+ "viewport": "1440x900",
+ "date": "2026-10-09T13:07:38.806Z",
+ "scenarios": {
+  "home": {
+   "load": {
+    "dcl": 317,
+    "load": 319,
+    "first-paint": 320,
+    "requests": 15,
+    "transferKB": 301,
+    "decodedKB": 845,
+    "lcp": 604
+   },
+   "idle": {
+    "seconds": 3,
+    "frames": 180,
+    "fps": 59.9,
+    "p50": 16.7,
+    "p95": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "over20": 0,
+    "over33": 0,
+    "over50": 0,
+    "longTasks": 0,
+    "longTaskMs": 0,
+    "longestTask": 0,
+    "heapMB": 12
+   },
+   "scroll": {
+    "seconds": 12.3,
+    "frames": 624,
+    "fps": 50.8,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 66.7,
+    "max": 516.6,
+    "over20": 59,
+    "over33": 27,
+    "over50": 9,
+    "longTasks": 6,
+    "longTaskMs": 829,
+    "longestTask": 516,
+    "heapMB": 24.2,
+    "field": {
+     "calls": 6,
+     "tris": 508266,
+     "geos": 30,
+     "tex": 9,
+     "failed": false
+    },
+    "scrolledPx": 16159,
+    "pageHeight": 16159
+   },
+   "errors": []
+  },
+  "studyEach": {
+   "great-indian-bustard": {
+    "status": "ready",
+    "readyMs": 1187,
+    "load": {
+     "dcl": 115,
+     "load": 115,
+     "first-paint": 72,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 13.1,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 328,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.5,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "snow-leopard": {
+    "status": "ready",
+    "readyMs": 624,
+    "load": {
+     "dcl": 103,
+     "load": 104,
+     "first-paint": 64,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 13.8,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 6.2,
+     "frames": 371,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.5,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 10125
+    },
+    "errors": []
+   },
+   "ganges-river-dolphin": {
+    "status": "ready",
+    "readyMs": 1077,
+    "load": {
+     "dcl": 97,
+     "load": 97,
+     "first-paint": 56,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 25,
+     "field": {
+      "calls": 6,
+      "tris": 370764,
+      "geos": 6,
+      "tex": 3,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 329,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 28.8,
+     "field": {
+      "calls": 6,
+      "tris": 370764,
+      "geos": 6,
+      "tex": 3,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "bengal-tiger": {
+    "status": "ready",
+    "readyMs": 614,
+    "load": {
+     "dcl": 100,
+     "load": 100,
+     "first-paint": 64,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 11.6,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.5,
+     "frames": 329,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.6,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   },
+   "indian-rhinoceros": {
+    "status": "ready",
+    "readyMs": 599,
+    "load": {
+     "dcl": 99,
+     "load": 99,
+     "first-paint": 72,
+     "requests": 20,
+     "transferKB": 6,
+     "decodedKB": 819
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 11.4,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 6,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 5.7,
+     "frames": 323,
+     "fps": 56.4,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 49.9,
+     "max": 50.1,
+     "over20": 15,
+     "over33": 5,
+     "over50": 1,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.1,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 6,
+      "tex": 2,
+      "failed": false
+     },
+     "pageHeight": 9000
+    },
+    "errors": []
+   }
+  },
+  "studyToStudy": {
+   "steps": [
+    {
+     "i": 0,
+     "error": "no next link"
+    }
+   ],
+   "errors": []
+  },
+  "chapterChurn": {
+   "snow-leopard": {
+    "ticks": 8,
+    "rounds": 8,
+    "samples": [
+     {
+      "heapMB": 7.5,
+      "nodes": 1621,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.2,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.3,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.5,
+      "nodes": 1641,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.6,
+      "nodes": 1634,
+      "listeners": 254,
+      "geos": 5,
+      "tex": 2
+     }
+    ],
+    "frameStats": {
+     "seconds": 62.6,
+     "frames": 3738,
+     "fps": 59.7,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 116.7,
+     "over20": 5,
+     "over33": 4,
+     "over50": 4,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 12.9,
+     "field": {
+      "calls": 5,
+      "tris": 138142,
+      "geos": 5,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "errors": []
+   },
+   "bengal-tiger": {
+    "ticks": 7,
+    "rounds": 8,
+    "samples": [
+     {
+      "heapMB": 7.4,
+      "nodes": 1566,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.1,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.2,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.3,
+      "nodes": 1584,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     },
+     {
+      "heapMB": 8.4,
+      "nodes": 1577,
+      "listeners": 250,
+      "geos": 7,
+      "tex": 2
+     }
+    ],
+    "frameStats": {
+     "seconds": 54.8,
+     "frames": 3278,
+     "fps": 59.8,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 66.7,
+     "over20": 6,
+     "over33": 3,
+     "over50": 1,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 9.8,
+     "field": {
+      "calls": 8,
+      "tris": 305442,
+      "geos": 7,
+      "tex": 2,
+      "failed": false
+     }
+    },
+    "errors": []
+   }
+  },
+  "routes": {
+   "/atlas": {
+    "load": {
+     "dcl": 92,
+     "load": 92,
+     "first-paint": 52,
+     "requests": 18,
+     "transferKB": 13,
+     "decodedKB": 807
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 10.2
+    },
+    "scroll": {
+     "seconds": 0.5,
+     "frames": 28,
+     "fps": 60.9,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 11.9,
+     "pageHeight": 849
+    },
+    "errors": []
+   },
+   "/compare": {
+    "load": {
+     "dcl": 96,
+     "load": 96,
+     "first-paint": 68,
+     "requests": 18,
+     "transferKB": 11,
+     "decodedKB": 798
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 60.3,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.4
+    },
+    "scroll": {
+     "seconds": 0.4,
+     "frames": 23,
+     "fps": 60.5,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.8,
+     "pageHeight": 1003
+    },
+    "errors": []
+   },
+   "/conservation": {
+    "load": {
+     "dcl": 90,
+     "load": 90,
+     "first-paint": 56,
+     "requests": 18,
+     "transferKB": 11,
+     "decodedKB": 804
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 7.4
+    },
+    "scroll": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 60.1,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 8.6,
+     "pageHeight": 8984
+    },
+    "errors": []
+   },
+   "/species/snow-leopard": {
+    "load": {
+     "dcl": 96,
+     "load": 96,
+     "first-paint": 72,
+     "requests": 20,
+     "transferKB": 11,
+     "decodedKB": 816
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 181,
+     "fps": 60.3,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 6.1
+    },
+    "scroll": {
+     "seconds": 1.7,
+     "frames": 101,
+     "fps": 59.9,
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 7.9,
+     "pageHeight": 4981
+    },
+    "errors": []
+   },
+   "/#field-studies": {
+    "load": {
+     "dcl": 103,
+     "load": 103,
+     "first-paint": 72,
+     "requests": 15,
+     "transferKB": 4,
+     "decodedKB": 845
+    },
+    "idle": {
+     "seconds": 3,
+     "frames": 180,
+     "fps": 60,
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8,
+     "over20": 0,
+     "over33": 0,
+     "over50": 0,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 42.2,
+     "field": {
+      "calls": 5,
+      "tris": 285122,
+      "geos": 29,
+      "tex": 7,
+      "failed": false
+     }
+    },
+    "scroll": {
+     "seconds": 8.6,
+     "frames": 452,
+     "fps": 52.7,
+     "p50": 16.7,
+     "p95": 33.4,
+     "p99": 50,
+     "max": 50.1,
+     "over20": 56,
+     "over33": 11,
+     "over50": 1,
+     "longTasks": 0,
+     "longTaskMs": 0,
+     "longestTask": 0,
+     "heapMB": 24.4,
+     "field": {
+      "calls": 6,
+      "tris": 508266,
+      "geos": 30,
+      "tex": 9,
+      "failed": false
+     },
+     "pageHeight": 16159
+    },
+    "errors": []
+   }
+  }
+ },
+ "env": {
+  "browser": "153.0.8010.12",
+  "gl": "ANGLE (AMD, AMD Radeon Graphics (radeonsi renoir ACO), OpenGL ES 3.2)",
+  "cores": 8,
+  "cpu": "AMD Ryzen 3 7330U with Radeon Graphics"
+ }
+}

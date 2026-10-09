@@ -3,6 +3,7 @@ import { GLSL_GRAIN, GLSL_HASH, GLSL_NOISE } from '../../gl/chunks';
 import { seededRandom } from '../../gl/particles';
 import { CameraRig, type Shot } from '../cameraRig';
 import { rgb } from '../gl/color';
+import { turn } from '../gl/turn';
 import { fbm, seg, smooth } from '../noise';
 import habitatUrl from '../../../assets/field/ganges-river-dolphin-habitat.webp';
 import type { FieldInput, FieldWorld, WorldContext } from '../types';
@@ -462,6 +463,7 @@ export async function createRiver({ tier }: WorldContext): Promise<FieldWorld> {
     grassB: rgb('#7b7c3e'),
     straw: rgb('#a39a62'),
   };
+  const yieldNow = turn();
   const sun = new THREE.Vector3(-0.42, 0.52, 0.62).normalize();
   const sunLate = new THREE.Vector3(-0.62, 0.24, 0.5).normalize();
   const sunCol = C.sunCol.clone();
@@ -495,6 +497,7 @@ export async function createRiver({ tier }: WorldContext): Promise<FieldWorld> {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   for (let k = 0; k < pos.count; k++) {
+    if ((k & 1023) === 0) await yieldNow();
     const x = pos.getX(k) + (LAND.x0 + LAND.x1) / 2;
     const z = pos.getZ(k) + (LAND.z0 + LAND.z1) / 2;
     pos.setXYZ(k, x, ground(x, z), z);
@@ -522,6 +525,7 @@ export async function createRiver({ tier }: WorldContext): Promise<FieldWorld> {
   const BED = { x0: -1000, z0: -300, w: 2000, d: 600, nx: 1000, nz: 300 };
   const bedData = new Uint16Array(BED.nx * BED.nz);
   for (let j = 0; j < BED.nz; j++) {
+    await yieldNow();
     for (let i = 0; i < BED.nx; i++) {
       const x = BED.x0 + ((i + 0.5) / BED.nx) * BED.w;
       const z = BED.z0 + ((j + 0.5) / BED.nz) * BED.d;
@@ -567,6 +571,7 @@ export async function createRiver({ tier }: WorldContext): Promise<FieldWorld> {
   const rnd = new Float32Array(reedCount * 4);
   let placed = 0;
   for (let tries = 0; placed < reedCount && tries < reedCount * 40; tries++) {
+    if ((tries & 1023) === 0) await yieldNow();
     const x = -420 + rand() * 840;
     const c = centre(x);
     const hw = halfWidth(x);
