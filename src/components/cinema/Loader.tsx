@@ -130,7 +130,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
       .then(() => {
         if (!live) return;
         tick(5);
-        setTimeout(() => live && setLeaving(true), 450);
+        setTimeout(() => live && setLeaving(true), 250);
       });
 
     const skip = () => skipRef.current();
@@ -172,7 +172,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
       release();
       markIntroDone();
     }, 350);
-    const unmount = setTimeout(onDone, 1300);
+    const unmount = setTimeout(onDone, 1000);
     return () => {
       clearTimeout(handOff);
       clearTimeout(unmount);
