@@ -1,0 +1,247 @@
+/* --- the journey between views of the world (world/WorldJourney.tsx) --- */
+/*
+  One sheet, one camera. Every value that moves is a custom property written
+  by the journey's clock on the root, so a frame touches one element's style:
+    --in     the sheet comes up            0 → 1
+    --fly    the camera's progress         0 → 1
+    --depth  the ground gains depth        0 → 1   (--lift: px per layer)
+    --rule   the line through the anchor   0 → 1
+    --open   the line opens (shutter)      0 → 1
+    --out    the next page shows through   0 → 1
+    --gone   the last of it lifts away     0 → 1
+*/
+.wj {
+  --in: 0;
+  --fly: 0;
+  --depth: 0;
+  --lift: 0px;
+  --rule: 0;
+  --open: 0;
+  --out: 0;
+  --gone: 0;
+  --status: var(--color-contour);
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-transition);
+  pointer-events: none;
+  visibility: hidden;
+  color: var(--color-canvas);
+  contain: strict;
+}
+.wj[data-state='on'] {
+  visibility: visible;
+  pointer-events: auto;
+  cursor: progress;
+}
+.wj-sheet {
+  position: absolute;
+  inset: 0;
+  /* Its own layer: the sheet only fades, and must not be re-rastered with the map every frame. */
+  will-change: opacity;
+  background-color: var(--color-forest-950);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-canvas) 3.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 3.5%, transparent) 1px, transparent 1px);
+  background-size: 96px 96px;
+  opacity: calc(var(--in) * (1 - var(--out)));
+}
+
+/* The view: the camera's frame. It can start inside the atlas map's panel and end inside it. */
+.wj-view {
+  position: absolute;
+  inset: 0;
+  /* The sheet beneath takes the pointer; hit-testing into the map's paths on every move is not free. */
+  pointer-events: none;
+  will-change: opacity;
+  opacity: calc(var(--in) * (1 - var(--out)));
+}
+.wj-persp {
+  position: absolute;
+  inset: 0;
+  perspective: 1100px;
+  perspective-origin: 50% 32%;
+}
+.wj-world {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+}
+.wj-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The lifted layers are cut to the states of record (positioned by the journey) and only ever move in 3D. */
+.wj-layer {
+  position: absolute;
+  transform: translateZ(calc(var(--i) * var(--lift)));
+  opacity: var(--depth);
+}
+.wj-rings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  transform: translateZ(calc(var(--i) * var(--lift)));
+}
+.wj-rings svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.wj-rings circle {
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 1;
+  opacity: 0;
+  transform: scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.wj-rings circle:nth-child(1) {
+  fill: var(--color-contour);
+  stroke: var(--color-forest-950);
+  stroke-width: 1.5;
+}
+/* Rings rise one after another as the ground lifts. */
+.wj-rings circle:nth-child(1) { opacity: clamp(0, calc(var(--depth) * 3 - 0.2), 1); transform: none; }
+.wj-rings circle:nth-child(2) { opacity: clamp(0, calc(var(--depth) * 3 - 0.8), 0.9); transform: scale(clamp(0.6, calc(0.4 + var(--depth) * 0.7), 1)); }
+.wj-rings circle:nth-child(3) { opacity: clamp(0, calc(var(--depth) * 3 - 1.4), 0.55); transform: scale(clamp(0.6, calc(0.2 + var(--depth) * 0.85), 1)); }
+.wj-rings circle:nth-child(4) { opacity: clamp(0, calc(var(--depth) * 3 - 2), 0.3); transform: scale(clamp(0.6, var(--depth), 1)); }
+
+/* Survey instruments: where the camera is centred, and at what scale. */
+.wj-instruments {
+  position: absolute;
+  will-change: opacity;
+  right: var(--gutter);
+  bottom: calc(var(--gutter) + 0.25rem);
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  opacity: calc(var(--in) * (1 - var(--out)) * (1 - var(--open)));
+}
+.wj-readout {
+  white-space: pre;
+}
+.wj-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.wj-bar {
+  display: block;
+  height: 5px;
+  border: 1px solid color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  border-top: 0;
+}
+
+/* The destination, named on the sheet — every word from the dataset. */
+.wj-caption {
+  position: absolute;
+  will-change: opacity, transform;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: clamp(5.5rem, 14vh, 9rem);
+  display: grid;
+  gap: 0.5rem;
+  opacity: calc(var(--in) * (1 - var(--out)));
+  transform: translateY(calc((1 - var(--in)) * 12px));
+}
+@media (min-width: 1024px) {
+  .wj-caption {
+    left: clamp(3rem, 8vw, 9rem);
+  }
+}
+.wj-eyebrow,
+.wj-disclaimer {
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+.wj-title {
+  /* The coordinate comes first; the name arrives as the camera does. */
+  opacity: clamp(0, calc(var(--fly) * 1.8 - 0.5), 1);
+  transform: translateY(calc((1 - clamp(0, calc(var(--fly) * 1.8 - 0.5), 1)) * 10px));
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2rem, 4.4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.wj-note {
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+.wj-status {
+  color: var(--status);
+}
+.wj-disclaimer {
+  margin-top: 0.4rem;
+  opacity: var(--depth);
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+}
+
+/* The line through the anchor, and the shutter it opens into. */
+.wj-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--rule-y, 50%);
+  height: 1px;
+  margin-top: -0.5px;
+  opacity: calc(1 - var(--out));
+}
+.wj-rule span {
+  display: block;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-canvas) 78%, transparent);
+  transform: scaleX(var(--rule));
+}
+.wj-photo {
+  position: absolute;
+  transform-origin: 0 0;
+  overflow: hidden;
+  background: var(--color-forest-950);
+  clip-path: inset(calc((1 - var(--open)) * 50%) 0 calc((1 - var(--open)) * 50%) 0);
+  opacity: calc(1 - var(--gone));
+  visibility: hidden;
+}
+.wj[data-state='on'] .wj-photo {
+  visibility: visible;
+}
+.wj-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Closing a photograph back into a line, on the way out to the atlas. */
+.wj[data-kind='travel'] .wj-title,
+.wj[data-kind='ascend'] .wj-title {
+  opacity: 1;
+  transform: none;
+}
+.wj[data-closing='true'] .wj-sheet {
+  opacity: 0;
+}
+
+/* Home → atlas: while the hero's relief is laid flat underneath (--flat),
+   the sheet is still clear, and only the instruments read the ground. */
+.wj[data-flatten='true'] {
+  cursor: progress;
+}
+.wj[data-flatten='true'] .wj-instruments {
+  opacity: var(--flat, 0);
+}

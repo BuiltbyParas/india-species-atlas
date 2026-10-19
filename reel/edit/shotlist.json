@@ -1,0 +1,179 @@
+{
+  "$comment": "India Species Atlas: 60-second vertical reel. This file is the source of truth for the edit. The Remotion composition AtlasReel reads it (video/atlas-promo/reel/). Times are seconds at 30 fps. Voice times are PLANNED and are replaced by the measured times of the human recording (see reel/audio/voice/VOICE_SCRIPT.md). status: test-standin | awaiting-flow | existing-adapt | approved | rejected.",
+  "format": { "width": 1080, "height": 1920, "fps": 30, "duration": 60 },
+  "safeZone": { "top": 250, "bottom": 1480, "left": 90, "right": 940, "note": "Instagram UI covers roughly the top 220 px, the bottom 440 px (caption and buttons) and a 120 px column on the right. Critical type stays inside this box." },
+  "voice": [
+    { "id": "V01", "in": 0.4, "out": 3.6, "line": "India is home to some of the most extraordinary species on Earth.", "emotion": "curious, wonder", "claim": null },
+    { "id": "V02", "in": 4.0, "out": 6.2, "line": "But where they live... is only the beginning.", "emotion": "intrigued, a smile in the voice", "claim": null },
+    { "id": "V03", "in": 6.8, "out": 8.2, "line": "Take the Great Indian Bustard.", "emotion": "discovery, leaning in", "claim": "species.ts great-indian-bustard commonName" },
+    { "id": "V04", "in": 8.5, "out": 9.8, "line": "Their habitat is changing.", "emotion": "quieter, observant", "claim": "great-indian-bustard threatNote: \"loss and fragmentation of grassland\"" },
+    { "id": "V05", "in": 10.2, "out": 13.0, "line": "And sometimes, the threat is literally a line across the landscape.", "emotion": "serious, the key line of the film", "claim": "great-indian-bustard threatNote: \"Collision with high-tension power lines crossing the Thar\"" },
+    { "id": "V06", "in": 14.6, "out": 15.9, "line": "Critically endangered.", "emotion": "low, plain, no drama", "claim": "great-indian-bustard status CR" },
+    { "id": "V07", "in": 20.5, "out": 22.3, "line": "Move south, and the story changes.", "emotion": "energy back, travelling", "claim": null },
+    { "id": "V08", "in": 27.3, "out": 28.7, "line": "Forests become corridors...", "emotion": "calm, explaining", "claim": "bengal-tiger threatNote: \"fragmentation of forest and corridors\"" },
+    { "id": "V09", "in": 29.4, "out": 30.9, "line": "...and corridors become fragmented.", "emotion": "concern, falling", "claim": "bengal-tiger threatNote: \"loss and fragmentation of forest and corridors by roads, railways, mining and settlement\"" },
+    { "id": "V10", "in": 31.5, "out": 32.7, "line": "Follow the rivers.", "emotion": "light, inviting", "claim": null },
+    { "id": "V11", "in": 34.9, "out": 37.0, "line": "Even here, dams and barrages split the population.", "emotion": "serious, matter-of-fact", "claim": "ganges-river-dolphin threatNote: \"Dams and barrages fragment the population\"" },
+    { "id": "V12", "in": 37.5, "out": 39.1, "line": "Then rise into the Himalayas.", "emotion": "awe, breath before it", "claim": "snow-leopard regions: himalayas" },
+    { "id": "V13", "in": 40.6, "out": 43.3, "line": "Different habitat. Different species. Different pressures.", "emotion": "measured, three even steps", "claim": null },
+    { "id": "V14", "in": 43.5, "out": 45.0, "line": "And some stories show us something else.", "emotion": "warmer, a turn", "claim": null },
+    { "id": "V15", "in": 45.2, "out": 46.9, "line": "Recovery doesn't always mean safety.", "emotion": "gentle but firm", "claim": "indian-rhinoceros summary: \"A conservation success story ... but still Vulnerable because of its small, concentrated range\"" },
+    { "id": "V16", "in": 47.6, "out": 49.6, "line": "That's why we built India Species Atlas.", "emotion": "proud, quiet confidence", "claim": null },
+    { "id": "V17", "in": 50.8, "out": 52.8, "line": "Not just to show where species are...", "emotion": "brisk, over the montage", "claim": null },
+    { "id": "V18", "in": 55.0, "out": 57.4, "line": "...but to explore what is happening there.", "emotion": "warm, to camera, the last spoken line", "claim": null }
+  ],
+  "shots": [
+    {
+      "id": "S01", "in": 0, "out": 3, "source": "existing", "section": "The line / India",
+      "visual": "Black. A 1 px canvas-coloured line rules across, then traces India's outline from the site's boundary file; INDIA in Newsreader Light. Re-rendered in portrait from S01Signal/S02India, not cropped from the 16:9 film.",
+      "character": "0.5 s side-profile silhouette in the dark at the line's start, rim-lit by it, before the outline draws.",
+      "voice": ["V01"], "sfx": ["low drone swell", "geographic click as the line starts", "rising tone under INDIA"], "music": "minimal atmospheric pulse",
+      "transitionIn": "from black", "transitionOut": "F camera dive (push into India)", "text": ["INDIA"], "status": "existing-adapt"
+    },
+    {
+      "id": "S02", "in": 3, "out": 6, "source": "existing", "section": "India to Rajasthan",
+      "visual": "The existing map camera travels to the Thar (LANDSCAPE_FOCUS[0]); relief and contours come up, the line runs ahead into Rajasthan. Final 0.6 s: contour lines thicken into terrain and a contour-shaped mask opens onto the grassland plate.",
+      "character": null,
+      "voice": ["V02"], "sfx": ["geographic pulse", "air rush on the dive"], "music": "pulse",
+      "transitionIn": "F camera dive", "transitionOut": "I mask reveal (contour mask opens on S03)", "text": ["RAJASTHAN", "26.2°N 71.4°E"], "status": "existing-adapt"
+    },
+    {
+      "id": "S03", "in": 6, "out": 10, "source": "flow", "flowFile": "S03_rajasthan_grassland.mp4", "section": "Rajasthan",
+      "visual": "Vertical tracking shot through pale golden semi-arid grassland at sunrise, grass-tip height. No animals.",
+      "character": "Small distant figure on a low rise, back to camera, 0.8 s (7.6 to 8.4).",
+      "voice": ["V03", "V04"], "sfx": ["wind through dry grass", "dust hiss"], "music": "pulse",
+      "transitionIn": "I mask reveal", "transitionOut": "H match cut (horizon line holds height into S04)", "text": [], "status": "test-standin"
+    },
+    {
+      "id": "S04", "in": 10, "out": 13, "source": "flow", "flowFile": "S04_wire.mp4", "section": "The wire",
+      "visual": "Grass-level lateral track; one dark transmission wire crosses frame towards distant pylons; focus racks grass to wire. Freeze 4 frames at 12.87; a canvas-coloured graphic line lays over the wire and straightens into a map line.",
+      "character": "In the foreground, out of focus, raises an arm and points at the wire (11.0 to 12.2).",
+      "voice": ["V05"], "sfx": ["faint 50 Hz electrical hum", "short tonal whoosh on the morph"], "music": "rhythm begins on the freeze",
+      "transitionIn": "H match cut", "transitionOut": "A line morph (wire to map line)", "text": [], "status": "test-standin"
+    },
+    {
+      "id": "S05", "in": 13, "out": 17, "source": "flow-or-real", "flowFile": "S05_bustard.mp4", "section": "Great Indian Bustard",
+      "visual": "A Great Indian Bustard stands in open grassland at sunrise; slow push from a respectful distance. The map line from S04 settles to the horizon and fades.",
+      "character": "At the left edge, partly hidden by foreground grass, watching the bird (14.0 to 15.2). Never in front of it.",
+      "voice": ["V06"], "sfx": ["grassland ambience", "single soft low impact on the status"], "music": "rhythm",
+      "transitionIn": "A line morph (line resolves onto the horizon)", "transitionOut": "K focus transition (bird to card)", "text": ["01", "GREAT INDIAN BUSTARD"], "status": "test-standin",
+      "honesty": "A generated bustard is an image of no real bird. Prefer the credited Commons photograph or licensed real footage; if a Flow bird is used, the frame carries an on-screen 'AI-generated visualisation' label. Decision pending (EDIT_PLAN.md, open decision 1)."
+    },
+    {
+      "id": "S06", "in": 17, "out": 20, "source": "existing", "section": "Bustard Atlas card",
+      "visual": "Portrait species card: number, name, status chip from species.ts. Rajasthan and Gujarat (states of record) fill in the bustard's status colour on the map.",
+      "character": "Points at Rajasthan on the map (17.6 to 18.8).",
+      "voice": [], "sfx": ["UI tick on each line of type", "map fill pulse"], "music": "rhythm",
+      "transitionIn": "K focus transition", "transitionOut": "E habitat morph, then G camera ascent", "text": ["01", "GREAT INDIAN BUSTARD", "CRITICALLY ENDANGERED"], "status": "existing-adapt"
+    },
+    {
+      "id": "S07", "in": 20, "out": 22, "source": "flow", "flowFile": "S07_forest.mp4", "section": "Central Indian forest",
+      "visual": "Camera advances into dry deciduous forest; sun shafts through canopy. No animals.",
+      "character": null,
+      "voice": ["V07"], "sfx": ["forest ambience in", "deep impact on the cut to S08"], "music": "rhythm",
+      "transitionIn": "G camera ascent then dive into canopy", "transitionOut": "H match cut (vertical tree trunk to tiger's stripe)", "text": [], "status": "awaiting-flow"
+    },
+    {
+      "id": "S08", "in": 22, "out": 24, "source": "flow-or-real", "flowFile": "S08_tiger.mp4", "section": "Tiger",
+      "visual": "Tiger walks through forest, tracked from the side.",
+      "character": "0.7 s, half-hidden behind a trunk in the foreground, looking towards the tiger (22.6 to 23.3).",
+      "voice": [], "sfx": ["forest ambience", "soft paw foley"], "music": "momentum",
+      "transitionIn": "H match cut", "transitionOut": "G camera ascent to map", "text": [], "status": "awaiting-flow",
+      "honesty": "As S05. The existing credited 3840 px tiger photograph is the fallback."
+    },
+    {
+      "id": "S09", "in": 24, "out": 27, "source": "existing", "section": "Tiger map",
+      "visual": "Portrait species card; the tiger's states of record fill; a line traces the dataset's localities (the smoothPath device the site uses). It is not drawn or labelled as a range or a corridor.",
+      "character": "Traces along the line with a finger; the line draws just behind the fingertip (24.6 to 26.4).",
+      "voice": [], "sfx": ["UI tick", "pencil-on-paper line draw"], "music": "momentum",
+      "transitionIn": "G camera ascent", "transitionOut": "B road morph in reverse (line becomes the road's centre line)", "text": ["02", "BENGAL TIGER", "ENDANGERED"], "status": "existing-adapt"
+    },
+    {
+      "id": "S10", "in": 27, "out": 31, "source": "flow", "flowFile": "S10_road.mp4", "section": "Road / fragmentation",
+      "visual": "High aerial along a highway cutting through dense forest; forest on both sides.",
+      "character": null,
+      "voice": ["V08", "V09"], "sfx": ["low road rumble", "low mechanical sweep on the morph"], "music": "momentum builds",
+      "transitionIn": "B road morph", "transitionOut": "B road morph (centre line lifts off as a line, splits in two)", "text": [], "status": "awaiting-flow"
+    },
+    {
+      "id": "S11", "in": 31, "out": 33, "source": "flow", "flowFile": "S11_ganges.mp4", "section": "Ganges",
+      "visual": "Slow aerial over the broad river at early morning; mist.",
+      "character": null,
+      "voice": ["V10"], "sfx": ["water", "fluid whoosh in"], "music": "momentum",
+      "transitionIn": "the split line becomes the river's two banks (match)", "transitionOut": "camera tips under the surface", "text": [], "status": "awaiting-flow"
+    },
+    {
+      "id": "S12", "in": 33, "out": 35, "source": "flow-or-real", "flowFile": "S12_dolphin.mp4", "section": "Ganges river dolphin",
+      "visual": "Turbid water, suspended sediment; the dolphin passes.",
+      "character": "Under 1 s, drawn as a line-art figure inside sonar rings, an Atlas-style visualisation rather than a person underwater (33.4 to 34.2).",
+      "voice": [], "sfx": ["underwater low frequency", "two echolocation clicks"], "music": "momentum",
+      "transitionIn": "camera tips under the surface", "transitionOut": "C river morph", "text": [], "status": "awaiting-flow",
+      "honesty": "No licensed video of the species exists on Commons. If generated, the visualisation label applies. The credited photograph is the fallback."
+    },
+    {
+      "id": "S13", "in": 35, "out": 37, "source": "existing", "section": "Dolphin map",
+      "visual": "Portrait card; the Natural Earth river network draws outward from the Ganga; the dolphin's states of record fill.",
+      "character": null,
+      "voice": ["V11"], "sfx": ["fluid whoosh", "UI tick"], "music": "momentum",
+      "transitionIn": "C river morph", "transitionOut": "D contour morph (camera climbs north into relief)", "text": ["03", "GANGES RIVER DOLPHIN", "ENDANGERED"], "status": "existing-adapt"
+    },
+    {
+      "id": "S14", "in": 37, "out": 39, "source": "flow", "flowFile": "S14_himalaya.mp4", "section": "Himalaya",
+      "visual": "Aerial glide towards a rocky ridge at dawn; blowing snow.",
+      "character": null,
+      "voice": ["V12"], "sfx": ["high wind", "soft rising tonal transition"], "music": "cinematic expansion begins",
+      "transitionIn": "D contour morph (relief to real ridge)", "transitionOut": "H match cut (ridge line to slope line)", "text": [], "status": "awaiting-flow"
+    },
+    {
+      "id": "S15", "in": 39, "out": 41, "source": "flow-or-real", "flowFile": "S15_snow_leopard.mp4", "section": "Snow leopard",
+      "visual": "Snow leopard moves across a rocky slope, tracked from far away.",
+      "character": "Small figure lower in frame, looking up towards the cat (39.4 to 40.2).",
+      "voice": [], "sfx": ["wind", "snow on stone"], "music": "expansion",
+      "transitionIn": "H match cut", "transitionOut": "D contour morph (the ridge becomes a contour line)", "text": [], "status": "awaiting-flow",
+      "honesty": "Wild NCF India footage (CC BY 3.0) was found by the earlier plan and is the preferred source if it passes the 1080p gate."
+    },
+    {
+      "id": "S16", "in": 41, "out": 43, "source": "existing", "section": "Snow leopard map",
+      "visual": "Portrait card over the baked contour raster; one contour expands outward; the snow leopard's states of record fill (Ladakh drawn inside Jammu and Kashmir, as the site does).",
+      "character": null,
+      "voice": ["V13"], "sfx": ["soft rising tone"], "music": "expansion",
+      "transitionIn": "D contour morph", "transitionOut": "J scale transition (contour to tall grass blade)", "text": ["04", "SNOW LEOPARD", "VULNERABLE"], "status": "existing-adapt"
+    },
+    {
+      "id": "S17", "in": 43, "out": 46, "source": "flow-or-real", "flowFile": "S17_rhino.mp4", "section": "Rhino",
+      "visual": "Greater one-horned rhinoceros walks through tall floodplain grass; lateral track.",
+      "character": "0.7 s at the frame edge, a small relieved smile that settles into thought (44.0 to 44.7).",
+      "voice": ["V14", "V15"], "sfx": ["low environmental impact", "tall grass"], "music": "expansion",
+      "transitionIn": "J scale transition", "transitionOut": "G camera ascent to the master map", "text": ["05", "GREATER ONE-HORNED RHINOCEROS", "VULNERABLE"], "status": "awaiting-flow",
+      "honesty": "Captive or unverified footage is not approved for this shot (see PROMO_FILM_PLAN.md T10)."
+    },
+    {
+      "id": "S18", "in": 46, "out": 50, "source": "existing", "section": "India master map",
+      "visual": "Whole India in portrait framing (upper two-thirds). Five places light in film order; one thin line joins them as the route this film travelled. It is the film's own path, not an ecological connection.",
+      "character": "Stands beside the map, lower left, watching the network light up; turns her head as each place lights.",
+      "voice": ["V16"], "sfx": ["one tick per place", "a low bloom when the route completes"], "music": "expansion",
+      "transitionIn": "G camera ascent", "transitionOut": "J scale transition into the interface map pane", "text": ["RAJASTHAN", "CENTRAL INDIA", "GANGES", "HIMALAYAS", "NORTHEAST INDIA"], "status": "existing-adapt"
+    },
+    {
+      "id": "S19", "in": 50, "out": 55, "source": "existing", "section": "Atlas interface",
+      "visual": "Six real-site plates at 0.8 s each, re-cropped for portrait: ATLAS (atlas.jpg), SPECIES (species.jpg), PROFILE (profile-overview.jpg), DISTRIBUTION (profile-distribution.jpg), THREATS (profile-threats.jpg), LAYERS (atlas-conservation.jpg). Masked reveals, directional blur, slight perspective.",
+      "character": "Taps the Threats tab on the PROFILE plate (52.0 to 52.6); the tab's real state follows.",
+      "voice": ["V17"], "sfx": ["precise UI ticks on every cut"], "music": "peak",
+      "transitionIn": "J scale transition", "transitionOut": "camera pulls back out of the interface to the map", "text": ["ATLAS", "SPECIES", "PROFILE", "DISTRIBUTION", "THREATS", "LAYERS"], "status": "existing-adapt"
+    },
+    {
+      "id": "S20", "in": 55, "out": 58, "source": "existing", "section": "Atlas meaning",
+      "visual": "Back to the quiet map; everything slows. Character fully visible, mid-frame below the map.",
+      "character": "Fully visible. Turns from the map to camera on 'there'.",
+      "voice": ["V18"], "sfx": ["music drops out", "room tone only"], "music": "drop",
+      "transitionIn": "pull back", "transitionOut": "fade through black", "text": [], "status": "existing-adapt"
+    },
+    {
+      "id": "S21", "in": 58, "out": 60, "source": "existing", "section": "Final brand",
+      "visual": "Black. Thin line. India outline. INDIA SPECIES ATLAS. Then the three EXPLORE lines. One clean impact.",
+      "character": "A last look to camera, small and calm, beside the wordmark (58.4 to 59.4).",
+      "voice": [], "sfx": ["near silence", "one final impact on the wordmark"], "music": "near silence, final impact",
+      "transitionIn": "from black", "transitionOut": "end", "text": ["INDIA SPECIES ATLAS", "EXPLORE THE SPECIES.", "EXPLORE THE MAPS.", "EXPLORE THE CONSERVATION STORY."], "status": "existing-adapt"
+    }
+  ]
+}

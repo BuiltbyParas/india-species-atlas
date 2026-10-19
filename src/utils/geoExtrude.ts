@@ -8,6 +8,7 @@
  * Deliberately asset-free: no downloaded 3D model, no texture, no loader.
  */
 import * as THREE from 'three';
+import { PROJECTION_LAT } from '../geo/india';
 
 /** A GeoJSON position: [longitude, latitude]. */
 export type Position = [number, number];
@@ -143,7 +144,7 @@ export function bakeCapAndWallColors(
  * either scene — both are illustrations, not measurement surfaces — but an
  * uncorrected plate carrée looks visibly wrong, so it is worth the one cosine.
  */
-export const LAT0 = 22.5;
+export const LAT0 = PROJECTION_LAT;
 export const LON_SCALE = Math.cos((LAT0 * Math.PI) / 180);
 
 /** One polygon of the source, projected and simplified. Outer ring first. */

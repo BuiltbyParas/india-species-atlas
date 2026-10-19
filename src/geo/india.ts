@@ -16,20 +16,43 @@ const MIN_LNG = 68;
 const MAX_LNG = 97.5;
 const MIN_LAT = 6.5;
 const MAX_LAT = 37.2;
-const LNG_SCALE = Math.cos((22 * Math.PI) / 180);
+/**
+ * The latitude the longitude axis is corrected at. Shared with the 3D relief
+ * (`utils/geoExtrude.ts`), so the flat maps and the relief draw the country
+ * in exactly the same proportions.
+ */
+export const PROJECTION_LAT = 22;
+const LNG_SCALE = Math.cos((PROJECTION_LAT * Math.PI) / 180);
 
 export const MAP_WIDTH = 1000;
 const K = MAP_WIDTH / ((MAX_LNG - MIN_LNG) * LNG_SCALE);
 export const MAP_HEIGHT = Math.round((MAX_LAT - MIN_LAT) * K);
 export const MAP_VIEWBOX = `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`;
+/** The geographic point at the middle of the drawn sheet (not a claim about India's centre). */
+export const SHEET_CENTRE = { lat: (MIN_LAT + MAX_LAT) / 2, lng: (MIN_LNG + MAX_LNG) / 2 };
 
 export function project(lng: number, lat: number): [number, number] {
   return [(lng - MIN_LNG) * LNG_SCALE * K, (MAX_LAT - lat) * K];
 }
 
+/** The inverse of `project`: a sheet point back to [lng, lat]. */
+export function unproject(x: number, y: number): [number, number] {
+  return [MIN_LNG + x / (LNG_SCALE * K), MAX_LAT - y / K];
+}
+
+/**
+ * Kilometres per sheet unit. The projection keeps north–south distances true
+ * (one degree of latitude ≈ 111.32 km) and corrects east–west ones at 22°, so
+ * near that latitude a sheet unit is the same distance in either direction.
+ * It is the scale a survey bar on a sheet view is drawn from.
+ */
+export const KM_PER_UNIT = 111.32 / K;
+
 export interface StatePath {
   name: string;
   d: string;
+  /** Extent in map units: [minX, minY, maxX, maxY]. */
+  bounds: [number, number, number, number];
 }
 
 export interface IndiaGeo {
@@ -56,6 +79,7 @@ function build(geojson: GeoCollection): IndiaGeo {
   for (const feature of geojson.features) {
     const name = String(feature.properties?.state ?? '');
     let d = '';
+    const bounds: StatePath['bounds'] = [Infinity, Infinity, -Infinity, -Infinity];
     for (const polygon of ringsOf(feature)) {
       for (const ring of polygon) {
         ring.forEach(([lng, lat], i) => {
@@ -64,12 +88,16 @@ function build(geojson: GeoCollection): IndiaGeo {
           if (lng < extent.minLng) extent.minLng = lng;
           if (lng > extent.maxLng) extent.maxLng = lng;
           const [x, y] = project(lng, lat);
+          bounds[0] = Math.min(bounds[0], x);
+          bounds[1] = Math.min(bounds[1], y);
+          bounds[2] = Math.max(bounds[2], x);
+          bounds[3] = Math.max(bounds[3], y);
           d += `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
         });
         d += 'Z';
       }
     }
-    states.push({ name, d });
+    states.push({ name, d, bounds });
   }
   return {
     states,
@@ -129,6 +157,18 @@ export function formatDeg(value: number, axis: 'lat' | 'lng'): string {
     min = 0;
   }
   return `${deg}°${String(min).padStart(2, '0')}′${hemi}`;
+}
+
+/** Shown in place of a locality's coordinates where its record withholds them. */
+export const COORDS_WITHHELD = 'coordinates withheld';
+
+/**
+ * A locality's coordinates, wherever a record's place is named: "26°47′N 70°38′E", or `COORDS_WITHHELD` for a
+ * record that withholds them (`DistributionPoint.withholdCoordinates`). Readouts of the pointer, the camera or the
+ * map's own frame are instruments, not records, and use `formatDeg` directly.
+ */
+export function localityCoords(p: { lat: number; lng: number; withholdCoordinates?: true }): string {
+  return p.withholdCoordinates ? COORDS_WITHHELD : `${formatDeg(p.lat, 'lat')} ${formatDeg(p.lng, 'lng')}`;
 }
 
 /**

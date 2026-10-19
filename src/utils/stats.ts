@@ -69,3 +69,28 @@ export function statesCovered() {
   for (const s of SPECIES) for (const st of s.states) set.add(st);
   return [...set].sort();
 }
+
+/**
+ * India's union territories, by the names the dataset uses. The rest of `statesCovered()` are states; a count of
+ * "states" that included these would overstate one and hide the other.
+ */
+const UNION_TERRITORIES = new Set([
+  'Andaman & Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+]);
+
+/** The places of record, split into states and union territories. */
+export function statesAndTerritories() {
+  const all = statesCovered();
+  const territories = all.filter((n) => UNION_TERRITORIES.has(n));
+  return { states: all.length - territories.length, territories: territories.length };
+}
+
+/** Localities that are conservation-breeding centres rather than wild populations. */
+export const captiveLocalities = SPECIES.reduce((n, s) => n + s.distributionPoints.filter((p) => p.captive).length, 0);

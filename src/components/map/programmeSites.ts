@@ -1,6 +1,7 @@
 import { PROGRAMMES } from '../../data/programmes';
 import { SPECIES_BY_ID } from '../../data/species';
 import type { ConservationProgramme, Species } from '../../types';
+import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 
 /**
  * Where the Conservation layer stands its programme markers, and what each
@@ -139,17 +140,14 @@ export function programmeSitesFor(species: Species[]): ProgrammeSite[] {
  * boolean read off the data rather than a quantity that a prism's height
  * would misrepresent.
  *
- * A name with no matching feature in `india-states.geojson` simply raises
- * nothing. The one case in this dataset is Ladakh, which the shipped boundary
- * file — drawn before the 2019 reorganisation — still carries inside its
- * "Jammu and Kashmir" feature; the snow leopard entry lists both names, so
- * that ground is raised regardless.
+ * Names are the drawn ones (Ladakh is raised as part of Jammu and Kashmir). A
+ * name with no matching feature in `india-states.geojson` simply raises nothing.
  */
 export function programmeStatesFor(species: Species[]): Set<string> {
   const states = new Set<string>();
   for (const s of species) {
     if (s.conservationProgrammes.length === 0) continue;
-    for (const state of s.states) states.add(state);
+    for (const state of s.states) states.add(GEOJSON_STATE_ALIASES[state] ?? state);
   }
   return states;
 }

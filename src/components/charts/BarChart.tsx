@@ -37,7 +37,7 @@ export function BarChart({
             className="grid items-center gap-3"
             style={{ gridTemplateColumns: `${labelWidth} 1fr auto` }}
           >
-            <dt className="truncate text-xs text-canvas/70" title={d.label}>
+            <dt className="text-xs leading-snug text-canvas/70">
               {d.label}
             </dt>
             <dd className="h-3 overflow-hidden rounded-full bg-forest-800">
@@ -48,7 +48,7 @@ export function BarChart({
             </dd>
             <dd className="tabular-nums text-sm font-semibold text-canvas">
               {d.value}
-              {unit && <span className="ml-0.5 text-xs font-normal text-canvas/50">{unit}</span>}
+              {unit && <span className="ml-0.5 text-xs font-normal text-canvas/70">{unit}</span>}
             </dd>
           </div>
         );

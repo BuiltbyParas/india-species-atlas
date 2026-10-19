@@ -8,6 +8,8 @@ import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { ProgrammeShape } from './ProgrammeShape';
 import { programmeSitesFor, programmeStatesFor, type ProgrammeSite } from './programmeSites';
 import type { ConservationScene, SceneSite } from './conservationScene';
+import { loadIndiaGeoJson } from '../../geo/india';
+import { registerScene } from '../../world/sceneRegistry';
 
 /**
  * The opt-in 3D companion to the Conservation map mode.
@@ -52,8 +54,9 @@ export function ConservationView({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}india-states.geojson`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('geojson unavailable'))))
+    // The same shared request every map on the site uses, so the file is
+    // fetched once per visit rather than once per component.
+    loadIndiaGeoJson()
       .then((data) => {
         if (!cancelled) setGeojson(data as GeoCollection);
       })
@@ -125,16 +128,7 @@ export function ConservationView({
         instance.resize(Math.round(rect.width), Math.round(rect.height));
 
         // Idle whenever it is off-screen or the tab is in the background.
-        let onScreen = true;
-        const sync = () => instance.setActive(onScreen && !document.hidden);
-        const visibility = new IntersectionObserver((entries) => {
-          onScreen = entries.some((e) => e.isIntersecting);
-          sync();
-        });
-        visibility.observe(stage);
-        cleanups.push(() => visibility.disconnect());
-        document.addEventListener('visibilitychange', sync);
-        cleanups.push(() => document.removeEventListener('visibilitychange', sync));
+        cleanups.push(registerScene('conservation', instance, stage));
 
         const lost = () => onUnavailable('slow');
         canvas.addEventListener('webglcontextlost', lost);
@@ -182,7 +176,7 @@ export function ConservationView({
 
   if (!sites.length) {
     return (
-      <div className="grid h-full place-items-center bg-forest-900 p-6 text-center text-sm text-canvas/55">
+      <div className="grid h-full place-items-center bg-forest-900 p-6 text-center text-sm text-canvas/70">
         <p className="max-w-sm">
           None of the species in the current selection is linked to a conservation programme, so there is
           nothing for this view to raise. Clear a filter, or switch back to the map.
@@ -199,6 +193,7 @@ export function ConservationView({
         tabIndex={0}
         aria-label="Conservation programmes in three dimensions. Drag to turn the view; arrow keys turn and tilt it; plus and minus zoom."
         onKeyDown={onKeyDown}
+        data-cursor-area="Explore"
         className="relative min-h-0 flex-1 outline-none ring-forest-500/70 transition-shadow focus-visible:ring-2"
       >
         <canvas
@@ -209,7 +204,7 @@ export function ConservationView({
         />
 
         {!ready && (
-          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/45">
+          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/62">
             Raising the programme states…
           </p>
         )}
@@ -219,7 +214,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.turn(-1)}
             aria-label="Turn left"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -227,7 +222,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.turn(1)}
             aria-label="Turn right"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -235,7 +230,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.zoom(1)}
             aria-label="Zoom in"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ZoomIn className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -243,7 +238,7 @@ export function ConservationView({
             type="button"
             onClick={() => sceneRef.current?.zoom(-1)}
             aria-label="Zoom out"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <ZoomOut className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -254,18 +249,18 @@ export function ConservationView({
               select(-1);
             }}
             aria-label="Reset the view"
-            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-md p-0')}
+            className={buttonClasses('secondary', 'sm', 'h-8 w-8 rounded-xs p-0')}
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-[10px] text-forest-300/45 sm:flex">
+        <p className="pointer-events-none absolute bottom-3 left-4 hidden items-center gap-1.5 text-micro text-forest-300/45 sm:flex">
           <Move3d className="h-3.5 w-3.5" aria-hidden="true" />
           Drag to turn · click a marker for its programme
         </p>
 
-        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[17rem] text-right text-[10px] leading-snug text-forest-300/45">
+        <p className="pointer-events-none absolute bottom-3 right-4 max-w-[17rem] text-right text-micro leading-snug text-forest-300/45">
           The step marks whether a state has a programme in this dataset, not how much. Markers are plan
           shapes, not depictions of species.
         </p>
@@ -280,14 +275,14 @@ export function ConservationView({
         {current ? (
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="flex items-center gap-2 font-serif text-base font-semibold text-canvas">
+              <p className="flex items-center gap-2 font-serif text-lg font-normal tracking-tight text-canvas">
                 <ProgrammeShape identity={current.identity} />
                 {current.programme.name}
               </p>
-              <p className="mt-0.5 text-xs text-canvas/55">{current.programme.authority}</p>
+              <p className="mt-0.5 text-xs text-canvas/70">{current.programme.authority}</p>
               <p className="mt-1.5 text-sm text-canvas/75">
                 {current.species.commonName}{' '}
-                <span className="italic text-canvas/50">({current.species.scientificName})</span> ·{' '}
+                <span className="italic text-canvas/70">({current.species.scientificName})</span> ·{' '}
                 <span style={{ color: 'var(--color-forest-300)' }}>{current.label}</span>
               </p>
             </div>
@@ -300,7 +295,7 @@ export function ConservationView({
             </button>
           </div>
         ) : (
-          <p className="text-sm text-canvas/55">
+          <p className="text-sm text-canvas/70">
             {sites.length} programme site{sites.length === 1 ? '' : 's'} across {raisedStates.size} state
             {raisedStates.size === 1 ? '' : 's'} and union territories. Click a marker to see the programme it
             stands for.

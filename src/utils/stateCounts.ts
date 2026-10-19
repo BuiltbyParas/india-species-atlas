@@ -10,14 +10,20 @@ import type { Species } from '../types';
  */
 
 /**
- * `public/india-states.geojson` predates the 2019 reorganisation of Jammu &
- * Kashmir, so it has no Ladakh polygon. Records for Ladakh are therefore drawn
- * on the old Jammu and Kashmir shape, and the legend says so — silently
- * dropping them would understate the Himalayan states instead.
+ * Dataset state names that the boundary file draws under a different name.
+ * The atlas draws India as a political map: `public/india-states.geojson`
+ * carries the north as one "Jammu and Kashmir" territory that includes Ladakh,
+ * so Ladakh is never a detached outline. Records that name Ladakh are drawn,
+ * counted and listed on that shape; the dataset keeps its own Ladakh labels.
  */
 export const GEOJSON_STATE_ALIASES: Record<string, string> = {
   Ladakh: 'Jammu and Kashmir',
 };
+
+/** Whether a species is recorded in the territory the map draws as `drawn`. */
+export function recordedInDrawnState(species: Pick<Species, 'states'>, drawn: string): boolean {
+  return species.states.some((st) => (GEOJSON_STATE_ALIASES[st] ?? st) === drawn);
+}
 
 export function countSpeciesByState(results: Species[]): Map<string, number> {
   const counts = new Map<string, number>();

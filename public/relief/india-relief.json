@@ -1,0 +1,26 @@
+{
+  "width": 604,
+  "height": 632,
+  "west": 67.59375,
+  "north": 37.610417,
+  "east": 97.79375,
+  "south": 6.010417,
+  "cellDeg": 0.05,
+  "units": "metres above mean sea level; the sea and anything below it clamped to 0",
+  "encoding": "int16 little-endian, planar-predictor residuals (west + north − north-west), zlib",
+  "cell": "mean of 3×3 one-arc-minute samples",
+  "extent": "India from public/india-states.geojson plus 2 cells; 0 elsewhere",
+  "peakInside": {
+    "metres": 6688,
+    "lat": 35.885,
+    "lng": 76.519
+  },
+  "source": {
+    "name": "ETOPO 2022 15 Arc-Second Global Relief Model",
+    "publisher": "NOAA National Centers for Environmental Information",
+    "doi": "10.25921/fd45-gt74",
+    "via": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/ETOPO_2022_v1_15s.nc?z%5B(6):4:(37.6)%5D%5B(67.6):4:(97.8)%5D",
+    "licence": "Free to use and redistribute; not intended for legal use (NOAA).",
+    "retrieved": "2026-10-10"
+  }
+}

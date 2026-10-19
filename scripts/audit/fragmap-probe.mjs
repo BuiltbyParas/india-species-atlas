@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+const OUT = process.argv[2];
+const browser = await chromium.launch({ args: ['--ignore-gpu-blocklist', '--enable-gpu', '--use-angle=gl'] });
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const errs = [];
+page.on('console', (m) => ['error'].includes(m.type()) && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:4301/', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(5000);
+const secs = await page.evaluate(() => [...document.querySelectorAll('.documentary-page > *, main > section, section[id], [id$=chapter]')].map(e => ({ tag: e.tagName, id: e.id, cls: (e.className+'').slice(0,80), top: Math.round(e.getBoundingClientRect().top + scrollY), h: Math.round(e.getBoundingClientRect().height), text: (e.innerText||'').replace(/\s+/g,' ').slice(0,140) })));
+console.log(JSON.stringify(secs, null, 1));
+console.log('H', await page.evaluate(() => document.documentElement.scrollHeight));
+await page.goto('http://localhost:4301/atlas', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(4000);
+await page.screenshot({ path: OUT + '/atlas-before.jpg', type: 'jpeg', quality: 70 });
+console.log('atlas markers', await page.evaluate(() => document.querySelectorAll('.leaflet-marker-icon').length), 'tiles', await page.evaluate(() => document.querySelectorAll('.leaflet-tile').length), 'paths', await page.evaluate(()=>document.querySelectorAll('.leaflet-overlay-pane path').length));
+console.log('errs', errs);
+await browser.close();

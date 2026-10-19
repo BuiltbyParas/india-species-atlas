@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
-import { getLenis } from '../../motion/SmoothScroll';
-import { prefersReducedMotion } from '../../motion/preferences';
+import { scrollSpeed, watchScrollVelocity } from '../../interaction/velocity';
+import { useReducedMotion } from '../../motion/preferences';
 
 /**
  * A line of type running along a curve, like a river's name lettered along
@@ -29,6 +29,7 @@ export function CurvedLoop({
   const svgRef = useRef<SVGSVGElement>(null);
   const textPathRef = useRef<SVGTextPathElement>(null);
   const measureRef = useRef<SVGTextElement>(null);
+  const reduced = useReducedMotion();
   const unit = words.join('   ·   ') + '   ·   ';
   const text = unit.repeat(6);
 
@@ -37,6 +38,7 @@ export function CurvedLoop({
     const tp = textPathRef.current;
     const measure = measureRef.current;
     if (!svg || !tp || !measure) return;
+    watchScrollVelocity();
     let unitLen = measure.getComputedTextLength() || 1000;
     let offset = -unitLen;
     let raf = 0;
@@ -44,7 +46,6 @@ export function CurvedLoop({
     let dragging = false;
     let lastX = 0;
     let dir = -1;
-    const reduced = prefersReducedMotion();
 
     const place = () => {
       if (offset > 0) offset -= unitLen;
@@ -55,7 +56,8 @@ export function CurvedLoop({
 
     const loop = () => {
       if (!dragging) {
-        const v = getLenis()?.velocity ?? 0;
+        // The page's own speed, in px per 60 Hz frame (the shared velocity store).
+        const v = scrollSpeed() / 60;
         if (Math.abs(v) > 0.5) dir = v > 0 ? -1 : 1;
         offset += dir * (speed + Math.min(Math.abs(v) * 0.25, 6));
       }
@@ -107,7 +109,7 @@ export function CurvedLoop({
       svg.removeEventListener('pointercancel', up);
       window.removeEventListener('resize', onResize);
     };
-  }, [speed, unit]);
+  }, [speed, unit, reduced]);
 
   return (
     <div className={className}>

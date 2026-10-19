@@ -7,6 +7,10 @@ import { BIBLIOGRAPHY } from '../../data/sources';
 import { MAP_VIEWBOX, useIndiaGeo } from '../../geo/india';
 import { cn } from '../../utils/cn';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { openMedia } from '../../interaction/media';
+import { FILM, FILM_RUNTIME } from '../../content/film';
+import { FIELD_STUDIES } from '../../content/fieldStudies';
 
 const LOCALITY_COUNT = SPECIES.reduce((n, s) => n + s.distributionPoints.length, 0);
 const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => e.publisher)))];
@@ -19,7 +23,7 @@ const PUBLISHERS = [...new Set(BIBLIOGRAPHY.flatMap((c) => c.entries.map((e) => 
 const ITEMS = [
   {
     to: '/',
-    label: 'Atlas',
+    label: 'Home',
     figure: 'The documentary',
     strip: ['The map', 'The species', 'The selection', 'Fragmentation', 'Protection'],
   },
@@ -28,6 +32,12 @@ const ITEMS = [
     label: 'Species',
     figure: `${SPECIES.length} species`,
     strip: SPECIES.map((s) => s.commonName),
+  },
+  {
+    to: '/#field-studies',
+    label: 'Field studies',
+    figure: `${FIELD_STUDIES.length} worlds`,
+    strip: FIELD_STUDIES.map((f) => `${f.habitat} · ${f.species.commonName}`),
   },
   {
     to: '/atlas',
@@ -62,6 +72,7 @@ const SECONDARY = [
 ];
 
 function isActive(pathname: string, search: string, to: string) {
+  if (to === '/#field-studies') return pathname.startsWith('/field/');
   const [path, query] = to.split('?');
   if (query) return pathname === path && search.includes(query);
   if (path === '/atlas') return pathname === '/atlas' && !search.includes('mode=threats');
@@ -78,24 +89,26 @@ function isActive(pathname: string, search: string, to: string) {
  * gesture as running a finger along a line on a map.
  */
 export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const { openRandom } = useSpeciesProfile();
   const geo = useIndiaGeo();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on navigation.
-  const lastPath = useRef(pathname + search);
+  const lastPath = useRef(pathname + search + hash);
   useEffect(() => {
-    if (lastPath.current !== pathname + search) {
-      lastPath.current = pathname + search;
+    if (lastPath.current !== pathname + search + hash) {
+      lastPath.current = pathname + search + hash;
       onClose();
     }
-  }, [pathname, search, onClose]);
+  }, [pathname, search, hash, onClose]);
 
   // Keyboard: Escape closes, Tab stays inside, first link takes focus.
   useEffect(() => {
     if (!open) return;
     const panel = panelRef.current;
+    // Whatever opened the menu (the Menu button) takes focus back when it closes.
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const first = panel?.querySelector<HTMLElement>('a, button');
     const focusTimer = window.setTimeout(() => first?.focus({ preventScroll: true }), 380);
     const onKey = (e: KeyboardEvent) => {
@@ -120,6 +133,10 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener('keydown', onKey);
+      // Closing makes the panel inert, which drops its focus to <body>. A route change moves
+      // focus to the new page itself afterwards, so restoring here never fights it.
+      const lost = document.activeElement === document.body || panel?.contains(document.activeElement);
+      if (lost && opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
@@ -157,7 +174,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
 
       {geo && (
         <svg className="menu-map" viewBox={MAP_VIEWBOX} aria-hidden="true">
-          <path d={geo.all} pathLength={1} />
+          <GeoLine d={geo.all} role="survey" className="menu-map-line" />
         </svg>
       )}
 
@@ -180,7 +197,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
                     to={item.to}
                     className={cn('menu-link', active && 'is-active')}
                     aria-current={active ? 'page' : undefined}
-                    data-cursor="Go"
+                    data-cursor="Enter"
                   >
                     <span className="menu-label-mask">
                       <span className="menu-label">{item.label}</span>
@@ -209,11 +226,26 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
           <ul className="space-y-2">
             {SECONDARY.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className="menu-secondary" data-cursor="Go">
+                <Link to={l.to} className="menu-secondary" data-cursor="Enter">
                   {l.label}
                 </Link>
               </li>
             ))}
+            <li>
+              <button
+                type="button"
+                className="menu-secondary"
+                data-cursor="Play"
+                onClick={() => {
+                  onClose();
+                  // Opened from a word, not a picture: the film comes forward on its own (MediaStage),
+                  // and focus comes back to the menu button, since the menu will be folded away.
+                  openMedia(FILM, null, document.querySelector<HTMLElement>('.menu-button'));
+                }}
+              >
+                Play the film <span className="tabular-nums text-canvas/62">· {FILM_RUNTIME}</span>
+              </button>
+            </li>
             <li>
               <button
                 type="button"
@@ -227,7 +259,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
               </button>
             </li>
           </ul>
-          <p className="mt-8 max-w-[18rem] text-xs leading-relaxed text-canvas/40">
+          <p className="mt-8 max-w-[18rem] text-xs leading-relaxed text-canvas/62">
             Status follows the IUCN Red List. Map locations are indicative localities, not range boundaries.
           </p>
         </div>

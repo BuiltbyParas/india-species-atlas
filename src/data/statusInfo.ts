@@ -70,3 +70,14 @@ export const THREATENED_ORDER: IucnStatus[] = ['CR', 'EN', 'VU'];
 export function statusColor(code: IucnStatus): string {
   return STATUS_INFO[code].colorVar;
 }
+
+/**
+ * The two years of a species' cited Red List assessment, as the atlas states them: "assessed 2019, published
+ * 2020", or "assessed 2015" where the two are the same. The assessment date and the publication year differ for
+ * most species, and a single bare year would leave the reader unable to tell which was meant.
+ */
+export function redListYears(s: { statusAssessedYear: number; statusPublishedYear: number }): string {
+  return s.statusAssessedYear === s.statusPublishedYear
+    ? `assessed ${s.statusAssessedYear}`
+    : `assessed ${s.statusAssessedYear}, published ${s.statusPublishedYear}`;
+}

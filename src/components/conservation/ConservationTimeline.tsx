@@ -41,8 +41,8 @@ export function ConservationTimeline() {
         description="Two kinds of dated fact sit on one line: the year a species was listed in the Red List category it still holds, and the year a conservation programme began. Move the slider to read the record as it stood at any point."
       />
 
-      <div className="mt-6 rounded-xl border border-forest-800 bg-forest-900/70 p-4 sm:p-5">
-        <label htmlFor="timeline-year" className="block text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
+      <div className="mt-6 rounded-xs border border-forest-800 bg-forest-900/70 p-4 sm:p-5">
+        <label htmlFor="timeline-year" className="block caps">
           Show the record as at
         </label>
         <div className="mt-2 flex items-center gap-4">
@@ -55,7 +55,8 @@ export function ConservationTimeline() {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-describedby="timeline-summary"
-            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-forest-700 accent-forest-400"
+            aria-valuetext={`${year}: ${listedSpecies} species with a dated listing, ${programmes} programmes begun`}
+            className="range-input min-w-0 flex-1"
           />
           <output htmlFor="timeline-year" className="w-16 shrink-0 text-right font-mono text-xl text-canvas">
             {year}
@@ -75,7 +76,7 @@ export function ConservationTimeline() {
           .map((e) => (
             <li
               key={e.id}
-              className="relative flex gap-4 rounded-lg border border-forest-800 bg-forest-900/50 p-3.5 pl-4"
+              className="relative flex gap-4 rounded-xs border border-forest-800 bg-forest-900/50 p-3.5 pl-4"
             >
               <span
                 aria-hidden="true"
@@ -90,7 +91,7 @@ export function ConservationTimeline() {
                   {e.kind === 'status' && e.status ? (
                     <StatusBadge status={e.status} size="sm" />
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-forest-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-forest-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-forest-600 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-forest-300">
                       <ShieldCheck className="h-3 w-3" aria-hidden="true" />
                       Programme
                     </span>
@@ -125,13 +126,13 @@ export function ConservationTimeline() {
       </ol>
 
       {hidden > 0 && (
-        <p className="mt-3 text-sm text-canvas/55" aria-live="polite">
+        <p className="mt-3 text-sm text-canvas/70" aria-live="polite">
           {hidden} later event{hidden === 1 ? '' : 's'} {hidden === 1 ? 'is' : 'are'} not shown. Move the
           slider to {lastYear} for the whole record.
         </p>
       )}
 
-      <div className="mt-6 rounded-lg border border-dashed border-forest-700/70 bg-forest-900/40 p-4 text-sm text-canvas/65">
+      <div className="mt-6 rounded-xs border border-dashed border-forest-700/70 bg-forest-900/40 p-4 text-sm text-canvas/65">
         <p className="font-medium text-canvas/80">What this timeline does not show</p>
         <p className="mt-1.5">
           A listing year is recorded here only where a source states it outright. No dated listing has been

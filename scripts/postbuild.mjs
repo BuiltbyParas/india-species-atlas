@@ -39,7 +39,27 @@ async function staticRoutes() {
 const index = join(dist, 'index.html');
 await copyFile(index, join(dist, '404.html'));
 
-const routes = await staticRoutes();
+/**
+ * The species pages (/species/:id), one per entry in the dataset. The ids are
+ * read from the dataset's own `id:` lines rather than listed here, for the
+ * same reason the routes are read from the router.
+ */
+async function speciesRoutes() {
+  const data = await readFile(join(root, 'src/data/species.ts'), 'utf8');
+  const ids = [...data.matchAll(/^ {4}id: '([a-z0-9-]+)',$/gm)].map((m) => m[1]);
+  if (ids.length === 0) throw new Error('postbuild: no species ids found in src/data/species.ts');
+  return ids.map((id) => `/species/${id}`);
+}
+
+/** The field studies (/field/:id), read from their editorial list the same way. */
+async function fieldRoutes() {
+  const content = await readFile(join(root, 'src/content/fieldStudies.ts'), 'utf8');
+  const ids = [...content.matchAll(/^ {4}id: '([a-z0-9-]+)',$/gm)].map((m) => m[1]);
+  if (ids.length === 0) throw new Error('postbuild: no field studies found in src/content/fieldStudies.ts');
+  return ids.map((id) => `/field/${id}`);
+}
+
+const routes = [...(await staticRoutes()), ...(await speciesRoutes()), ...(await fieldRoutes())];
 for (const route of routes) {
   const dir = join(dist, route);
   await mkdir(dir, { recursive: true });

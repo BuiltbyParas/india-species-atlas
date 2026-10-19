@@ -1,0 +1,31 @@
+{
+  "width": 660,
+  "height": 600,
+  "west": 58.985417,
+  "north": 41.01875,
+  "east": 102.985417,
+  "south": 1.01875,
+  "cellDeg": 0.06666667,
+  "units": "metres relative to mean sea level; negative below it (the sea floor)",
+  "encoding": "int16 little-endian, planar-predictor residuals (west + north − north-west), zlib",
+  "cell": "mean of 2×2 two-arc-minute samples; land to 1 m, sea floor to 10 m",
+  "extent": "the whole box, unclipped: India, its neighbours and the sea floor",
+  "peak": {
+    "metres": 6878,
+    "lat": 27.985,
+    "lng": 86.952
+  },
+  "deepest": {
+    "metres": -5420,
+    "lat": 1.652,
+    "lng": 59.685
+  },
+  "source": {
+    "name": "ETOPO 2022 15 Arc-Second Global Relief Model",
+    "publisher": "NOAA National Centers for Environmental Information",
+    "doi": "10.25921/fd45-gt74",
+    "via": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/ETOPO_2022_v1_15s.nc?z%5B(1):8:(41)%5D%5B(59):8:(103)%5D",
+    "licence": "Free to use and redistribute; not intended for legal use (NOAA).",
+    "retrieved": "2026-10-11"
+  }
+}

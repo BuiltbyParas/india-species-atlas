@@ -13,22 +13,21 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'sm' | 'md';
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold ' +
-  'transition-[background-color,border-color,color,box-shadow,transform] ' +
+  'ix-press inline-flex items-center justify-center gap-2 rounded-xs font-medium ' +
+  'transition-[background-color,border-color,color,box-shadow,transform,scale] ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-forest-500 text-white shadow-sm shadow-forest-950/40 ' +
-    'hover:bg-forest-400 hover:shadow-md hover:shadow-forest-950/50 ' +
-    'active:bg-forest-500 focus-visible:outline-forest-300',
+    // Buff on the dark sheet: the same ink-and-paper pairing as the cursor's label.
+    'bg-canvas text-ink hover:bg-parchment active:bg-sand focus-visible:outline-canvas',
   secondary:
-    'border border-forest-700 bg-forest-900/60 text-canvas ' +
-    'hover:border-forest-500 hover:bg-forest-800 ' +
+    'border border-canvas/20 bg-transparent text-canvas ' +
+    'hover:border-canvas/60 hover:bg-canvas/[0.04] ' +
     'focus-visible:outline-forest-400',
   ghost:
-    'text-canvas/70 hover:bg-forest-800/70 hover:text-canvas focus-visible:outline-forest-400',
+    'text-canvas/70 hover:bg-canvas/[0.05] hover:text-canvas focus-visible:outline-forest-400',
 };
 
 const SIZES: Record<ButtonSize, string> = {

@@ -7,18 +7,36 @@ import { CustomCursor } from './components/cinema/CustomCursor';
 import { Loader, shouldShowLoader } from './components/cinema/Loader';
 import { SmoothScroll } from './motion/SmoothScroll';
 import { markIntroDone } from './motion/intro';
+import { InteractionProvider } from './interaction/InteractionProvider';
+import { RouteTransition } from './interaction/RouteTransition';
+import { useOpenMedia } from './interaction/media';
 import { HomePage } from './pages/HomePage';
 
 // The working pages are split out, so the documentary's first load carries
 // only what it shows.
 const AtlasPage = lazy(() => import('./pages/AtlasPage').then((m) => ({ default: m.AtlasPage })));
 const SpeciesPage = lazy(() => import('./pages/SpeciesPage').then((m) => ({ default: m.SpeciesPage })));
+const SpeciesWorldPage = lazy(() =>
+  import('./pages/SpeciesWorldPage').then((m) => ({ default: m.SpeciesWorldPage })),
+);
 const ComparePage = lazy(() => import('./pages/ComparePage').then((m) => ({ default: m.ComparePage })));
 const ConservationPage = lazy(() => import('./pages/ConservationPage').then((m) => ({ default: m.ConservationPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 const SourcesPage = lazy(() => import('./pages/SourcesPage').then((m) => ({ default: m.SourcesPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const FieldStudyPage = lazy(() => import('./pages/FieldStudyPage').then((m) => ({ default: m.FieldStudyPage })));
 const DocumentaryPage = lazy(() => import('./pages/DocumentaryPage').then((m) => ({ default: m.DocumentaryPage })));
+// The cinema is only needed once something is opened (interaction/media.ts); the film entry prefetches it.
+const MediaStage = lazy(() => import('./components/cinema/MediaStage').then((m) => ({ default: m.MediaStage })));
+
+function MediaHost() {
+  const open = useOpenMedia();
+  return open ? (
+    <Suspense fallback={null}>
+      <MediaStage />
+    </Suspense>
+  ) : null;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,13 +46,19 @@ function ScrollToTop() {
   return null;
 }
 
+/**
+ * Holds the page open while a route's code arrives. It is a full screen tall
+ * so the footer starts below the fold and is not shoved down when the page
+ * lands (that jump was most of the working pages' layout shift).
+ */
 function PageFallback() {
-  return <div className="min-h-[70vh]" aria-busy="true" />;
+  return <div className="min-h-[100svh]" aria-busy="true" />;
 }
 
 function Shell() {
   const { pathname } = useLocation();
   const home = pathname === '/';
+  const field = pathname.startsWith('/field/');
   const documentary = pathname === '/documentary';
   const [loading, setLoading] = useState(() => home && shouldShowLoader());
   const done = useCallback(() => setLoading(false), []);
@@ -55,21 +79,26 @@ function Shell() {
     <>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:bg-canvas focus:px-3 focus:py-2 focus:text-sm focus:text-ink"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-(--z-skip) focus:bg-canvas focus:px-3 focus:py-2 focus:text-sm focus:text-ink"
       >
         Skip to content
       </a>
-      {home && <SmoothScroll />}
+      {(home || field) && <SmoothScroll key={home ? 'home' : 'field'} />}
+      <InteractionProvider />
       <CustomCursor />
+      <RouteTransition />
+      <MediaHost />
       {loading && <Loader onDone={done} />}
       <div className="flex min-h-screen flex-col">
         <Navbar />
-        <main id="main" className="flex-1">
+        <main id="main" tabIndex={-1} className="flex-1 outline-none">
           <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/atlas" element={<AtlasPage />} />
               <Route path="/species" element={<SpeciesPage />} />
+              <Route path="/species/:id" element={<SpeciesWorldPage />} />
+              <Route path="/field/:id" element={<FieldStudyPage />} />
               <Route path="/compare" element={<ComparePage />} />
               <Route path="/conservation" element={<ConservationPage />} />
               <Route path="/about" element={<AboutPage />} />

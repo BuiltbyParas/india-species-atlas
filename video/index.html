@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lines on the Map — film stage</title>
+    <style>
+      html, body { margin: 0; background: #000; overflow: hidden; }
+      #stage { display: block; transform-origin: 0 0; }
+      #hud { position: fixed; left: 12px; bottom: 10px; font: 12px/1.4 ui-monospace, monospace; color: #9a9; }
+      body.capture #hud { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <div id="hud"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

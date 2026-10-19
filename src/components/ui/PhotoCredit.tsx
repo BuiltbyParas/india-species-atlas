@@ -16,7 +16,7 @@ export function PhotoCredit({ species, className }: { species: Species; classNam
   const link = 'underline decoration-forest-700 underline-offset-2 hover:text-canvas/75 hover:decoration-forest-400';
 
   return (
-    <p className={cn('text-[11px] leading-snug text-canvas/40', className)}>
+    <p className={cn('text-micro leading-snug text-canvas/62', className)}>
       Photograph:{' '}
       {sourceUrl ? (
         <a href={sourceUrl} target="_blank" rel="noreferrer" className={link}>

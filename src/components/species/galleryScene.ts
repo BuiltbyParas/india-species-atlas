@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { perFrame } from '../../interaction/spring';
+import { FrameGovernor, pixelRatio } from '../../world/quality';
 
 /**
  * The species gallery: a ring of photographic cards in real 3D space.
@@ -54,7 +56,8 @@ export interface Gallery {
 const CARD_W = 1.12;
 const CARD_H = 1.56;
 const CARD_DEPTH = 0.055;
-const CARD_RADIUS = 0.075;
+// Nearly square: a mounted plate, the way the rest of the atlas frames a photograph.
+const CARD_RADIUS = 0.014;
 /** Bevel on the slab's edge. It is what catches the key light as a card turns. */
 const CARD_BEVEL = 0.014;
 
@@ -92,17 +95,10 @@ const FACE_H = 892;
 
 /* --------------------------------------------------------------- behaviour */
 
-/** Exponential smoothing per frame, for everything that eases. */
-const EASE = 0.13;
+/** Exponential smoothing for everything that eases, per second (0.13 a frame at 60 Hz). */
+const EASE_LAMBDA = perFrame(0.13);
 /** Pixels of horizontal drag that turn the ring by one card. */
 const DRAG_PER_CARD = 190;
-
-const SLOW_FRAME_MS = 34;
-const SAMPLE_WINDOW = 30;
-const SAMPLE_WINDOW_MS = 900;
-const DEGRADE_SLOW_FRACTION = 0.5;
-const ABANDON_SLOW_FRACTION = 0.68;
-const BAD_WINDOWS_BEFORE_ABANDON = 2;
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -200,13 +196,15 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   const codeWidth = ctx.measureText(card.statusCode).width;
   const chipW = codeWidth + 62;
   const chipH = 44;
-  ctx.fillStyle = 'rgba(6,15,10,0.66)';
-  path(ctx, chipX, chipY, chipW, chipH, chipH / 2);
+  ctx.fillStyle = 'rgba(6,15,10,0.72)';
+  path(ctx, chipX, chipY, chipW, chipH, 3);
   ctx.fill();
   ctx.strokeStyle = card.statusColor;
-  ctx.lineWidth = 2;
-  path(ctx, chipX + 1, chipY + 1, chipW - 2, chipH - 2, (chipH - 2) / 2);
+  ctx.globalAlpha = 0.6;
+  ctx.lineWidth = 1.5;
+  path(ctx, chipX + 0.75, chipY + 0.75, chipW - 1.5, chipH - 1.5, 3);
   ctx.stroke();
+  ctx.globalAlpha = 1;
   ctx.fillStyle = card.statusColor;
   ctx.beginPath();
   ctx.arc(chipX + 22, chipY + chipH / 2, 7, 0, Math.PI * 2);
@@ -218,12 +216,13 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // under it in italic, exactly as it is set everywhere else on the site.
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#f6f4ec';
-  ctx.font = '600 42px Geist, system-ui, sans-serif';
+  // The name in light Newsreader, as it is set in the documentary.
+  ctx.font = '300 54px Newsreader, Georgia, serif';
   const lines = wrap(ctx, card.commonName, FACE_W - 68);
-  let baseline = FACE_H - 66 - (lines.length - 1) * 50;
+  let baseline = FACE_H - 70 - (lines.length - 1) * 54;
   for (const line of lines) {
     ctx.fillText(line, 34, baseline);
-    baseline += 50;
+    baseline += 54;
   }
   ctx.fillStyle = 'rgba(195,226,211,0.82)';
   ctx.font = 'italic 400 27px Newsreader, Georgia, serif';
@@ -233,9 +232,9 @@ function drawFace(image: HTMLImageElement, card: GalleryCard): THREE.CanvasTextu
   // A hairline of the status colour around the whole face, which is what makes
   // the card read as a mounted plate rather than a floating photograph.
   ctx.strokeStyle = card.statusColor;
-  ctx.globalAlpha = 0.85;
-  ctx.lineWidth = 6;
-  path(ctx, 3, 3, FACE_W - 6, FACE_H - 6, radius - 3);
+  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 3;
+  path(ctx, 1.5, 1.5, FACE_W - 3, FACE_H - 3, Math.max(radius - 1.5, 0));
   ctx.stroke();
   ctx.globalAlpha = 1;
 
@@ -283,7 +282,7 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
   await document.fonts.ready.catch(() => undefined);
   const images = await Promise.all(cards.map((card) => loadImage(card.src)));
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = pixelRatio(2);
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
@@ -485,47 +484,18 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
 
   /* ------------------------------------------------------- adaptive quality */
 
-  let previousFrameAt = 0;
-  let sampledFrames = 0;
-  let sampledTime = 0;
-  let slowFrames = 0;
-  let badWindows = 0;
-  let degraded = false;
-  let cooldown = 0;
-
-  function sampleFrameRate(now: number) {
-    const gap = previousFrameAt ? now - previousFrameAt : 0;
-    previousFrameAt = now;
-    if (cooldown > 0) {
-      cooldown--;
-      return;
-    }
-    if (gap <= 0) return;
-    sampledTime += gap;
-    sampledFrames++;
-    if (gap > SLOW_FRAME_MS) slowFrames++;
-    if (sampledFrames < SAMPLE_WINDOW && sampledTime < SAMPLE_WINDOW_MS) return;
-
-    const fraction = slowFrames / sampledFrames;
-    sampledFrames = 0;
-    sampledTime = 0;
-    slowFrames = 0;
-    if (fraction < DEGRADE_SLOW_FRACTION) {
-      badWindows = 0;
-      return;
-    }
-    if (!degraded) {
-      degraded = true;
+  let lastDrawAt = 0;
+  /* Soften once, and only hand back to the flat page if softening did not help (world/quality.ts). */
+  const governor = new FrameGovernor({
+    rungs: 1,
+    onTooSlow,
+    slowFrameMs: 34, windowFrames: 30, windowMs: 900, degradeFraction: 0.5, abandonFraction: 0.68,
+    onStep() {
       renderer.setPixelRatio(Math.min(dpr, 1));
       for (const node of nodes) node.glow.visible = false;
-      cooldown = 12;
-      return;
-    }
-    if (fraction >= ABANDON_SLOW_FRACTION && ++badWindows >= BAD_WINDOWS_BEFORE_ABANDON) {
-      badWindows = 0;
-      onTooSlow?.();
-    }
-  }
+    },
+  });
+  governor.begin();
 
   /* ------------------------------------------------------------- the loop */
 
@@ -538,13 +508,16 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
   function draw(now: number) {
     frame = 0;
     if (disposed) return;
-    sampleFrameRate(now);
+    governor.sample(now);
+    const dt = lastDrawAt ? Math.min((now - lastDrawAt) / 1000, 1 / 20) : 1 / 60;
+    lastDrawAt = now;
+    const ease = 1 - Math.exp(-EASE_LAMBDA * dt);
 
     const before = currentIndex;
-    currentIndex += (targetIndex - currentIndex) * EASE;
-    pointerEased.x += (pointer.x - pointerEased.x) * EASE;
-    pointerEased.y += (pointer.y - pointerEased.y) * EASE;
-    scrollEased += (scrollOffset - scrollEased) * EASE;
+    currentIndex += (targetIndex - currentIndex) * ease;
+    pointerEased.x += (pointer.x - pointerEased.x) * ease;
+    pointerEased.y += (pointer.y - pointerEased.y) * ease;
+    scrollEased += (scrollOffset - scrollEased) * ease;
 
     const moving =
       Math.abs(targetIndex - currentIndex) > 0.0004 ||
@@ -580,7 +553,10 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
     if (disposed || !active || frame) return;
     // A frame resuming an idle scene follows an arbitrarily long pause, which
     // says nothing about how fast this device renders.
-    if (settled) previousFrameAt = 0;
+    if (settled) {
+      governor.reset();
+      lastDrawAt = 0;
+    }
     settled = false;
     frame = requestAnimationFrame(draw);
   }
@@ -717,7 +693,8 @@ export async function createGallery(options: GalleryOptions): Promise<Gallery> {
       if (next === active) return;
       active = next;
       if (active) {
-        previousFrameAt = 0;
+        governor.reset();
+        lastDrawAt = 0;
         invalidate();
       } else if (frame) {
         cancelAnimationFrame(frame);

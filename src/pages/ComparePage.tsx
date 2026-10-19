@@ -1,18 +1,21 @@
 import { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { GitCompareArrows, Heart, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Heart, X } from 'lucide-react';
 import type { Species } from '../types';
 import { SPECIES, SPECIES_BY_ID } from '../data/species';
 import { HABITAT_LABELS, REGION_LABELS } from '../data/regions';
 import { THREAT_BY_ID } from '../data/threats';
 import { PROGRAMME_BY_ID } from '../data/programmes';
-import { STATUS_INFO } from '../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../data/statusInfo';
 import { useFavourites } from '../hooks/useFavourites';
 import { SpeciesImage } from '../components/ui/SpeciesImage';
+import { PhotoCredit } from '../components/ui/PhotoCredit';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { buttonClasses } from '../components/ui/buttonClasses';
 import { useSpeciesProfile } from '../components/species/SpeciesProfileProvider';
+import { CompareGeography } from '../components/species/CompareGeography';
+import { CompareChooser } from '../components/species/CompareChooser';
 
 /**
  * Side-by-side comparison of up to three species.
@@ -52,7 +55,7 @@ const ROWS: Array<{
   },
   {
     label: 'Assessment cited',
-    render: (s) => <span className="font-mono text-xs">{s.statusAssessedYear}</span>,
+    render: (s) => <span className="font-mono text-xs">{redListYears(s)}</span>,
   },
   {
     label: 'Listed in this category since',
@@ -61,10 +64,10 @@ const ROWS: Array<{
       return first ? (
         <span>
           <span className="font-mono text-xs">{first.year}</span>
-          <span className="block text-xs text-canvas/55">{first.note}</span>
+          <span className="block text-xs text-canvas/70">{first.note}</span>
         </span>
       ) : (
-        <span className="text-xs text-canvas/50">Not recorded in this atlas</span>
+        <span className="text-xs text-canvas/70">Not recorded in this atlas</span>
       );
     },
   },
@@ -103,7 +106,7 @@ const ROWS: Array<{
     label: 'Programmes',
     render: (s) =>
       s.conservationProgrammes.length === 0 ? (
-        <span className="text-xs text-canvas/50">None linked in this atlas</span>
+        <span className="text-xs text-canvas/70">None linked in this atlas</span>
       ) : (
         <ul className="space-y-0.5">
           {s.conservationProgrammes.map((id) => {
@@ -111,7 +114,7 @@ const ROWS: Array<{
             return p ? (
               <li key={id}>
                 {p.name}
-                {p.startedYear && <span className="text-canvas/50"> · {p.startedYear}</span>}
+                {p.startedYear && <span className="text-canvas/70"> · {p.startedYear}</span>}
               </li>
             ) : null;
           })}
@@ -122,7 +125,7 @@ const ROWS: Array<{
     label: 'Key protected areas',
     render: (s) =>
       s.protectedAreas.length === 0 ? (
-        <span className="text-xs text-canvas/50">None listed</span>
+        <span className="text-xs text-canvas/70">None listed</span>
       ) : (
         <ul className="space-y-0.5">
           {s.protectedAreas.map((a) => (
@@ -189,17 +192,16 @@ export function ComparePage() {
         description="Comparison makes the differences between categories concrete: two species can share an IUCN status and face completely different threats, or hold the same threat across very different ranges. Every cell is read from the atlas dataset, and the selection is kept in the address bar so a comparison can be linked to."
       />
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-forest-800 bg-forest-900/70 p-4">
+      <div className="compare-bar mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
         <label className="flex w-full flex-col gap-2 text-sm text-canvas/75 sm:w-auto sm:flex-row sm:items-center">
-          <span className="inline-flex items-center gap-2 font-medium">
-            <GitCompareArrows className="h-4 w-4 text-forest-300" aria-hidden="true" />
+          <span className="caps">
             Add a species
           </span>
           <select
             value=""
             disabled={full || remaining.length === 0}
             onChange={(e) => e.target.value && add(e.target.value)}
-            className="w-full rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm text-canvas disabled:opacity-50 sm:w-auto"
+            className="atlas-select w-full sm:w-72"
           >
             <option value="">{full ? `Maximum of ${MAX} selected` : 'Choose…'}</option>
             {remaining.map((s) => (
@@ -229,22 +231,15 @@ export function ComparePage() {
       </div>
 
       {selected.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
-          <p className="font-medium text-canvas">Nothing selected yet</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-canvas/60">
-            Choose up to {MAX} species above, or open any species profile and use “Compare with another
-            species”.
-          </p>
-          <Link to="/species" className={buttonClasses('secondary', 'md', 'mt-5')}>
-            Browse the directory
-          </Link>
-        </div>
+        <CompareChooser onPick={setSelection} />
       ) : (
-        <div className="mt-8">
-          <p className="mb-2 text-xs text-canvas/55 sm:hidden">
+        <>
+        <CompareGeography species={selected} />
+        <div className="mt-12">
+          <p className="mb-2 text-xs text-canvas/70 sm:hidden">
             Scroll the table sideways to reach the other species — the attribute column stays in place.
           </p>
-          <div className="overflow-x-auto rounded-xl border border-forest-800">
+          <div className="overflow-x-auto rounded-xs border border-forest-800">
           <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <caption className="sr-only">
               Comparison of {selected.map((s) => s.commonName).join(', ')}
@@ -253,14 +248,15 @@ export function ComparePage() {
               <tr>
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 w-32 bg-forest-900 p-3 align-bottom text-xs font-semibold uppercase tracking-[0.14em] text-forest-300 sm:w-40"
+                  className="sticky left-0 z-10 w-32 bg-forest-900 p-3 align-bottom caps sm:w-40"
                 >
                   Attribute
                 </th>
                 {selected.map((s) => (
                   <th key={s.id} scope="col" className="border-l border-forest-800 bg-forest-900 p-3 align-bottom">
                     <div className="relative">
-                      <SpeciesImage species={s} className="mb-2.5 h-28 w-full rounded-lg" />
+                      <SpeciesImage species={s} className="h-28 w-full rounded-xs" sizes="(min-width: 1024px) 25vw, 45vw" />
+                      <PhotoCredit species={s} className="mb-2.5 mt-1.5 font-normal" />
                       <button
                         type="button"
                         onClick={() => remove(s.id)}
@@ -273,7 +269,7 @@ export function ComparePage() {
                     <button
                       type="button"
                       onClick={() => open(s.id)}
-                      className="font-serif text-base font-semibold text-canvas hover:text-forest-200"
+                      className="font-serif text-lg font-normal tracking-tight text-canvas hover:text-forest-200"
                     >
                       {s.commonName}
                     </button>
@@ -286,7 +282,7 @@ export function ComparePage() {
                 <tr key={row.label} className={i % 2 === 1 ? 'bg-forest-900/40' : undefined}>
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 border-t border-forest-800 bg-forest-900 p-3 align-top text-xs font-semibold uppercase tracking-[0.12em] text-forest-300"
+                    className="sticky left-0 z-10 border-t border-forest-800 bg-forest-900 p-3 align-top caps"
                   >
                     {row.label}
                   </th>
@@ -301,6 +297,7 @@ export function ComparePage() {
           </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

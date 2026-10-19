@@ -1,87 +1,206 @@
 import { useEffect, useRef } from 'react';
 import { useFinePointer, useReducedMotion } from '../../motion/preferences';
+import { magneticFocus } from '../../interaction/magnetic';
+import { onPointerExit, onPointerMove, pointer } from '../../interaction/pointer';
+import { Spring, SPRINGS, springDriver } from '../../interaction/spring';
+import { INTERACTIVE } from '../../interaction/targets';
+import { intentOf } from '../../interaction/intent';
+import { on } from '../../interaction/events';
+import { createTrail } from '../../interaction/trail';
+import { createGeoThread, placeOf, readPlace } from '../../interaction/geoThread';
+import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
- * The pointer, redrawn as a survey mark.
+ * The pointer, redrawn as a survey instrument.
  *
- * At rest it is a small dot that tracks the hand exactly, with a hairline ring
- * that follows a beat behind. Over anything interactive the ring opens and,
- * where the element says what pressing it does (`data-cursor="Open"`), carries
- * that word. A press on an interactive element sends out three contour rings —
- * the splash — which is the one flourish, and it only answers an action.
+ * At rest it is a small dot that tracks the hand exactly, with a hairline
+ * reticle that follows on the cursor spring. The reticle has weight: moving
+ * fast stretches it a little along the direction of travel, and pressing
+ * compresses it, with one small rebound on release.
+ *
+ * What it does depends on what it is over:
+ *
+ *   idle      the reticle and its four ticks
+ *   hover     anything interactive: the reticle opens
+ *   label     an element that names its action (`data-cursor="Enter"`): the
+ *             reticle fills and carries the word
+ *   lock      a magnetic control (`data-magnetic`): the reticle leaves the
+ *             hand and closes on the control as four corner marks, with the
+ *             control's word set at the corner like a label on a sheet
+ *   area      a region that names what the hand can do there
+ *             (`data-cursor-area="Explore"`, and drag surfaces): the word is
+ *             set small beside the reticle, which stays small so it never
+ *             hides the map or the sphere underneath
+ *   trace     the ink trail has found one of the atlas's lines (see
+ *             `interaction/trail.ts`)
+ *   text      a text field: the reticle steps aside for the system caret
+ *
+ * The word's intent (`interaction/intent.ts`: discover, enter, trace, locate,
+ * turn, define, drag, play) is written as `data-intent` and gives each kind of
+ * gesture its own reticle, whatever the word.
+ *
+ * A press on something interactive sends out three contour rings — the
+ * splash — which is the one flourish, and it only answers an action.
  *
  * Only on a mouse-like pointer with motion allowed. Touch devices and reduced
  * motion keep the system cursor, and nothing here is mounted for them.
  */
-const INTERACTIVE = 'a, button, [role="button"], [role="tab"], input, select, label, summary, [data-cursor]';
+const TEXT = 'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, [contenteditable="true"]';
 
 export function CustomCursor() {
   const fine = useFinePointer();
   const reduced = useReducedMotion();
   const enabled = fine && !reduced;
 
+  const layerRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const splashRef = useRef<HTMLDivElement>(null);
+  const trailRef = useRef<HTMLCanvasElement>(null);
+  const threadRef = useRef<HTMLCanvasElement>(null);
+  const geoRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!enabled) return;
+    const layer = layerRef.current!;
     const dot = dotRef.current!;
     const ring = ringRef.current!;
+    const body = bodyRef.current!;
     const label = labelRef.current!;
     const splashLayer = splashRef.current!;
+    const trail = createTrail(trailRef.current!);
+    const geoLabel = geoRef.current!;
+    // The thread is ruled in the environment's line colour, re-read when the reader crosses into another ground.
+    const readLine = () => getComputedStyle(document.documentElement).getPropertyValue('--env-line').trim() || '#b07a52';
+    let contour = readLine();
+    const offEnv = on('environment:change', () => (contour = readLine()));
+    const thread = createGeoThread(threadRef.current!, () => contour);
+    let geoEl: Element | null = null;
+    // Over anything that stands for a place, the reticle reads its coordinates,
+    // and moving on to another place rules a thread between the two.
+    const setGeo = (el: Element | null) => {
+      if (el === geoEl) {
+        if (el) thread.hold(el);
+        return;
+      }
+      geoEl = el;
+      const place = placeOf(el);
+      if (el && place) {
+        geoLabel.textContent = readPlace(place);
+        ring.dataset.geo = el.hasAttribute('data-geo-quiet') ? 'quiet' : 'true';
+        thread.visit(el);
+      } else {
+        ring.dataset.geo = 'false';
+      }
+    };
     document.documentElement.classList.add('has-custom-cursor');
 
-    let x = -100;
-    let y = -100;
-    let rx = -100;
-    let ry = -100;
+    const rx = new Spring(-100, SPRINGS.cursor);
+    const ry = new Spring(-100, SPRINGS.cursor);
+    const press = new Spring(1, SPRINGS.release);
     let visible = false;
-    let raf = 0;
-    let currentTarget: Element | null = null;
+    let state = 'idle';
+    let word = '';
+    let lockSize = '';
 
-    const loop = () => {
-      rx += (x - rx) * 0.2;
-      ry += (y - ry) * 0.2;
-      dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      ring.style.transform = `translate3d(${rx.toFixed(1)}px, ${ry.toFixed(1)}px, 0)`;
-      const settled = Math.abs(x - rx) < 0.1 && Math.abs(y - ry) < 0.1;
-      raf = settled ? 0 : requestAnimationFrame(loop);
+    const render = () => {
+      ring.style.transform = `translate3d(${rx.value.toFixed(2)}px, ${ry.value.toFixed(2)}px, 0)`;
+      // Weight: the reticle stretches along its own velocity, not the hand's,
+      // so the stretch eases away as it catches up.
+      const vx = rx.velocity;
+      const vy = ry.velocity;
+      const speed = state === 'lock' || state === 'label' ? 0 : Math.hypot(vx, vy);
+      const s = Math.min(speed / 2600, 1) * 0.22;
+      const k = press.value;
+      body.style.transform =
+        s > 0.004
+          ? `rotate(${Math.atan2(vy, vx).toFixed(3)}rad) scale(${((1 + s) * k).toFixed(3)}, ${((1 - s * 0.45) * k).toFixed(3)})`
+          : `scale(${k.toFixed(3)})`;
     };
-    const kick = () => {
-      if (!raf) raf = requestAnimationFrame(loop);
+    const kick = springDriver([rx, ry, press], render);
+
+    const setState = (next: string, nextWord: string) => {
+      if (next !== state) ring.dataset.state = state = next;
+      if (nextWord !== word) {
+        label.textContent = word = nextWord;
+        // The word is for reading; its intent decides the reticle's shape (interaction/intent.ts).
+        ring.dataset.intent = nextWord ? intentOf(nextWord) : '';
+      }
     };
 
-    const setTarget = (el: Element | null) => {
-      if (el === currentTarget) return;
-      currentTarget = el;
-      const word = el?.getAttribute('data-cursor') ?? '';
-      const drag = el?.closest('[data-cursor-drag]');
-      label.textContent = word;
-      ring.dataset.state = el ? (word ? 'label' : 'hover') : 'idle';
-      if (drag && !el?.closest(INTERACTIVE)) {
-        label.textContent = 'Drag';
-        ring.dataset.state = 'label';
+    let tracing = false;
+    // `moved`: the hand moved (not just the page under it). Only then is ink laid down.
+    const evaluate = (moved: boolean) => {
+      const target = pointer.target;
+      const lock = magneticFocus();
+      if (moved) tracing = trail.move();
+
+      setGeo((lock?.el ?? target)?.closest('[data-geo]') ?? null);
+
+      if (lock) {
+        // Close on the control, leaning a little after the hand.
+        rx.target = lock.x + (pointer.x - lock.x) * 0.12;
+        ry.target = lock.y + (pointer.y - lock.y) * 0.12;
+        const size = `${Math.round(lock.w + 14)}x${Math.round(lock.h + 10)}`;
+        if (size !== lockSize) {
+          lockSize = size;
+          ring.style.setProperty('--lw', `${Math.round(lock.w + 14)}px`);
+          ring.style.setProperty('--lh', `${Math.round(lock.h + 10)}px`);
+        }
+        setState('lock', lock.el.closest('[data-cursor]')?.getAttribute('data-cursor') ?? lock.el.querySelector('[data-cursor]')?.getAttribute('data-cursor') ?? '');
+      } else {
+        rx.target = pointer.x;
+        ry.target = pointer.y;
+        if (target?.closest(TEXT)) setState('text', '');
+        else {
+          const interactive = target?.closest(INTERACTIVE);
+          const area = target?.closest<HTMLElement>('[data-cursor-area], [data-cursor-drag]');
+          const named = interactive?.getAttribute('data-cursor');
+          if (interactive && named) setState('label', named);
+          else if (interactive) setState('hover', '');
+          else if (tracing) setState('trace', 'Trace');
+          else if (area) setState('area', area.dataset.cursorArea || 'Drag');
+          else setState('idle', '');
+        }
       }
       kick();
     };
 
-    const onMove = (e: PointerEvent) => {
+    const offMove = onPointerMove((e) => {
       if (e.pointerType !== 'mouse') return;
-      x = e.clientX;
-      y = e.clientY;
+      dot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       if (!visible) {
         visible = true;
-        rx = x;
-        ry = y;
-        dot.style.opacity = '1';
-        ring.style.opacity = '1';
+        rx.jump(e.clientX);
+        ry.jump(e.clientY);
+        layer.dataset.visible = 'true';
       }
-      const target = e.target instanceof Element ? e.target : null;
-      const interactive = target?.closest(INTERACTIVE) ?? target?.closest('[data-cursor-drag]') ?? null;
-      setTarget(interactive);
-      kick();
+      evaluate(true);
+    });
+
+    const offExit = onPointerExit(() => {
+      visible = false;
+      layer.dataset.visible = 'false';
+    });
+
+    // Scrolling moves the page under a still hand, so what is under it changes,
+    // but the browser does not re-target the pointer until it next moves. A
+    // hit test every frame of a scroll costs frames, so it is checked a few
+    // times a second instead — a reticle that catches up a beat late reads
+    // as weight, not lag.
+    let scrollTimer = 0;
+    const recheck = () => {
+      scrollTimer = 0;
+      if (!visible) return;
+      const under = document.elementFromPoint(pointer.x, pointer.y);
+      if (under) pointer.target = under;
+      tracing = false;
+      evaluate(false);
+    };
+    const onScroll = () => {
+      if (visible && !scrollTimer) scrollTimer = window.setTimeout(recheck, 140);
     };
 
     const splash = (cx: number, cy: number) => {
@@ -95,42 +214,65 @@ export function CustomCursor() {
     };
 
     const onDown = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
-      ring.dataset.pressed = 'true';
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      press.target = 0.72;
+      kick();
       const target = e.target instanceof Element ? e.target : null;
       if (target?.closest(INTERACTIVE) || target?.closest('[data-cursor-drag]')) splash(e.clientX, e.clientY);
     };
     const onUp = () => {
-      ring.dataset.pressed = 'false';
+      press.target = 1;
+      kick();
     };
-    const onLeaveWindow = () => {
-      visible = false;
-      dot.style.opacity = '0';
-      ring.style.opacity = '0';
+    // The keyboard's equivalent: tabbing from one place to the next rules the same thread.
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target instanceof Element ? e.target.closest('[data-geo]') : null;
+      if (el && (e.target as Element).matches(':focus-visible')) thread.visit(el);
     };
+    document.addEventListener('focusin', onFocus);
 
-    window.addEventListener('pointermove', onMove, { passive: true });
+    // A page change replaces what is under a still hand, too.
+    window.addEventListener('atlas:navigation:start', onScroll);
+    window.addEventListener('atlas:navigation:end', onScroll);
+    const offScroll = subscribeScroll(onScroll);
+    // So does the cinema opening over it, or folding away: never keep a stale word ("Play") over the film.
+    const later = () => window.setTimeout(recheck, 480);
+    const offMediaOpen = on('media:open', later);
+    const offMediaClose = on('media:close', later);
     window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('pointerup', onUp, { passive: true });
-    document.documentElement.addEventListener('pointerleave', onLeaveWindow);
     return () => {
-      cancelAnimationFrame(raf);
+      offMove();
+      offExit();
+      window.clearTimeout(scrollTimer);
+      trail.dispose();
+      thread.dispose();
+      offEnv();
+      document.removeEventListener('focusin', onFocus);
       document.documentElement.classList.remove('has-custom-cursor');
-      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('atlas:navigation:start', onScroll);
+      window.removeEventListener('atlas:navigation:end', onScroll);
+      offScroll();
+      offMediaOpen();
+      offMediaClose();
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
-      document.documentElement.removeEventListener('pointerleave', onLeaveWindow);
     };
   }, [enabled]);
 
   if (!enabled) return null;
 
   return (
-    <div aria-hidden="true" className="cursor-layer">
+    <div ref={layerRef} aria-hidden="true" className="cursor-layer" data-visible="false">
+      <canvas ref={trailRef} className="cursor-trail" />
+      <canvas ref={threadRef} className="cursor-thread" />
       <div ref={splashRef} />
       <div ref={ringRef} className="cursor-ring" data-state="idle">
-        <span className="cursor-ring-shape" />
+        <div ref={bodyRef} className="cursor-ring-body">
+          <span className="cursor-ring-shape" />
+        </div>
         <span ref={labelRef} className="cursor-label" />
+        <span ref={geoRef} className="cursor-geo" />
       </div>
       <div ref={dotRef} className="cursor-dot" />
     </div>

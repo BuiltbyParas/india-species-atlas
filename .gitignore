@@ -25,3 +25,27 @@ dist-ssr
 
 # Promo video pipeline output (frames, audio, renders)
 /promo/
+
+# Promotional film renders and caches (npm run video:*)
+/exports/
+
+# Full-size species photographs for the film: fetched from Wikimedia Commons by
+# `npm run video:data` (credits in video/public/species/photos.json)
+/video/public/species/*.jpg
+
+# /ai-team coordination and background-agent runs
+/.ai-team/
+
+# Promotional film (video/atlas-promo): generated interface plates, baked map
+# layers and audio (npm run video:promo:capture / :prep / :audio)
+/video/public/promo/
+
+# Reel (reel/): generated public copies, and large media kept out of git
+/video/public/reel/
+/reel/video/flow/*.mp4
+/reel/video/flow/*.mov
+/reel/video/renders/*
+!/reel/video/renders/.gitkeep
+/reel/audio/**/*.wav
+/reel/audio/**/*.aif*
+/reel/audio/**/*.mp3

@@ -1,5 +1,5 @@
 import type { Species } from '../types';
-import { iucnSearch } from './sources';
+import { iucnAssessment, REPORTS } from './sources';
 
 /**
  * Species photographs, sourced from Wikimedia Commons and bundled rather than
@@ -33,13 +33,23 @@ import asianElephantPhoto from '../assets/species/asian-elephant.jpg';
  * exhaustive. Quality over quantity.
  *
  * IUCN status for every species has been checked against the IUCN Red List
- * (via BirdLife International's Data Zone for birds). `statusAssessedYear` is
- * the year of the assessment being cited. `lastVerified` is the date the
- * entry was last checked against its listed sources.
+ * assessment cited for it, linked by DOI. `statusAssessedYear` is the year that
+ * assessment was made and `statusPublishedYear` the year the Red List published
+ * it (the year in its citation); both were read from Crossref's record of the
+ * DOI. `lastVerified` is the date the entry was last checked against its listed
+ * sources. Population figures carry their scope, survey years and source in
+ * `population`; the prose names the same figures.
  *
  * Distribution points are INDICATIVE locations within a known range — usually
  * a well-known protected area or landscape. They are not population
  * boundaries. See the map disclaimer in the app.
+ *
+ * Points were checked in October 2026 against OpenStreetMap: the named area's
+ * mapped boundary, or for river species the mapped channel of the named river.
+ * Where a point was moved, its comment says how: into a reserve, to the point
+ * of the mapped boundary farthest from its edge (or the nearest point a set
+ * distance inside it); onto a river, to the nearest point of the mapped channel.
+ * No point was placed by eye.
  */
 
 const wwf = (path: string, label: string) => ({
@@ -56,13 +66,14 @@ export const SPECIES: Species[] = [
     group: 'bird',
     status: 'CR',
     statusFullName: 'Critically Endangered',
-    statusAssessedYear: 2021,
+    statusAssessedYear: 2018,
+    statusPublishedYear: 2018,
     statusHistory: [
       {
         year: 2011,
         status: 'CR',
-        note: 'Listed as Critically Endangered from this year onwards.',
-        source: { label: 'Great Indian Bustard — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/great-indian-bustard-ardeotis-nigriceps', publisher: 'BirdLife International Data Zone' },
+        note: 'Moved up to Critically Endangered in the 2011 Red List update, and listed so since.',
+        source: REPORTS.bustardUplisting2011,
       },
     ],
     endemicToIndia: true,
@@ -72,7 +83,17 @@ export const SPECIES: Species[] = [
     summary:
       'One of the heaviest flying birds in the world, now reduced to a tiny population in the arid grasslands of western India.',
     description:
-      'The Great Indian Bustard is a large, ground-dwelling bird of open grassland and scrub. Once found across much of the Indian subcontinent, it has undergone a catastrophic decline and the wild population is now estimated in the low hundreds, with the great majority in Rajasthan. It has been listed as Critically Endangered on the IUCN Red List since 2011.',
+      'The Great Indian Bustard is a large, ground-dwelling bird of open grassland and scrub. Once found across much of the Indian subcontinent, it has undergone a catastrophic decline. The Wildlife Institute of India’s 2024–25 survey of the Thar in Jaisalmer district estimated 130 ± 21 birds in 2025, about the same as its 2017–18 estimate; a handful more survive in Kutch, Gujarat, which the survey did not cover. It has been listed as Critically Endangered on the IUCN Red List since 2011.',
+    population: [
+      {
+        scope: 'Great Indian Bustards in the Thar of Jaisalmer district, Rajasthan (Desert National Park, Pokhran Field Firing Range and the surrounding priority area)',
+        value: '130 ± 21 (SE)',
+        surveyed: 'October 2024 and April 2025',
+        method: 'Vehicle-based distance sampling and occupancy modelling over about 14,000 km²',
+        caveat: 'Excludes Gujarat and birds held for conservation breeding. The 2017–18 estimate by the same method was 128 ± 19.',
+        source: REPORTS.bustard2026,
+      },
+    ],
     indianDistribution:
       'The largest surviving population is in and around Desert National Park in Jaisalmer district, Rajasthan. A very small number persist in the Abdasa–Naliya grasslands of Kutch, Gujarat. Historic populations in Maharashtra, Karnataka, Andhra Pradesh and Madhya Pradesh are now effectively lost or functionally extinct.',
     habitatNote:
@@ -91,9 +112,12 @@ export const SPECIES: Species[] = [
     whyItMatters:
       'The bustard is an indicator of the health of India’s much-neglected grassland and desert ecosystems, which are treated as "wasteland" in land-use policy despite supporting distinctive wildlife and pastoral livelihoods.',
     distributionPoints: [
-      { lat: 26.83, lng: 70.72, label: 'Desert National Park, Jaisalmer, Rajasthan', note: 'Largest surviving population and conservation-breeding focus.' },
-      { lat: 27.55, lng: 71.35, label: 'Pokhran field firing range area, Rajasthan', note: 'Part of the core Thar bustard landscape.' },
-      { lat: 23.34, lng: 68.84, label: 'Abdasa / Naliya grasslands, Kutch, Gujarat', note: 'A remnant population of only a few birds.' },
+      // Was 26.83, 70.72, 6.7 km outside the park's mapped boundary (OSM relation 8334694). Moved to the nearest
+      // point 3 km inside it, in the north of the park, where the survey finds the birds.
+      { lat: 26.78, lng: 70.64, label: 'Desert National Park, Jaisalmer, Rajasthan', note: 'Largest surviving population and conservation-breeding focus.', withholdCoordinates: true },
+      // The firing range has no public boundary; the point stands for the range's landscape, in Jaisalmer district.
+      { lat: 27.55, lng: 71.35, label: 'Pokhran field firing range area, Rajasthan', note: 'Part of the core Thar bustard landscape.', withholdCoordinates: true },
+      { lat: 23.34, lng: 68.84, label: 'Abdasa / Naliya grasslands, Kutch, Gujarat', note: 'A remnant population of only a few birds.', withholdCoordinates: true },
     ],
     image: {
       src: greatIndianBustardPhoto,
@@ -104,11 +128,13 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Great_Indian_Bustard_Ardeotis_nigriceps_by_Raju_Kasambe_DSCN9716_09.jpg',
     },
     sources: [
-      iucnSearch('Ardeotis nigriceps'),
+      iucnAssessment('Ardeotis nigriceps', 'BirdLife International 2018', '10.2305/IUCN.UK.2018-2.RLTS.T22691932A134188105.en', 2018),
       { label: 'Great Indian Bustard — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/great-indian-bustard-ardeotis-nigriceps', publisher: 'BirdLife International Data Zone' },
+      REPORTS.bustard2026,
+      REPORTS.bustardUplisting2011,
       { label: 'Bustard Recovery Project', url: 'https://wii.gov.in/bustard_recovery_project', publisher: 'Wildlife Institute of India' },
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -118,7 +144,8 @@ export const SPECIES: Species[] = [
     group: 'mammal',
     status: 'EN',
     statusFullName: 'Endangered',
-    statusAssessedYear: 2022,
+    statusAssessedYear: 2021,
+    statusPublishedYear: 2022,
     endemicToIndia: false,
     regions: ['central-india', 'western-ghats', 'sundarbans', 'gangetic-plains', 'northeast'],
     states: ['Madhya Pradesh', 'Maharashtra', 'Karnataka', 'Uttarakhand', 'Tamil Nadu', 'Assam', 'West Bengal', 'Rajasthan', 'Kerala'],
@@ -126,7 +153,16 @@ export const SPECIES: Species[] = [
     summary:
       'India holds the majority of the world’s wild tigers; the species as a whole is assessed as Endangered by the IUCN.',
     description:
-      'The tiger (Panthera tigris) is assessed as Endangered on the IUCN Red List (2022). India is its global stronghold: the 2022 national estimate placed the country’s tiger population at roughly 3,700, spread across more than 50 tiger reserves. Populations range from the dry forests of central India to the Western Ghats, the Terai grasslands and the Sundarbans mangroves.',
+      'The tiger (Panthera tigris) is assessed as Endangered on the IUCN Red List (assessment published 2022). India is its global stronghold: the All India Tiger Estimation 2022 put the country’s tiger population at an average of 3,682 (range 3,167–3,925), spread across more than 50 tiger reserves. Populations range from the dry forests of central India to the Western Ghats, the Terai grasslands and the Sundarbans mangroves.',
+    population: [
+      {
+        scope: 'Wild tigers in India',
+        value: '3,682 (average; range 3,167–3,925)',
+        surveyed: '2022 cycle of the All India Tiger Estimation',
+        method: 'A camera-trap minimum of 3,167, extended by statistical models to tiger areas without camera traps',
+        source: REPORTS.tigers2022,
+      },
+    ],
     indianDistribution:
       'Four broad landscapes hold most Indian tigers: the Central Indian highlands and Eastern Ghats (Madhya Pradesh, Maharashtra, Chhattisgarh), the Western Ghats (Karnataka, Tamil Nadu, Kerala), the Shivalik–Gangetic plains (Uttarakhand, Uttar Pradesh, Bihar) and the Brahmaputra floodplain and hills of the Northeast. The Sundarbans supports a distinct mangrove-dwelling population.',
     habitatNote:
@@ -150,9 +186,13 @@ export const SPECIES: Species[] = [
       { lat: 22.33, lng: 80.61, label: 'Kanha Tiger Reserve, Madhya Pradesh' },
       { lat: 20.26, lng: 79.35, label: 'Tadoba–Andhari Tiger Reserve, Maharashtra' },
       { lat: 29.53, lng: 78.95, label: 'Jim Corbett Tiger Reserve, Uttarakhand' },
-      { lat: 11.9, lng: 76.35, label: 'Nagarhole Tiger Reserve, Karnataka (Western Ghats)' },
+      // Was 11.90, 76.35: 12.4 km outside Nagarhole's mapped boundary, on Bandipur's edge (the elephant's
+      // "Nagarhole–Bandipur" point). Moved to the point of Nagarhole (OSM relation 12154449) farthest from its edge.
+      { lat: 12.05, lng: 76.16, label: 'Nagarhole Tiger Reserve, Karnataka (Western Ghats)' },
       { lat: 21.95, lng: 88.9, label: 'Sundarbans Tiger Reserve, West Bengal', note: 'Mangrove-dwelling population.' },
-      { lat: 26.5, lng: 76.42, label: 'Ranthambhore Tiger Reserve, Rajasthan' },
+      // Was 26.50, 76.42: 38 km outside the park, in Dausa district. Moved to the point of Ranthambhore National
+      // Park (OSM relation 3494941) farthest from its edge, 8 km inside.
+      { lat: 26.0, lng: 76.5, label: 'Ranthambhore Tiger Reserve, Rajasthan' },
     ],
     image: {
       src: bengalTigerPhoto,
@@ -163,10 +203,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Bengal_tiger_in_Sanjay_Dubri_Tiger_Reserve_December_2024_by_Tisha_Mukherjee_11.jpg',
     },
     sources: [
-      iucnSearch('Panthera tigris'),
-      { label: 'Status of Tigers, Co-predators & Prey in India, 2022', url: 'https://ntca.gov.in/', publisher: 'NTCA / Wildlife Institute of India' },
+      iucnAssessment('Panthera tigris', 'Goodrich et al. 2022', '10.2305/IUCN.UK.2022-1.RLTS.T15955A214862019.en', 2022),
+      REPORTS.tigerReports,
+      REPORTS.tigers2022,
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -177,6 +218,7 @@ export const SPECIES: Species[] = [
     status: 'EN',
     statusFullName: 'Endangered',
     statusAssessedYear: 2015,
+    statusPublishedYear: 2015,
     endemicToIndia: false,
     regions: ['himalayas', 'northeast'],
     states: ['Sikkim', 'West Bengal', 'Arunachal Pradesh', 'Meghalaya', 'Nagaland'],
@@ -217,10 +259,10 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Red_Panda,_Gentle_Tree-Dweller_of_the_Himalayas.jpg',
     },
     sources: [
-      iucnSearch('Ailurus fulgens'),
+      iucnAssessment('Ailurus fulgens', 'Glatston et al. 2015', '10.2305/IUCN.UK.2015-4.RLTS.T714A45195924.en', 2015),
       wwf('red_panda', 'Red Panda'),
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -230,7 +272,8 @@ export const SPECIES: Species[] = [
     group: 'mammal',
     status: 'EN',
     statusFullName: 'Endangered',
-    statusAssessedYear: 2022,
+    statusAssessedYear: 2021,
+    statusPublishedYear: 2022,
     endemicToIndia: false,
     regions: ['gangetic-plains', 'northeast'],
     states: ['Uttar Pradesh', 'Bihar', 'West Bengal', 'Assam', 'Jharkhand'],
@@ -238,7 +281,17 @@ export const SPECIES: Species[] = [
     summary:
       'India’s National Aquatic Animal, an almost-blind dolphin that navigates the Ganga and Brahmaputra rivers by echolocation.',
     description:
-      'The Ganges River Dolphin (Platanista gangetica) is assessed as Endangered on the IUCN Red List (2022). It is functionally blind and relies on echolocation to hunt in turbid river water. It was declared India’s National Aquatic Animal in 2009. The population is fragmented by dams and barrages and is estimated in the low thousands across India, Nepal and Bangladesh.',
+      'The Ganges River Dolphin (Platanista gangetica) is assessed as Endangered on the IUCN Red List (assessment published 2022). It is functionally blind and relies on echolocation to hunt in turbid river water. It was declared India’s National Aquatic Animal in 2009. The population is fragmented by dams and barrages. India’s first nationwide survey, by the Wildlife Institute of India in 2021–23, estimated 6,324 Ganges river dolphins in the Ganga and Brahmaputra basins of India alone; the species also lives in Nepal and Bangladesh.',
+    population: [
+      {
+        scope: 'Ganges river dolphins in India (Ganga and Brahmaputra basins)',
+        value: '6,324 (the survey’s total of 6,327, range 5,980–6,691, includes three Indus river dolphins in the Beas)',
+        surveyed: '2021–2023',
+        method: 'Boat surveys with two teams of observers and underwater hydrophones, over 8,406 km of the Ganga and Brahmaputra and their tributaries',
+        caveat: 'India only: the species’ range also includes Nepal and Bangladesh.',
+        source: REPORTS.dolphins2025,
+      },
+    ],
     indianDistribution:
       'The main stems and larger tributaries of the Ganga (including the Chambal, Ghaghara, Gandak and Kosi) through Uttar Pradesh, Bihar and West Bengal, and the Brahmaputra and its tributaries in Assam.',
     habitatNote:
@@ -257,10 +310,13 @@ export const SPECIES: Species[] = [
     whyItMatters:
       'As a top predator restricted to river channels, the dolphin is a sensitive indicator of river health for the ~600 million people who depend on the Ganga and Brahmaputra basins.',
     distributionPoints: [
-      { lat: 25.25, lng: 87.0, label: 'Vikramshila Gangetic Dolphin Sanctuary, Bhagalpur, Bihar' },
+      // River records sit on the mapped channel (OSM), at its nearest point to the old one: was 25.25, 87.00, 4.4 km off it.
+      { lat: 25.27, lng: 87.04, label: 'Vikramshila Gangetic Dolphin Sanctuary, Bhagalpur, Bihar' },
       { lat: 25.31, lng: 83.0, label: 'Ganga near Varanasi, Uttar Pradesh' },
-      { lat: 26.5, lng: 78.35, label: 'Chambal river, National Chambal Sanctuary' },
-      { lat: 26.2, lng: 91.7, label: 'Brahmaputra near Guwahati, Assam' },
+      // Was 26.50, 78.35, 32 km from the Chambal; moved to the nearest point of its mapped channel.
+      { lat: 26.68, lng: 78.09, label: 'Chambal river, National Chambal Sanctuary' },
+      // Was 26.20, 91.70, 2.4 km off the mapped channel.
+      { lat: 26.18, lng: 91.7, label: 'Brahmaputra near Guwahati, Assam' },
     ],
     image: {
       src: gangesRiverDolphinPhoto,
@@ -271,11 +327,12 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Ganges_River_Dolphin_sighted_in_Koshi_Barrage_(cropped).jpg',
     },
     sources: [
-      iucnSearch('Platanista gangetica'),
+      iucnAssessment('Platanista gangetica', 'Kelkar et al. 2022', '10.2305/IUCN.UK.2022-1.RLTS.T41756A50383346.en', 2022),
+      REPORTS.dolphins2025,
       { label: 'Project Dolphin', url: 'https://riverdolphin.in/about-the-project/', publisher: 'National Mission for Clean Ganga / MoEFCC' },
       wwf('ganges_river_dolphin', 'Ganges River Dolphin'),
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -286,6 +343,7 @@ export const SPECIES: Species[] = [
     status: 'EN',
     statusFullName: 'Endangered',
     statusAssessedYear: 2008,
+    statusPublishedYear: 2008,
     endemicToIndia: true,
     regions: ['western-ghats'],
     states: ['Tamil Nadu', 'Kerala'],
@@ -293,7 +351,17 @@ export const SPECIES: Species[] = [
     summary:
       'A stocky wild goat endemic to the high grasslands of the southern Western Ghats; the state animal of Tamil Nadu.',
     description:
-      'The Nilgiri Tahr (Nilgiritragus hylocrius) is assessed as Endangered on the IUCN Red List (criterion C2a(i), Alempath & Rice 2008). It is endemic to the montane grassland ("sholas and grasslands" mosaic) of the southern Western Ghats, in a fragmented range across roughly 100 localities. The total population is a few thousand animals, with the largest single population in Eravikulam National Park, Kerala.',
+      'The Nilgiri Tahr (Nilgiritragus hylocrius) is assessed as Endangered on the IUCN Red List (criterion C2a(i), Alempath & Rice 2008). It is endemic to the montane grassland ("sholas and grasslands" mosaic) of the southern Western Ghats, in a fragmented range across roughly 100 localities. The first synchronised census by Kerala and Tamil Nadu, in April 2025, counted 2,668 tahr, with the largest single population, 841, in Eravikulam National Park, Kerala.',
+    population: [
+      {
+        scope: 'Nilgiri tahr in Kerala and Tamil Nadu, the whole of its range',
+        value: '2,668 (Kerala 1,365; Tamil Nadu 1,303), of which 841 in Eravikulam National Park',
+        surveyed: '24–27 April 2025',
+        method: 'Synchronised block census by bounded count and double-observer methods',
+        caveat: 'Taken from news reports of the two states’ census reports, which could not be checked directly.',
+        source: REPORTS.tahrCensus2025,
+      },
+    ],
     indianDistribution:
       'The higher hills of the Western Ghats from the Nilgiris southward: the Nilgiri plateau, the Anamalai and Palni hills, the High Range around Eravikulam, and southward to the Ashambu (Agasthyamalai) hills, spanning the Tamil Nadu–Kerala border.',
     habitatNote:
@@ -302,7 +370,7 @@ export const SPECIES: Species[] = [
     threatNote:
       'Conversion of montane grassland to tea, wattle, eucalyptus and pine plantations and to reservoirs; a highly fragmented range with small, isolated subpopulations; poaching; and competition and disease risk from domestic livestock.',
     conservationActions: [
-      'Project Nilgiri Tahr (Tamil Nadu, 2023): surveys, habitat restoration and reintroduction planning',
+      'Project Nilgiri Tahr (Tamil Nadu, launched December 2022 for 2022–27): surveys, habitat restoration and reintroduction planning',
       'Long-term monitoring of the Eravikulam population',
       'Removal of invasive wattle and restoration of native grassland',
     ],
@@ -325,10 +393,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Nilgiri_Tahr_at_Eravikulam_National_Park.jpg',
     },
     sources: [
-      iucnSearch('Nilgiritragus hylocrius'),
+      iucnAssessment('Nilgiritragus hylocrius', 'Alempath & Rice 2008', '10.2305/IUCN.UK.2008.RLTS.T9917A13026736.en', 2008),
+      REPORTS.tahrCensus2025,
       wwf('nilgiri_tahr', 'Nilgiri Tahr'),
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -338,15 +407,16 @@ export const SPECIES: Species[] = [
     group: 'reptile',
     status: 'CR',
     statusFullName: 'Critically Endangered',
-    statusAssessedYear: 2019,
+    statusAssessedYear: 2017,
+    statusPublishedYear: 2019,
     endemicToIndia: false,
     regions: ['gangetic-plains', 'central-india'],
     states: ['Madhya Pradesh', 'Uttar Pradesh', 'Rajasthan', 'Bihar'],
     habitats: ['freshwater'],
     summary:
-      'A fish-eating crocodilian with a distinctive narrow snout; the world population collapsed by an estimated 98% over the 20th century.',
+      'A fish-eating crocodilian with a distinctive narrow snout; its numbers are estimated to have fallen by up to 98% since the 1940s.',
     description:
-      'The Gharial (Gavialis gangeticus) is assessed as Critically Endangered on the IUCN Red List (2019). It is one of the largest crocodilians and is highly specialised for catching fish, with a slender snout and needle-like teeth. The number of breeding adults in the wild is very small; the National Chambal Sanctuary holds the single largest population.',
+      'The Gharial (Gavialis gangeticus) is assessed as Critically Endangered on the IUCN Red List (assessment published 2019). It is one of the largest crocodilians and is highly specialised for catching fish, with a slender snout and needle-like teeth. The number of breeding adults in the wild is very small; the National Chambal Sanctuary holds the single largest population.',
     indianDistribution:
       'Now largely confined to the Chambal river (across Madhya Pradesh, Rajasthan and Uttar Pradesh), with smaller populations on the Girwa (Katarniaghat, UP), the Son (Madhya Pradesh) and the Gandak (Bihar). It is regionally extinct across most of its former Indus, Ganga, Brahmaputra and Mahanadi range.',
     habitatNote:
@@ -365,10 +435,15 @@ export const SPECIES: Species[] = [
     whyItMatters:
       'The gharial survives only where rivers still run clean, connected and seasonally full, so a recovering gharial population is a sign that a river is functioning as an ecosystem rather than only as a water-supply channel.',
     distributionPoints: [
-      { lat: 26.62, lng: 78.6, label: 'National Chambal Sanctuary (near Dholpur), Rajasthan / MP' },
-      { lat: 28.35, lng: 81.15, label: 'Girwa river, Katarniaghat WS, Uttar Pradesh' },
-      { lat: 24.6, lng: 81.3, label: 'Son Gharial Sanctuary, Madhya Pradesh' },
-      { lat: 26.85, lng: 84.5, label: 'Gandak river, Bihar' },
+      // Was 26.62, 78.60, 14 km from the channel and 70 km from Dholpur; moved to the nearest channel point, relabelled.
+      { lat: 26.75, lng: 78.58, label: 'National Chambal Sanctuary, lower Chambal (Madhya Pradesh / Uttar Pradesh)', withholdCoordinates: true },
+      { lat: 28.35, lng: 81.15, label: 'Girwa river, Katarniaghat WS, Uttar Pradesh', withholdCoordinates: true },
+      // Was 24.60, 81.30 near Rewa, 64 km from the Son; moved to the nearest point of the Son channel inside the mapped
+      // Son Gharial WLS (OSM way 669274355).
+      { lat: 24.56, lng: 82.24, label: 'Son Gharial Sanctuary, Madhya Pradesh', withholdCoordinates: true },
+      // UNRESOLVED: 15.6 km from the mapped Gandak (nearest river is the Burhi Gandak); not moved until the state of the
+      // nearest channel point is confirmed.
+      { lat: 26.85, lng: 84.5, label: 'Gandak river, Bihar', withholdCoordinates: true },
     ],
     image: {
       src: gharialPhoto,
@@ -379,10 +454,10 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Gharial_(Gavialis_gangeticus)_male.jpg',
     },
     sources: [
-      iucnSearch('Gavialis gangeticus'),
-      { label: 'Gharial conservation research', url: 'https://wii.gov.in/', publisher: 'Wildlife Institute of India' },
+      iucnAssessment('Gavialis gangeticus', 'Lang et al. 2019', '10.2305/IUCN.UK.2019-1.RLTS.T8966A149227430.en', 2019),
+      REPORTS.gharialEdge,
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -393,6 +468,7 @@ export const SPECIES: Species[] = [
     status: 'CR',
     statusFullName: 'Critically Endangered',
     statusAssessedYear: 2021,
+    statusPublishedYear: 2021,
     statusHistory: [
       {
         year: 2000,
@@ -406,7 +482,7 @@ export const SPECIES: Species[] = [
     states: ['Madhya Pradesh', 'Rajasthan', 'Assam', 'Haryana', 'Uttar Pradesh', 'Gujarat'],
     habitats: ['grassland', 'forest'],
     summary:
-      'Once possibly the most abundant large raptor on Earth; its population fell by more than 99% in the 1990s and 2000s.',
+      'Once possibly the most abundant large raptor on Earth; its numbers in India fell by an estimated 99.9% between 1992 and 2007.',
     description:
       'The White-rumped Vulture (Gyps bengalensis) is assessed as Critically Endangered on the IUCN Red List (listed CR since 2000). Its collapse was one of the fastest declines ever recorded in a bird, driven by poisoning from the veterinary anti-inflammatory drug diclofenac, which causes fatal kidney failure in vultures that feed on the carcasses of treated cattle.',
     indianDistribution:
@@ -427,9 +503,10 @@ export const SPECIES: Species[] = [
     whyItMatters:
       'Vultures strip carcasses within hours, limiting the spread of disease and the numbers of feral dogs and rats. Their loss has been linked to public-health and sanitation costs across South Asia.',
     distributionPoints: [
-      { lat: 30.8, lng: 76.9, label: 'Jatayu Conservation Breeding Centre, Pinjore, Haryana', note: 'Assurance / breeding population.' },
+      { lat: 30.8, lng: 76.9, label: 'Jatayu Conservation Breeding Centre, Pinjore, Haryana', note: 'A captive assurance and breeding population, not a wild locality.', captive: true },
       { lat: 23.7, lng: 81.0, label: 'Bandhavgarh landscape, Madhya Pradesh' },
-      { lat: 26.5, lng: 76.42, label: 'Ranthambhore National Park, Rajasthan' },
+      // Was 26.50, 76.42 (shared with the tiger): 38 km outside the park. Moved with the tiger's point.
+      { lat: 26.0, lng: 76.5, label: 'Ranthambhore National Park, Rajasthan' },
       { lat: 26.6, lng: 93.2, label: 'Kaziranga–Karbi Anglong landscape, Assam' },
     ],
     image: {
@@ -441,11 +518,12 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:White_rumped_vulture_in_chitwan_national_park.jpg',
     },
     sources: [
-      iucnSearch('Gyps bengalensis'),
+      iucnAssessment('Gyps bengalensis', 'BirdLife International 2021', '10.2305/IUCN.UK.2021-3.RLTS.T22695194A204618615.en', 2021),
       { label: 'White-rumped Vulture — species factsheet', url: 'https://datazone.birdlife.org/species/factsheet/white-rumped-vulture-gyps-bengalensis', publisher: 'BirdLife International Data Zone' },
+      REPORTS.vultureDecline,
       { label: 'Action Plan for Vulture Conservation in India 2020–2025 (PDF)', url: 'https://save-vultures.org/wp-content/uploads/2020/11/20-11-India-National-Vulture-Action-Plan-2020-25.pdf', publisher: 'MoEFCC, Government of India (hosted by SAVE)' },
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -455,7 +533,8 @@ export const SPECIES: Species[] = [
     group: 'mammal',
     status: 'VU',
     statusFullName: 'Vulnerable',
-    statusAssessedYear: 2017,
+    statusAssessedYear: 2016,
+    statusPublishedYear: 2017,
     statusHistory: [
       {
         year: 2017,
@@ -476,6 +555,15 @@ export const SPECIES: Species[] = [
       'The elusive big cat of the high mountains; reassessed from Endangered to Vulnerable in 2017, but still declining.',
     description:
       'The Snow Leopard (Panthera uncia) was reassessed from Endangered to Vulnerable in 2017, on the basis of a revised (larger) population estimate rather than any recovery — the population is still thought to be declining. India’s first nationwide assessment (SPAI, reported 2024) estimated about 718 snow leopards in the country.',
+    population: [
+      {
+        scope: 'Snow leopards in India',
+        value: '718',
+        surveyed: '2019–2023',
+        method: 'Occupancy survey over more than 70% of the potential range, then camera-trap abundance estimates in each region',
+        source: REPORTS.snowLeopards2024,
+      },
+    ],
     indianDistribution:
       'The higher Himalaya and the trans-Himalayan cold deserts: Ladakh, the upper valleys of Himachal Pradesh (Spiti, Lahaul, Kinnaur) and Uttarakhand, and the high country of Sikkim and Arunachal Pradesh.',
     habitatNote:
@@ -507,11 +595,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Irbis4.JPG',
     },
     sources: [
-      iucnSearch('Panthera uncia'),
+      iucnAssessment('Panthera uncia', 'McCarthy et al. 2017', '10.2305/IUCN.UK.2017-2.RLTS.T22732A50664030.en', 2017),
       { label: 'Statement on the IUCN Red List status change of the snow leopard', url: 'https://snowleopard.org/statement-iucn-red-list-status-change-snow-leopard/', publisher: 'Snow Leopard Trust' },
-      { label: 'Snow Leopard Population Assessment in India (SPAI)', url: 'https://wii.gov.in/', publisher: 'Wildlife Institute of India / MoEFCC' },
+      REPORTS.snowLeopards2024,
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -521,7 +609,8 @@ export const SPECIES: Species[] = [
     group: 'mammal',
     status: 'VU',
     statusFullName: 'Vulnerable',
-    statusAssessedYear: 2019,
+    statusAssessedYear: 2018,
+    statusPublishedYear: 2019,
     endemicToIndia: false,
     regions: ['northeast', 'gangetic-plains'],
     states: ['Assam', 'West Bengal', 'Uttar Pradesh'],
@@ -529,7 +618,23 @@ export const SPECIES: Species[] = [
     summary:
       'A conservation success story recovering from fewer than 200 animals a century ago, but still Vulnerable because of its small, concentrated range.',
     description:
-      'The Greater One-horned Rhinoceros (Rhinoceros unicornis) is assessed as Vulnerable on the IUCN Red List. Intensive protection has brought the population back from near-extinction to around 4,000 animals across India and Nepal, but it remains Vulnerable because it occupies a very small total area, is highly fragmented, and more than two-thirds of the world population is in a single park — Kaziranga.',
+      'The Greater One-horned Rhinoceros (Rhinoceros unicornis) is assessed as Vulnerable on the IUCN Red List. Intensive protection has brought the population back from near-extinction to around 4,000 animals across India and Nepal (4,018 counted in 2021–22). It remains Vulnerable because it occupies a very small total area and is highly fragmented, and about two-thirds of all wild rhinos live in a single park: Kaziranga’s 2022 count of 2,613 was 65% of that total.',
+    population: [
+      {
+        scope: 'Wild greater one-horned rhinos in India and Nepal',
+        value: '4,018 (India 3,266; Nepal 752)',
+        surveyed: 'India 2021–22 (Assam, March–April 2022); Nepal 2021',
+        method: 'Direct counts by state forest departments, and Nepal’s national count',
+        source: REPORTS.rhinos2022,
+      },
+      {
+        scope: 'Kaziranga National Park, Assam',
+        value: '2,613',
+        surveyed: 'March–April 2022',
+        caveat: '65% of the 4,018 counted across India and Nepal.',
+        source: REPORTS.rhinos2022,
+      },
+    ],
     indianDistribution:
       'The floodplain grasslands of the Brahmaputra in Assam (Kaziranga, Pobitora, Orang, Manas), the Terai of northern West Bengal (Jaldapara, Gorumara), and Dudhwa National Park in Uttar Pradesh, where the species was reintroduced.',
     habitatNote:
@@ -548,7 +653,7 @@ export const SPECIES: Species[] = [
     whyItMatters:
       'Rhinos are ecosystem engineers of the Brahmaputra and Terai grasslands — their grazing and movement maintain the short-grass patches that many other threatened species, such as the Bengal florican and hog deer, also need.',
     distributionPoints: [
-      { lat: 26.58, lng: 93.17, label: 'Kaziranga National Park, Assam', note: 'Holds the large majority of the world population.' },
+      { lat: 26.58, lng: 93.17, label: 'Kaziranga National Park, Assam', note: 'About two-thirds of the world’s wild rhinos (2,613 counted in 2022).' },
       { lat: 26.23, lng: 92.05, label: 'Pobitora Wildlife Sanctuary, Assam' },
       { lat: 26.72, lng: 91.0, label: 'Manas National Park, Assam', note: 'Population re-established by translocation.' },
       { lat: 26.68, lng: 89.28, label: 'Jaldapara National Park, West Bengal' },
@@ -563,10 +668,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Payamfarahani_-_Rhinoceros_unicornis_(26).jpg',
     },
     sources: [
-      iucnSearch('Rhinoceros unicornis'),
+      iucnAssessment('Rhinoceros unicornis', 'Ellis & Talukdar 2019', '10.2305/IUCN.UK.2019-3.RLTS.T19496A18494149.en', 2019),
+      REPORTS.rhinos2022,
       { label: 'Indian Rhino Vision 2020', url: 'https://www.wwfindia.org/about_wwf/priority_species/threatened_species/one_horned_rhinoceros/', publisher: 'WWF India' },
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -577,14 +683,26 @@ export const SPECIES: Species[] = [
     status: 'VU',
     statusFullName: 'Vulnerable',
     statusAssessedYear: 2015,
+    // The amended version of the 2015 assessment, published in 2019, is the one the Red List now cites.
+    statusPublishedYear: 2019,
     endemicToIndia: false,
     regions: ['coastal-marine'],
     states: ['Tamil Nadu', 'Gujarat', 'Andaman & Nicobar Islands'],
     habitats: ['marine'],
     summary:
-      'The only strictly herbivorous marine mammal — a "sea cow" that grazes seagrass meadows; globally Vulnerable, and very rare in Indian waters.',
+      'The only herbivorous mammal that lives strictly in the sea — a "sea cow" that grazes seagrass meadows; globally Vulnerable, and very rare in Indian waters.',
     description:
-      'The Dugong (Dugong dugon) is assessed as Vulnerable on the IUCN Red List at the global scale (2015; some regional subpopulations are separately assessed as Endangered or Critically Endangered). In India the species is now confined to three areas and its national population is estimated at only around 200–250 animals, making it one of the country’s most endangered marine mammals in practice.',
+      'The Dugong (Dugong dugon) is assessed as Vulnerable on the IUCN Red List at the global scale (assessed 2015; amended version published 2019); some regional subpopulations are separately assessed as Endangered or Critically Endangered. In India the species is now confined to three areas, and there is no complete national count. A Wildlife Institute of India drone survey of the Tamil Nadu coast, the largest Indian population, estimated about 270 dugongs in Palk Bay and the Gulf of Mannar in 2023–25.',
+    population: [
+      {
+        scope: 'Dugongs off Tamil Nadu (Palk Bay and the Gulf of Mannar)',
+        value: '270 ± 16 (Palk Bay 158 ± 13; Gulf of Mannar 112 ± 9)',
+        surveyed: '2023 and April 2025',
+        method: 'Drone (UAV) strip transects over seagrass habitat, corrected for animals below the surface',
+        caveat: 'Tamil Nadu only: the Gulf of Kutch and the Andaman and Nicobar Islands were not counted, so this is not a national total.',
+        source: REPORTS.dugongs2026,
+      },
+    ],
     indianDistribution:
       'The Gulf of Mannar and Palk Bay off Tamil Nadu (the largest Indian population), the Gulf of Kutch in Gujarat, and the waters around the Andaman and Nicobar Islands.',
     habitatNote:
@@ -604,7 +722,9 @@ export const SPECIES: Species[] = [
       'Dugong grazing keeps seagrass meadows healthy and productive; those meadows are nursery habitat for fish and prawns that coastal fisheries depend on, and they store large amounts of "blue carbon".',
     distributionPoints: [
       { lat: 9.1, lng: 79.12, label: 'Gulf of Mannar, Tamil Nadu' },
-      { lat: 9.7, lng: 79.4, label: 'Palk Bay / Dugong Conservation Reserve, Tamil Nadu' },
+      // In Palk Bay (and on India's side of the maritime boundary), 35 km offshore: the label named the Dugong
+      // Conservation Reserve too, whose notified boundary could not be checked, so it now names the bay only.
+      { lat: 9.7, lng: 79.4, label: 'Palk Bay, Tamil Nadu' },
       { lat: 22.5, lng: 69.7, label: 'Gulf of Kachchh, Gujarat' },
       { lat: 12.0, lng: 93.0, label: 'Ritchie’s Archipelago, Andaman Islands' },
     ],
@@ -617,11 +737,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Dugong.JPG',
     },
     sources: [
-      iucnSearch('Dugong dugon'),
-      { label: 'Dugong Recovery Programme / seagrass work', url: 'https://wii.gov.in/', publisher: 'Wildlife Institute of India' },
+      iucnAssessment('Dugong dugon', 'Marsh & Sobtzick 2019, amended version of the 2015 assessment', '10.2305/IUCN.UK.2015-4.RLTS.T6909A160756767.en', 2019),
+      REPORTS.dugongs2026,
       { label: 'Dugong — mammals of India', url: 'https://www.mammalsofindia.org/dugong-dugon', publisher: 'Mammals of India (NCF / IISc)' },
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -631,7 +751,8 @@ export const SPECIES: Species[] = [
     group: 'mammal',
     status: 'EN',
     statusFullName: 'Endangered',
-    statusAssessedYear: 2020,
+    statusAssessedYear: 2015,
+    statusPublishedYear: 2020,
     endemicToIndia: true,
     regions: ['western-ghats'],
     states: ['Karnataka', 'Kerala', 'Tamil Nadu'],
@@ -643,7 +764,7 @@ export const SPECIES: Species[] = [
     indianDistribution:
       'The wet evergreen forests of the Western Ghats in Karnataka (e.g. around Sirsi–Honnavara and the Sharavathi valley), Kerala (Silent Valley and the surrounding Nilgiri forests) and the Anamalai and Kalakkad hills of Tamil Nadu.',
     habitatNote:
-      'Undisturbed tropical wet evergreen ("sholas" at low and mid elevations) forest, where the macaque forages high in the canopy for fruit, and is reluctant to cross open ground.',
+      'Undisturbed tropical wet evergreen forest, where the macaque forages high in the canopy for fruit, and is reluctant to cross open ground.',
     majorThreats: ['habitat-loss', 'human-wildlife-conflict', 'infrastructure'],
     threatNote:
       'Historic clearance of rainforest for tea, coffee, cardamom and teak; fragmentation of remaining forest by roads, power lines, reservoirs and plantations; and, in fragments near people, a shift to raiding crops and refuse that leads to road kills and conflict.',
@@ -671,10 +792,10 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Lion-tailed_Macaque_in_Bristol_Zoo.jpg',
     },
     sources: [
-      iucnSearch('Macaca silenus'),
+      iucnAssessment('Macaca silenus', 'Singh et al. 2020', '10.2305/IUCN.UK.2020-2.RLTS.T12559A17951402.en', 2020),
       { label: 'Lion-tailed Macaque — mammals of India', url: 'https://www.mammalsofindia.org/macaca-silenus', publisher: 'Mammals of India (NCF / IISc)' },
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 
   {
@@ -685,12 +806,13 @@ export const SPECIES: Species[] = [
     status: 'EN',
     statusFullName: 'Endangered',
     statusAssessedYear: 2019,
+    statusPublishedYear: 2020,
     statusHistory: [
       {
         year: 1986,
         status: 'EN',
-        note: 'Listed as Endangered from this year onwards.',
-        source: iucnSearch('Elephas maximus'),
+        note: 'Listed as Endangered from this year onwards (the assessment history, on the assessment page).',
+        source: iucnAssessment('Elephas maximus', 'Williams et al. 2020', '10.2305/IUCN.UK.2020-3.RLTS.T7140A45818198.en', 2020),
       },
     ],
     endemicToIndia: false,
@@ -698,9 +820,19 @@ export const SPECIES: Species[] = [
     states: ['Karnataka', 'Kerala', 'Tamil Nadu', 'Assam', 'Odisha', 'Uttarakhand', 'West Bengal', 'Jharkhand'],
     habitats: ['forest', 'grassland'],
     summary:
-      'India holds the majority of the world’s wild Asian elephants; the species has been Endangered on the IUCN Red List since 1986.',
+      'India holds more wild Asian elephants than any other country; the species has been Endangered on the IUCN Red List since 1986.',
     description:
-      'The Asian Elephant (Elephas maximus) has been assessed as Endangered on the IUCN Red List since 1986, reflecting a long-term population decline of at least 50% over three generations. India’s wild population is the largest of any country, on the order of 27,000–30,000 animals, distributed across four broad landscapes.',
+      'The Asian Elephant (Elephas maximus) has been assessed as Endangered on the IUCN Red List since 1986, reflecting a long-term population decline of at least 50% over three generations. India’s wild population is the largest of any country. The first DNA-based national estimate, by the Wildlife Institute of India in 2021–25, put it at 22,446 across four broad landscapes; the report treats this as a new baseline, not comparable with earlier counts made by other methods, such as 29,964 in 2017.',
+    population: [
+      {
+        scope: 'Wild Asian elephants in India',
+        value: '22,446 (95% CI 18,255–26,645)',
+        surveyed: '2021–2025',
+        method: 'Individuals identified from DNA in non-invasive samples, with mark–recapture modelling',
+        caveat: 'The report calls it a new monitoring baseline: it is not comparable with earlier counts made by other methods (29,964 in 2017).',
+        source: REPORTS.elephants2025,
+      },
+    ],
     indianDistribution:
       'Southern India (the Western Ghats and adjoining Eastern Ghats of Karnataka, Kerala, Tamil Nadu), the Northeast (Assam and neighbouring states), east-central India (Odisha, Jharkhand, Chhattisgarh) and the northern foothills (Uttarakhand and northern West Bengal).',
     habitatNote:
@@ -734,10 +866,11 @@ export const SPECIES: Species[] = [
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Elephas_maximus_(Bandipur).jpg',
     },
     sources: [
-      iucnSearch('Elephas maximus'),
-      { label: 'Project Elephant — PIB release', url: 'https://pib.gov.in/PressReleaseIframePage.aspx?PRID=1884356', publisher: 'Press Information Bureau, Government of India' },
+      iucnAssessment('Elephas maximus', 'Williams et al. 2020', '10.2305/IUCN.UK.2020-3.RLTS.T7140A45818198.en', 2020),
+      REPORTS.elephants2025,
+      REPORTS.projectElephant,
     ],
-    lastVerified: '2026-08-29',
+    lastVerified: '2026-10-17',
   },
 ];
 

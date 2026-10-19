@@ -13,13 +13,13 @@ export function ThreatsOverview() {
         title="The threats behind the status"
         description="Most threatened species face several pressures at once. These are the categories used in the map’s Threats mode."
       />
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-x-10 gap-y-6 sm:grid-cols-2">
         {THREATS.map((t) => {
           const affected = SPECIES.filter((s) => s.majorThreats.includes(t.id));
           return (
-            <article key={t.id} className="rounded-xl border border-forest-700/70 bg-forest-900 p-5">
+            <article key={t.id} className="sheet">
               <div className="flex items-baseline justify-between gap-2">
-                <h3 className="font-serif text-lg font-semibold text-canvas">{t.name}</h3>
+                <h3 className="font-serif text-xl font-normal tracking-tight text-canvas">{t.name}</h3>
                 <span className="shrink-0 rounded-full bg-forest-800 px-2 py-0.5 text-xs text-canvas/70">
                   {affected.length} species
                 </span>

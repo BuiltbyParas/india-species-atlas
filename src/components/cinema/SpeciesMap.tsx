@@ -1,7 +1,9 @@
 import { useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { DistributionPoint, Species, ThreatId } from '../../types';
 import { THREAT_LABELS } from '../../data/threats';
-import { formatDeg, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, smoothPath, useIndiaGeo } from '../../geo/india';
+import { localityCoords, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
+import { GeoLine } from '../../geo/line/GeoLine';
+import { chain, threadPath } from '../../geo/line/paths';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
 import { programmeSitesFor } from '../map/programmeSites';
 import { cn } from '../../utils/cn';
@@ -41,55 +43,6 @@ const HATCH_ANGLE: Record<ThreatId, number> = {
   bycatch: -67,
 };
 
-/**
- * The drawn thread: localities chained nearest-next from the anchor, then cut
- * wherever two consecutive localities are far apart. A line is only drawn
- * between places in the same landscape; two populations a thousand
- * kilometres apart are left unjoined, because a line between them would read
- * as a corridor the data does not record.
- */
-const MAX_JOIN_DEG = 5;
-
-export function threadPath(points: DistributionPoint[]): string {
-  const ordered = chain(points);
-  const runs: DistributionPoint[][] = [];
-  let run: DistributionPoint[] = [];
-  for (const p of ordered) {
-    const last = run[run.length - 1];
-    if (last && Math.hypot(p.lat - last.lat, p.lng - last.lng) > MAX_JOIN_DEG) {
-      runs.push(run);
-      run = [];
-    }
-    run.push(p);
-  }
-  runs.push(run);
-  return runs
-    .filter((r) => r.length > 1)
-    .map((r) => smoothPath(r.map((p) => project(p.lng, p.lat))))
-    .join('');
-}
-
-/** Order localities into a chain that starts at the anchor and takes the nearest next. */
-export function chain(points: DistributionPoint[]): DistributionPoint[] {
-  if (points.length < 3) return points;
-  const rest = points.slice(1);
-  const out = [points[0]];
-  while (rest.length) {
-    const last = out[out.length - 1];
-    let best = 0;
-    let bestD = Infinity;
-    rest.forEach((p, i) => {
-      const d = (p.lat - last.lat) ** 2 + (p.lng - last.lng) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    });
-    out.push(rest.splice(best, 1)[0]);
-  }
-  return out;
-}
-
 export interface SpeciesMapFrame {
   tx: number;
   ty: number;
@@ -97,7 +50,7 @@ export interface SpeciesMapFrame {
 }
 
 /** The zoom that frames a species' localities, padded so the region keeps some context. */
-export function frameFor(species: Species): SpeciesMapFrame {
+export function frameFor(species: Species, geo?: IndiaGeo | null): SpeciesMapFrame {
   const pts = species.distributionPoints.map((p) => project(p.lng, p.lat));
   let minX = Infinity;
   let minY = Infinity;
@@ -108,6 +61,15 @@ export function frameFor(species: Species): SpeciesMapFrame {
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
+  }
+  // The northern territory is far larger than the localities inside it, so
+  // frame all of it rather than clip its western and northern reaches.
+  const north = geo?.byName.get('Jammu and Kashmir');
+  if (north && species.states.some((s) => (GEOJSON_STATE_ALIASES[s] ?? s) === 'Jammu and Kashmir')) {
+    minX = Math.min(minX, north.bounds[0]);
+    minY = Math.min(minY, north.bounds[1]);
+    maxX = Math.max(maxX, north.bounds[2]);
+    maxY = Math.max(maxY, north.bounds[3]);
   }
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
@@ -127,6 +89,9 @@ export function SpeciesMap({
   showLegend = true,
   vars,
   align = 'center',
+  legendPhase,
+  highlightLocality = null,
+  onLocality,
 }: {
   species: Species;
   highlightThreat?: ThreatId | null;
@@ -138,6 +103,15 @@ export function SpeciesMap({
   /** Layer values set declaratively, for the documentary clock. */
   vars?: { range: number; threat: number; cons: number; zoom: number };
   align?: 'left' | 'center';
+  /**
+   * Which caption the key shows, when the caller knows the phase (the pinned
+   * scene does). Without it the key follows the layer variables instead.
+   */
+  legendPhase?: 'range' | 'threats' | 'conservation';
+  /** A locality picked out elsewhere (the species page's register), by its label. */
+  highlightLocality?: string | null;
+  /** Called when the reader points at a locality here, so the register can answer. */
+  onLocality?: (label: string | null) => void;
 }) {
   const geo = useIndiaGeo();
   const uid = useId().replace(/:/g, '');
@@ -151,7 +125,7 @@ export function SpeciesMap({
   const ordered = useMemo(() => chain(species.distributionPoints), [species]);
   const thread = useMemo(() => threadPath(species.distributionPoints), [species]);
   const sites = useMemo(() => programmeSitesFor([species]), [species]);
-  const frame = useMemo(() => frameFor(species), [species]);
+  const frame = useMemo(() => frameFor(species, geo), [species, geo]);
 
   const occurrence = geo ? drawnStates.map((n) => geo.byName.get(n)).filter(Boolean) : [];
   const occurrenceD = occurrence.map((s) => s!.d).join('');
@@ -231,10 +205,10 @@ export function SpeciesMap({
           </g>
 
           {/* The protected outline: the same states, redrawn in water-blue once conservation enters. */}
-          <path d={occurrenceD} pathLength={1} className="sm-protected" />
+          <GeoLine d={occurrenceD} role="protect" draw="var(--cons)" className="sm-protected" />
 
-          {/* The thread through the localities. */}
-          <path d={thread} pathLength={1} className="sm-thread" />
+          {/* The thread through the localities, drawn by its nib as the range comes in. */}
+          <GeoLine d={thread} role="thread" draw="var(--range)" nib={3.6} className="sm-thread" />
 
           {/* Programme sites. */}
           {sites.map((site, i) => {
@@ -252,16 +226,17 @@ export function SpeciesMap({
             return (
               <g
                 key={p.label}
-                className="sm-point"
+                className={cn('sm-point', highlightLocality === p.label && 'is-hl')}
+                data-locality={p.label}
                 style={{ ['--k' as string]: i / Math.max(ordered.length - 1, 1) }}
-                onPointerEnter={interactive ? (e) => onPoint(p, e.currentTarget) : undefined}
-                onPointerLeave={interactive ? () => setHover(null) : undefined}
-                onFocus={interactive ? (e) => onPoint(p, e.currentTarget) : undefined}
-                onBlur={interactive ? () => setHover(null) : undefined}
+                onPointerEnter={interactive ? (e) => (onPoint(p, e.currentTarget), onLocality?.(p.label)) : undefined}
+                onPointerLeave={interactive ? () => (setHover(null), onLocality?.(null)) : undefined}
+                onFocus={interactive ? (e) => (onPoint(p, e.currentTarget), onLocality?.(p.label)) : undefined}
+                onBlur={interactive ? () => (setHover(null), onLocality?.(null)) : undefined}
                 tabIndex={interactive ? 0 : undefined}
                 role={interactive ? 'button' : undefined}
                 aria-label={interactive ? `${p.label}${p.note ? `. ${p.note}` : ''}` : undefined}
-                data-cursor={interactive ? 'Locality' : undefined}
+                data-cursor={interactive ? 'Locate' : undefined}
               >
                 <circle cx={x} cy={y} r="14" className="sm-point-hit" />
                 <circle cx={x} cy={y} r={i === 0 ? 5.5 : 4} className="sm-point-dot" />
@@ -279,16 +254,16 @@ export function SpeciesMap({
           style={{ left: hover.x, top: hover.y }}
           role="tooltip"
         >
-          <p className="text-[13px] leading-snug text-canvas">{hover.point.label}</p>
-          <p className="mt-0.5 text-[11px] tabular-nums text-canvas/50">
-            {formatDeg(hover.point.lat, 'lat')} {formatDeg(hover.point.lng, 'lng')}
+          <p className="text-small leading-snug text-canvas">{hover.point.label}</p>
+          <p className="mt-0.5 text-micro tabular-nums text-canvas/70">
+            {localityCoords(hover.point)}
           </p>
-          {hover.point.note && <p className="mt-1 text-[12px] leading-snug text-canvas/70">{hover.point.note}</p>}
+          {hover.point.note && <p className="mt-1 text-label leading-snug text-canvas/70">{hover.point.note}</p>}
         </div>
       )}
 
       {showLegend && (
-        <div className="sm-legend pointer-events-none absolute left-0 top-0 h-24 w-[15rem] text-[11px] leading-snug text-canvas/45">
+        <div className="sm-legend pointer-events-none absolute left-0 top-0 isolate h-28 w-[min(17rem,calc(100%-2.5rem))]" data-phase={legendPhase}>
           <p className="sm-legend-range">
             Shaded: states of record. Points: indicative localities, not a range boundary. The ringed point is {anchor.label.split(',')[0]}.
           </p>

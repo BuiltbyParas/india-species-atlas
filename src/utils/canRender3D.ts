@@ -7,6 +7,7 @@
  * is the layout the site is designed around: the 3D is an enhancement on top
  * of a page that already works without it.
  */
+import { prefersReducedMotion } from '../motion/preferences';
 
 /** The WebGL probe is a device fact and cannot change within a session. */
 let webglSupported: boolean | null = null;
@@ -30,7 +31,7 @@ export function canRender3D(): boolean {
   if (typeof window === 'undefined') return false;
   // Re-read every time: unlike the device facts below, this one can be changed
   // by the visitor while the page is open.
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (prefersReducedMotion()) return false;
 
   const nav = navigator as Navigator & {
     connection?: { saveData?: boolean; effectiveType?: string };

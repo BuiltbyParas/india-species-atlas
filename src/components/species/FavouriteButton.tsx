@@ -32,8 +32,8 @@ export function FavouriteButton({
       }}
       title={saved ? 'Remove from saved species' : 'Save this species'}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border font-medium transition-colors',
-        size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-xs',
+        'inline-flex items-center gap-1.5 rounded-xs border font-medium transition-colors',
+        size === 'sm' ? 'px-2 py-1 text-micro' : 'px-2.5 py-1.5 text-xs',
         saved
           ? 'border-clay/70 bg-clay/15 text-clay'
           : 'border-forest-700 bg-forest-950/70 text-canvas/65 hover:border-forest-500 hover:text-canvas',

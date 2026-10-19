@@ -1,0 +1,14 @@
+{
+  "source": "NOAA ETOPO1 1 Arc-Minute Global Relief Model (Ice Surface), via NOAA CoastWatch ERDDAP, dataset etopo180",
+  "units": "metres above sea level",
+  "order": "row-major, first row is the northernmost",
+  "cols": 331,
+  "rows": 331,
+  "west": 75,
+  "east": 80.5,
+  "north": 35.5,
+  "south": 30,
+  "cellsize": 0.016666666666666673,
+  "min": 205,
+  "max": 7288
+}

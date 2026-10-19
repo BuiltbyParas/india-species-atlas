@@ -1,21 +1,30 @@
 import { Link } from 'react-router-dom';
+import { LineTitle } from '../components/cinema/LineTitle';
+import { EmptySheet } from '../components/ui/EmptySheet';
 
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-lg px-4 py-24 text-center">
-      <p className="font-serif text-5xl font-semibold text-forest-400">404</p>
-      <h1 className="mt-3 font-serif text-2xl font-semibold text-canvas">Page not found</h1>
-      <p className="mt-2 text-sm text-canvas/65">
-        That page isn&rsquo;t part of the atlas. Try the interactive map or the species directory.
-      </p>
-      <div className="mt-6 flex justify-center gap-3">
-        <Link to="/" className="rounded-lg border border-forest-600 px-4 py-2 text-sm font-medium text-canvas hover:bg-forest-900">
-          Home
-        </Link>
-        <Link to="/atlas" className="rounded-lg bg-forest-500 px-4 py-2 text-sm font-semibold text-white hover:bg-forest-400">
-          Explore the map
-        </Link>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-20 sm:px-8 lg:py-28" data-trail>
+      <EmptySheet
+        as="h1"
+        eyebrow="404 · Not on the sheet"
+        title={<LineTitle text="Page not found" />}
+        actions={
+          <>
+            <Link to="/atlas" className="cta" data-magnetic="0.25" data-cursor="Enter">
+              <span>Explore the map</span>
+              <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line">
+                <path d="M0 5 C 12 1, 26 9, 40 5" />
+              </svg>
+            </Link>
+            <Link to="/" className="text-link" data-magnetic="0.2">
+              Back to the documentary
+            </Link>
+          </>
+        }
+      >
+        That address isn&rsquo;t part of the atlas. The map and the species directory hold everything it records.
+      </EmptySheet>
     </div>
   );
 }

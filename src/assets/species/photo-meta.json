@@ -1,0 +1,50 @@
+{
+  "asian-elephant": {
+    "w": 1400,
+    "h": 934
+  },
+  "bengal-tiger": {
+    "w": 1400,
+    "h": 934
+  },
+  "dugong": {
+    "w": 1400,
+    "h": 992
+  },
+  "ganges-river-dolphin": {
+    "w": 1400,
+    "h": 1154
+  },
+  "gharial": {
+    "w": 1400,
+    "h": 934
+  },
+  "great-indian-bustard": {
+    "w": 1400,
+    "h": 1050
+  },
+  "indian-rhinoceros": {
+    "w": 1400,
+    "h": 934
+  },
+  "lion-tailed-macaque": {
+    "w": 1400,
+    "h": 1786
+  },
+  "nilgiri-tahr": {
+    "w": 1400,
+    "h": 1050
+  },
+  "red-panda": {
+    "w": 1400,
+    "h": 934
+  },
+  "snow-leopard": {
+    "w": 1400,
+    "h": 1050
+  },
+  "white-rumped-vulture": {
+    "w": 1400,
+    "h": 876
+  }
+}

@@ -10,26 +10,27 @@ import {
   totalSpecies,
 } from '../../utils/stats';
 import { SectionHeading } from '../ui/SectionHeading';
+import { buttonClasses } from '../ui/buttonClasses';
 
 function CaptureCard() {
   const byStatus = countByStatus();
   return (
     <div
       id="atlas-capture"
-      className="overflow-hidden rounded-2xl border border-forest-700 bg-gradient-to-br from-forest-900 to-forest-950 p-6 sm:p-8"
+      className="overflow-hidden rounded-xs border border-forest-700 bg-gradient-to-br from-forest-900 to-forest-950 p-6 sm:p-8"
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-forest-400">India Species Atlas</p>
-      <h3 className="mt-2 font-serif text-2xl font-semibold text-canvas sm:text-3xl">
-        Mapping Endangered Species &amp; Their Conservation Status in India
+      <p className="caps">India Species Atlas</p>
+      <h3 className="mt-2 font-serif text-3xl font-light tracking-tight text-canvas sm:text-3xl">
+        Mapping Threatened Species &amp; Their Conservation Status in India
       </h3>
 
       <div className="mt-6 grid grid-cols-3 gap-3 text-center">
         {(['CR', 'EN', 'VU'] as const).map((code) => (
-          <div key={code} className="rounded-lg border border-forest-700/70 bg-forest-900/70 py-3">
-            <p className="font-serif text-2xl font-semibold" style={{ color: STATUS_INFO[code].colorVar }}>
+          <div key={code} className="rounded-xs border border-forest-700/70 bg-forest-900/70 py-3">
+            <p className="font-serif text-3xl font-light tracking-tight" style={{ color: STATUS_INFO[code].colorVar }}>
               {byStatus[code]}
             </p>
-            <p className="text-[11px] font-medium text-canvas/70">{STATUS_INFO[code].name}</p>
+            <p className="text-micro font-medium text-canvas/70">{STATUS_INFO[code].name}</p>
           </div>
         ))}
       </div>
@@ -83,28 +84,28 @@ function ShareCard() {
   };
 
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-forest-700 bg-forest-900 p-6 text-center">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-forest-400">
+    <div className="flex flex-col items-center rounded-xs border border-forest-700 bg-forest-900 p-6 text-center">
+      <p className="flex items-center gap-1.5 caps">
         <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
         Scan to explore the interactive atlas
       </p>
-      <div className="mt-4 rounded-xl bg-canvas p-3">
+      <div className="mt-4 rounded-xs bg-canvas p-3">
         {qrOk ? (
           <canvas ref={canvasRef} width={176} height={176} aria-label="QR code linking to this site" />
         ) : (
           <p className="w-44 p-6 text-xs text-ink">QR code unavailable — use the link below.</p>
         )}
       </div>
-      <p className="mt-3 max-w-[16rem] break-all text-xs text-canvas/55">{url || 'Deploy the site to generate a link'}</p>
+      <p className="mt-3 max-w-[16rem] break-all text-xs text-canvas/70">{url || 'Deploy the site to generate a link'}</p>
       <button
         type="button"
         onClick={copy}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-forest-600 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-forest-800"
+        className={buttonClasses('secondary', 'sm', 'mt-3 text-xs')}
       >
         {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
         {copied ? 'Copied' : 'Copy link'}
       </button>
-      <p className="mt-3 text-[11px] leading-snug text-canvas/45">
+      <p className="mt-3 text-micro leading-snug text-canvas/62">
         The QR code is generated from the live address in your browser, so it always points to wherever this
         atlas is deployed.
       </p>
@@ -126,11 +127,11 @@ export function PresentationSection() {
           <ShareCard />
         </div>
         <div className="mt-6">
-          <Link
-            to="/atlas"
-            className="inline-flex items-center gap-2 rounded-lg bg-forest-500 px-5 py-3 text-sm font-semibold text-white hover:bg-forest-400"
-          >
-            Open the interactive map
+          <Link to="/atlas" className="cta" data-magnetic="0.25" data-cursor="Enter">
+            <span>Open the interactive map</span>
+            <svg viewBox="0 0 40 10" aria-hidden="true" className="cta-line">
+              <path d="M0 5 C 12 1, 26 9, 40 5" />
+            </svg>
           </Link>
         </div>
       </div>

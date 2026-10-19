@@ -1,0 +1,841 @@
+/*
+ * The field studies read (StudyReading.tsx): each study's article, rising in the page's flow over its held world.
+ *
+ * Three movements per study (Encounter, Discover, Protect). Discover and Protect set their two beats side by side
+ * in a spread beside the world, so the reading is a few composed screens rather than a screen per sentence; the
+ * column drops back to one where the spread would be narrower than two comfortable measures.
+ *
+ * One journal's type for all five — a small capital label, a serif title, a serif lede, sans notes, ruled field
+ * notes — and each study's own pacing and placing: the grassland's ruled horizons, the mountain's long pauses, the
+ * river's column set out into open water, the forest's narrow, close column, the floodplain's heavier hand.
+ * Emerald is kept for what it signals elsewhere: the beat being read, links, focus.
+ */
+
+/* ---------------------------------------------------------- the column */
+
+.fs-read {
+  --gutter: clamp(1.25rem, 3.4vw, 3rem);
+  /* The single column (Encounter, the close) and the spread (Discover, Protect). */
+  --col: min(35rem, 40vw);
+  --spread: min(60rem, 59vw);
+  /* Between movements: a breath, not a screen. */
+  --gap: 10svh;
+  position: relative;
+  margin-left: var(--gutter);
+  width: var(--spread);
+  padding-top: 4svh;
+  /* A breath after the bridge; the next world turns in under its last lines, which give way to it (below). */
+  margin-bottom: 10svh;
+  color: var(--fs-ink);
+  pointer-events: none;
+  transition: opacity 0.45s var(--ease-out-expo);
+}
+/* An article shows only while its study is being read: it rises in as the composition steps back (never over the
+   name), and once the next study holds the screen, what is left of it steps out of that one's way. */
+.fs-index-stretch:not([data-reading]) .fs-read {
+  opacity: 0;
+}
+.fs-index-stretch:last-child .fs-read {
+  margin-bottom: 0;
+}
+.fs-read-head,
+.fs-sec-head,
+.fs-beat,
+.fs-more,
+.fs-bridge {
+  pointer-events: auto;
+}
+.fs-sec {
+  margin-bottom: var(--gap);
+}
+.fs-sec:last-child {
+  margin-bottom: 0;
+}
+/* Encounter: the study's name on one side, the animal in its ground on the other. */
+.fs-sec[data-sec='encounter'] {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  column-gap: clamp(2rem, 3.4vw, 3.6rem);
+  align-items: start;
+}
+.fs-read-head {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  margin: 0;
+}
+.fs-sec[data-sec='encounter'] > :not(.fs-read-head) {
+  grid-column: 2;
+}
+.fs-sec-head {
+  margin-bottom: 1.8rem;
+  max-width: 42rem;
+}
+/* Two beats side by side; one column where two would each fall under a comfortable measure. */
+.fs-sec-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.4rem clamp(2rem, 3.4vw, 3.6rem);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .fs-sec-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  /* Protect, in reading order: the threat, then what is being done beside it; the close under the threat, and the
+     full record beside it; the bridge last. */
+  .fs-sec-grid--protect {
+    grid-template-areas:
+      'threat conservation'
+      'close conservation'
+      'bridge more';
+    row-gap: 0;
+  }
+  .fs-sec-grid--protect > [data-beat='threat'] {
+    grid-area: threat;
+  }
+  .fs-sec-grid--protect > [data-beat='conservation'] {
+    grid-area: conservation;
+  }
+  .fs-sec-grid--protect > .fs-beat--close {
+    grid-area: close;
+  }
+  .fs-sec-grid--protect > .fs-more {
+    grid-area: more;
+    margin-top: 2.2rem;
+  }
+  .fs-sec-grid--protect > .fs-bridge {
+    grid-area: bridge;
+  }
+}
+.fs-beat--close {
+  margin-top: 2.2rem;
+}
+/* Discover: the field note, with its rows, takes the wider column. */
+@media (min-width: 1100px) {
+  .fs-sec[data-sec='discover'] .fs-sec-grid {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
+
+/* ---------------------------------------------------------- type */
+
+.fs-read-k,
+.fs-sec-k,
+.fs-beat-k,
+.fs-fn-k,
+.fs-fn-rows dt,
+.fs-standing dt,
+.fs-bridge-k,
+.fs-callout-k,
+.fs-read-more h6 {
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-weight: 400;
+}
+.fs-read-k {
+  margin: 0 0 1.1rem;
+  color: var(--fs-line);
+}
+.fs-read-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.fs-read-sci {
+  margin: 1rem 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-lede);
+  color: var(--fs-muted);
+}
+.fs-read-sci i {
+  color: var(--fs-ink);
+}
+
+.fs-sec-k {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0 0 1.1rem;
+  color: var(--fs-muted);
+}
+.fs-sec-k::before {
+  content: '';
+  width: 2.2rem;
+  height: 1px;
+  background: var(--fs-line);
+}
+.fs-sec-k span {
+  color: var(--fs-line);
+}
+/* A beat's own label inside its movement: small, ruled, in the ground's line. */
+.fs-beat-k {
+  margin: 0 0 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--fs-line) 45%, transparent);
+  color: var(--fs-line);
+}
+.fs-close-title {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lede);
+  color: var(--fs-muted);
+}
+.fs-sec-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(1.7rem, 2.5vw, 2.45rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.fs-beat-lede {
+  margin: 0 0 1rem;
+  font-family: var(--font-serif);
+  font-size: var(--text-lede);
+  line-height: var(--text-lede--line-height);
+  color: var(--fs-ink);
+  text-wrap: pretty;
+  max-width: 34em;
+}
+.fs-beat-lede--close {
+  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+  line-height: 1.45;
+}
+.fs-beat-body {
+  margin: 0 0 0.9rem;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  color: var(--fs-muted);
+  text-wrap: pretty;
+  max-width: 38em;
+}
+.fs-read-note {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  color: var(--fs-faint);
+}
+.fs-read a:not(.text-link),
+.fs-read-src {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-emerald-400) 55%, transparent);
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.3s;
+}
+.fs-read a:not(.text-link):hover,
+.fs-read-src:hover {
+  text-decoration-color: var(--color-emerald-300);
+}
+.fs-read-src {
+  font-size: var(--text-label);
+  color: var(--fs-muted);
+}
+
+/* ---------------------------------------------------------- the field note */
+
+.fs-fn {
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--fs-line);
+}
+.fs-fn + .fs-fn {
+  margin-top: 1.8rem;
+}
+.fs-fn-figure {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.8rem, 4.8vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+.fs-fn--minor .fs-fn-figure {
+  font-size: clamp(1.9rem, 2.8vw, 2.7rem);
+}
+/* Under its beat's label the first figure needs no rule of its own. */
+.fs-beat-k + .fs-fn {
+  padding-top: 0.2rem;
+  border-top: 0;
+}
+.fs-fn-qual {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  letter-spacing: 0;
+  color: var(--fs-muted);
+  max-width: 36em;
+}
+.fs-fn-scope {
+  margin: 0.8rem 0 0.9rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lede);
+  line-height: 1.4;
+  color: var(--fs-ink);
+}
+.fs-fn-rows,
+.fs-standing {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.fs-fn-rows > div,
+.fs-standing > div {
+  display: grid;
+  grid-template-columns: 6.2rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding-top: 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--fs-ink) 12%, transparent);
+}
+.fs-fn-rows dt,
+.fs-standing dt {
+  color: var(--fs-faint);
+}
+.fs-fn-rows dd,
+.fs-standing dd {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  color: var(--fs-ink);
+}
+.fs-fn-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1rem;
+  margin: 2rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--fs-line);
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+  font-weight: 300;
+}
+.fs-fn-k {
+  color: var(--fs-muted);
+}
+.fs-fn-band-x {
+  flex-basis: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  color: var(--fs-faint);
+}
+
+/* ---------------------------------------------------------- threat, conservation */
+
+.fs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fs-tags li {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--fs-ink) 26%, transparent);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fs-muted);
+}
+.fs-actions {
+  margin: 0 0 1.4rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+.fs-actions li {
+  position: relative;
+  padding-left: 1.6rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.05rem, 1.2vw, 1.18rem);
+  line-height: 1.45;
+}
+.fs-actions li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 0.9rem;
+  height: 1px;
+  background: var(--fs-line);
+}
+.fs-standing dd strong {
+  font-weight: 500;
+}
+.fs-standing .fs-dot {
+  display: inline-block;
+  margin-right: 0.45rem;
+  vertical-align: 0.1em;
+}
+
+/* ---------------------------------------------------------- adaptation callouts */
+
+.fs-callouts {
+  margin: 0;
+}
+.fs-callouts ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.6rem;
+}
+.fs-callouts li {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--fs-line) 50%, transparent);
+}
+.fs-callout-k {
+  color: var(--fs-line);
+}
+.fs-callouts blockquote {
+  margin: 0;
+}
+.fs-callouts blockquote p {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lede);
+  line-height: 1.45;
+}
+.fs-callouts figcaption {
+  margin-top: 1.4rem;
+}
+
+/* ---------------------------------------------------------- onward, the full record, the bridge */
+
+.fs-read-onward {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 2rem;
+  margin: 0;
+}
+.fs-read-onward > * {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fs-ink);
+  font-size: var(--text-small);
+}
+.fs-read-more {
+  margin-top: 1.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--fs-ink) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--fs-ink) 18%, transparent);
+}
+.fs-read-more summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  min-height: 48px;
+  padding: 0.6rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-small);
+  color: var(--fs-ink);
+}
+.fs-read-more summary::-webkit-details-marker {
+  display: none;
+}
+.fs-read-more summary::before {
+  content: '+';
+  width: 1rem;
+  font-family: var(--font-mono);
+  color: var(--color-emerald-300);
+}
+.fs-read-more[open] summary::before {
+  content: '−';
+}
+.fs-read-more-body {
+  padding: 0.4rem 0 1.4rem 1.6rem;
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  color: var(--fs-muted);
+}
+.fs-read-more-body > p:first-child {
+  font-family: var(--font-serif);
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--fs-ink);
+}
+.fs-read-more h6 {
+  margin: 1.4rem 0 0.5rem;
+  color: var(--fs-faint);
+}
+.fs-read-more ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+/* The way on: set in the next ground's line, so the colour of where the reader goes arrives before its world. */
+.fs-bridge {
+  --to: var(--fs-line);
+  margin: 2.2rem 0 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--to);
+  max-width: 30em;
+}
+.fs-bridge[data-next='snow-leopard'] {
+  --to: #a9c6d3;
+}
+.fs-bridge[data-next='ganges-river-dolphin'] {
+  --to: #9fb6c2;
+}
+.fs-bridge[data-next='bengal-tiger'] {
+  --to: #b9d3c1;
+}
+.fs-bridge[data-next='indian-rhinoceros'] {
+  --to: #d6b27a;
+}
+.fs-bridge-k {
+  display: block;
+  margin-bottom: 0.8rem;
+  color: var(--to);
+}
+.fs-bridge-t {
+  display: block;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.5rem, 2.5vw, 2.35rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+/* ---------------------------------------------------------- each study's own pace */
+
+/* The grassland: open, ruled like horizons; each movement stands on its own long line. */
+.fs-read[data-study='great-indian-bustard'] {
+  --gap: 10svh;
+}
+.fs-read[data-study='great-indian-bustard'] .fs-sec-head {
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--fs-line) 38%, transparent);
+}
+.fs-read[data-study='great-indian-bustard'] .fs-sec-k::before {
+  width: 4.4rem;
+}
+
+/* The mountain: slower, longer pauses, more air in the title. */
+.fs-read[data-study='snow-leopard'] {
+  --gap: 14svh;
+}
+.fs-read[data-study='snow-leopard'] .fs-sec-title {
+  letter-spacing: -0.005em;
+}
+
+/* The river: the spread set out into the open water, with the depth's negative space around it. */
+.fs-read[data-study='ganges-river-dolphin'] {
+  --gap: 12svh;
+  margin-left: max(var(--gutter), 6vw);
+  --spread: min(54rem, 52vw);
+}
+
+/* The forest: narrower and closer, as the trees are. */
+.fs-read[data-study='bengal-tiger'] {
+  --gap: 8svh;
+  --spread: min(52rem, 50vw);
+  --col: min(30rem, 34vw);
+}
+
+/* The floodplain: the heavier hand of the composition's name, carried into the reading. */
+.fs-read[data-study='indian-rhinoceros'] {
+  --gap: 10svh;
+}
+.fs-read[data-study='indian-rhinoceros'] :is(.fs-read-title, .fs-sec-title, .fs-fn-figure) {
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+/* ---------------------------------------------------------- the stage while a study is read */
+
+/* The composition steps back for the reading, and the world's own dark settles behind the column. */
+.fs-comp[data-reading] > * {
+  opacity: 0 !important;
+  translate: 0 -0.8rem;
+  pointer-events: none !important;
+  transition:
+    opacity 0.6s var(--ease-out-expo),
+    translate 0.9s var(--ease-out-expo) !important;
+}
+.fs-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--fs-ground) 88%, transparent) 0%,
+    color-mix(in srgb, var(--fs-ground) 76%, transparent) 40%,
+    color-mix(in srgb, var(--fs-ground) 44%, transparent) 58%,
+    transparent 74%
+  );
+  transition: opacity 1.1s var(--ease-cinema);
+}
+.fs-index[data-reading] .fs-veil {
+  opacity: 1;
+}
+/* The index's own running head steps aside while an article passes under it. */
+.fs-index-head .fs-kicker {
+  transition: opacity 0.5s var(--ease-out-expo);
+}
+.fs-index[data-reading] .fs-index-head .fs-kicker {
+  opacity: 0;
+}
+
+/* The river from under its surface: turbid, silt-laden water (the Ganga and the Brahmaputra are not clear rivers),
+   the surface's light rising out of the frame as the reader goes down. Drawn, and only behind the reading. */
+.fs-depth {
+  --surface: 0%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.5s linear;
+}
+.fs-depth-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 220%;
+  transform: translate3d(0, var(--surface), 0);
+  background: linear-gradient(
+    180deg,
+    rgb(40 52 44 / 0) 0%,
+    rgb(150 160 128 / 0.16) 17%,
+    rgb(58 70 54 / 0.5) 22%,
+    rgb(36 46 38 / 0.72) 34%,
+    rgb(22 30 26 / 0.8) 52%,
+    rgb(12 18 16 / 0.9) 100%
+  );
+}
+.fs-depth-silt {
+  position: absolute;
+  inset: -30% 0;
+  opacity: 0.75;
+  background-image:
+    radial-gradient(circle, rgb(206 198 160 / 0.32) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgb(206 198 160 / 0.2) 0 1.4px, transparent 2.2px),
+    radial-gradient(circle, rgb(206 198 160 / 0.12) 0 2px, transparent 3px);
+  background-size:
+    97px 89px,
+    163px 151px,
+    241px 227px;
+  background-position:
+    0 0,
+    41px 63px,
+    120px 20px;
+  animation: fs-silt 48s linear infinite;
+  will-change: transform;
+}
+@keyframes fs-silt {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-36px, -18%, 0);
+  }
+}
+
+/* ---------------------------------------------------------- the list's beats */
+
+.fs-list-beats {
+  position: relative;
+  padding: 0.35rem 0 0.7rem 2.8rem;
+  border-bottom: 1px solid var(--fs-faint);
+}
+.fs-list-beats ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 0;
+}
+.fs-list-beats a {
+  display: flex;
+  align-items: center;
+  min-height: 26px;
+  font-size: var(--text-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fs-faint);
+  text-decoration: none;
+  transition: color 0.4s var(--ease-out-expo);
+}
+.fs-list-beats a:hover,
+.fs-list-beats a.is-read {
+  color: var(--fs-muted);
+}
+.fs-list-beats a.is-current {
+  color: var(--color-emerald-300);
+}
+.fs-list-rail {
+  position: absolute;
+  left: 0.3rem;
+  top: 0.75rem;
+  bottom: 1.05rem;
+  width: 1px;
+  background: var(--fs-faint);
+}
+.fs-list-rail-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-emerald-400);
+  transform-origin: top;
+  transform: scaleY(0);
+}
+
+/* ---------------------------------------------------------- the reveal */
+
+/* Small groups as each beat reaches the eye: short, early, once. Off with reduced motion (no data-reveal). */
+.fs-index[data-reveal] :is(.fs-beat, .fs-read-head, .fs-sec-head):not([data-in]) > * {
+  opacity: 0;
+  translate: 0 14px;
+}
+.fs-index[data-reveal] :is(.fs-beat, .fs-read-head, .fs-sec-head) > * {
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    translate 0.9s var(--ease-out-expo);
+}
+.fs-index[data-reveal] :is(.fs-beat, .fs-read-head, .fs-sec-head) > :nth-child(2) {
+  transition-delay: 70ms;
+}
+.fs-index[data-reveal] :is(.fs-beat, .fs-read-head, .fs-sec-head) > :nth-child(3) {
+  transition-delay: 140ms;
+}
+.fs-index[data-reveal] :is(.fs-beat, .fs-read-head, .fs-sec-head) > :nth-child(n + 4) {
+  transition-delay: 200ms;
+}
+
+/* ---------------------------------------------------------- leaving the section */
+
+.fs-skip {
+  position: absolute;
+  left: clamp(1.25rem, 3.4vw, 3rem);
+  top: 1rem;
+  z-index: 5;
+  padding: 0.7rem 1rem;
+  background: var(--fs-ground, #0e1411);
+  color: var(--color-canvas);
+  font-size: var(--text-small);
+  transform: translateY(-200%);
+  opacity: 0;
+}
+.fs-skip:focus-visible {
+  position: fixed;
+  top: 5rem;
+  transform: none;
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------- laptops, phones */
+
+@media (max-width: 1279px) and (min-width: 901px) {
+  .fs-read,
+  .fs-read[data-study] {
+    --col: min(32rem, 52vw);
+    --spread: min(46rem, 60vw);
+  }
+}
+
+@media (max-width: 900px) {
+  .fs-read,
+  .fs-read[data-study] {
+    --col: none;
+    --spread: auto;
+    --gap: 14svh;
+    margin-left: var(--gutter);
+    margin-right: var(--gutter);
+    width: auto;
+  }
+  .fs-read[data-study='snow-leopard'] {
+    --gap: 18svh;
+  }
+  .fs-sec[data-sec='encounter'] {
+    display: block;
+  }
+  .fs-read-head {
+    margin-bottom: 2rem;
+  }
+  /* On a phone the words sit over the full-bleed world: each beat has a ground of the world's own dark. */
+  .fs-read-head,
+  .fs-sec-head,
+  .fs-beat {
+    position: relative;
+  }
+  .fs-read-head::before,
+  .fs-sec-head::before,
+  .fs-beat::before {
+    content: '';
+    position: absolute;
+    inset: -1.25rem calc(-1 * var(--gutter));
+    z-index: -1;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--fs-ground) 80%, transparent) 12%,
+      color-mix(in srgb, var(--fs-ground) 80%, transparent) 88%,
+      transparent
+    );
+  }
+  .fs-veil {
+    background: color-mix(in srgb, var(--fs-ground) 30%, transparent);
+  }
+  /* The list's row at the foot goes while a study is read: the beats carry their own numbers. */
+  .fs-list-beats {
+    display: none;
+  }
+  .fs-index[data-reading] .fs-index-list {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.4s,
+      visibility 0s linear 0.4s;
+  }
+  .fs-fn-rows > div,
+  .fs-standing > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .fs-callouts li {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+  .fs-bridge {
+    margin-top: 7svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-depth-silt {
+    animation: none;
+  }
+  .fs-depth,
+  .fs-veil,
+  .fs-read,
+  .fs-index-head .fs-kicker,
+  .fs-comp[data-reading] > * {
+    transition-duration: 0.01ms !important;
+  }
+}

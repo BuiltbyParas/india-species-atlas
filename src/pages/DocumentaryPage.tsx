@@ -39,6 +39,7 @@ export function DocumentaryPage() {
   const [t, setT] = useState(() => Math.min(DURATION, Math.max(0, Number(params.get('t')) || 0)));
   const [playing, setPlaying] = useState(!capture);
   const [scale, setScale] = useState(1);
+  const [portrait, setPortrait] = useState(false);
   const [chrome, setChrome] = useState(true);
   const tRef = useRef(t);
   useEffect(() => {
@@ -47,7 +48,10 @@ export function DocumentaryPage() {
 
   // Fit the 1920×1080 frame to the window.
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => {
+      setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+      setPortrait(window.innerHeight > window.innerWidth * 1.1);
+    };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
@@ -139,17 +143,40 @@ export function DocumentaryPage() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black" style={{ cursor: showChrome ? 'auto' : 'none' }}>
-      <h1 className="sr-only">India Species Atlas — documentary mode</h1>
-      <div
-        className="absolute left-1/2 top-1/2"
-        style={{ width: 1920, height: 1080, transform: `translate(-50%, -50%) scale(${scale})` }}
-        aria-hidden="true"
-      >
-        <DocumentaryStage t={t} />
-      </div>
+      {!capture && (
+        <a
+          href="#doc-controls"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-(--z-skip) focus:bg-canvas focus:px-3 focus:py-2 focus:text-sm focus:text-ink"
+        >
+          Skip to the player controls
+        </a>
+      )}
+      <main aria-labelledby="doc-title">
+        <h1 id="doc-title" className="sr-only">India Species Atlas — documentary mode</h1>
+        <p className="sr-only">
+          A five-minute visual presentation of the atlas, played like a film. Everything it shows — the map, the
+          species, their threats and protection — is on the home page and the interactive map in readable form.{' '}
+          <Link to="/">Go to the home page</Link>.
+        </p>
+        <div
+          className="absolute left-1/2 top-1/2"
+          style={{ width: 1920, height: 1080, transform: `translate(-50%, -50%) scale(${scale})` }}
+          aria-hidden="true"
+        >
+          <DocumentaryStage t={t} />
+        </div>
+        {portrait && !capture && (
+          <p
+            className="absolute inset-x-0 px-6 text-center text-small text-canvas/70"
+            style={{ top: `calc(50% + ${(1080 * scale) / 2}px + 1.5rem)` }}
+          >
+            The documentary is a wide picture. Turn your phone sideways to see it larger.
+          </p>
+        )}
+      </main>
 
       {!capture && (
-        <div className={`doc-controls ${showChrome ? 'is-shown' : ''}`}>
+        <nav id="doc-controls" aria-label="Player controls" className={`doc-controls ${showChrome ? 'is-shown' : ''}`}>
           <div className="flex items-center gap-5">
             <button type="button" className="doc-btn" onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}>
               {playing ? (
@@ -158,7 +185,7 @@ export function DocumentaryPage() {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
               )}
             </button>
-            <p className="w-24 text-[13px] tabular-nums text-canvas/70">
+            <p className="w-24 text-small tabular-nums text-canvas/70">
               {fmt(t)} / {fmt(DURATION)}
             </p>
             <div className="relative flex-1">
@@ -178,11 +205,11 @@ export function DocumentaryPage() {
                 ))}
               </div>
             </div>
-            <Link to="/" className="text-[13px] text-canvas/70 hover:text-canvas">
+            <Link to="/" className="text-small text-canvas/70 hover:text-canvas">
               Back to the atlas
             </Link>
           </div>
-          <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-canvas/50">
+          <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-label text-canvas/70" aria-label="Chapters">
             {CHAPTERS.map((c) => (
               <li key={c.id}>
                 <button type="button" onClick={() => setT(c.t)} className="hover:text-canvas">
@@ -191,7 +218,7 @@ export function DocumentaryPage() {
               </li>
             ))}
           </ol>
-        </div>
+        </nav>
       )}
     </div>
   );

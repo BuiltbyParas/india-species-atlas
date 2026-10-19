@@ -1,0 +1,2600 @@
+/*
+ * The home page's editorial layer (documentation/HOMEPAGE_ART_DIRECTION.md):
+ * the motion primitives the redesigned chapters share, and the compositions
+ * that use them — the selection plate (Ch. 03), the closing plate and the
+ * conservation chapter's opening. Nothing here is read by the hero, the
+ * descent or Chapter 02; they keep their own rules in index.css.
+ *
+ * Motion vocabulary (one set, used everywhere below):
+ *   ink    scrubbed: a statement fills from a faint print to full ink with the scroll
+ *   line   once: a line of type rises out of a mask
+ *   meta   once: a label, figure or credit arrives after its heading
+ *   rule   once: a hairline is drawn from its start
+ * Stagger is `--mo-i` (an item's place in its group) × the primitive's step.
+ */
+
+.mo {
+  --mo-line-step: var(--mo-step);
+}
+
+/* --- ink: a statement read at the pace of the scroll (InkText.tsx) --- */
+.ink-text {
+  /* Written by useSectionProgress on the line itself; full ink until it is. */
+  --enter: 1;
+  /* 0 → 1 while the line's top travels from 90 % to 51 % of the screen: done before a sticky column stops it. */
+  --ink: clamp(0, (var(--enter) - 0.15) / 0.6, 1);
+}
+.ink-word {
+  /* A quarter of the line is changing at once, so the fill reads as travelling, not blinking. */
+  --a: clamp(0, (var(--ink) * 1.25 - var(--w)) * 4, 1);
+  opacity: calc(0.26 + var(--a) * 0.74);
+}
+/* In focus as it fills: the print still to be read is soft and sits a hair low; each word sharpens onto the line as
+   the ink reaches it. Its own box, so the move is a transform; the spaces stay text between words. */
+.ink-focus .ink-word {
+  display: inline-block;
+  filter: blur(calc((1 - var(--a)) * 0.065em));
+  transform: translate3d(0, calc((1 - var(--a)) * 0.12em), 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-focus .ink-word {
+    filter: none;
+    transform: none;
+  }
+}
+
+/* --- line: type rising out of its own mask, once --- */
+.mo-line {
+  display: block;
+  overflow: hidden;
+  /* Room for descenders inside the mask. */
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+.mo-line > span {
+  display: block;
+  transform: translate3d(0, var(--mo-rise), 0);
+  transition: transform var(--mo-line-dur) var(--mo-ease-line) calc(var(--mo-i, 0) * var(--mo-line-step, 55ms) + var(--mo-d, 0ms));
+}
+.mo.is-shown .mo-line > span {
+  transform: none;
+}
+
+/* --- meta: what follows its heading --- */
+.mo-meta {
+  opacity: 0;
+  transform: translate3d(0, var(--mo-meta-y), 0);
+  transition:
+    opacity var(--mo-meta-dur) var(--mo-ease-line),
+    transform var(--mo-meta-dur) var(--mo-ease-line);
+  transition-delay: calc(var(--mo-i, 0) * var(--mo-line-step, 55ms) + var(--mo-meta-delay, 260ms) + var(--mo-d, 0ms));
+}
+.mo.is-shown .mo-meta {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- rule: a hairline drawn from its start --- */
+.mo-rule {
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--mo-rule-dur) var(--mo-ease-rule) calc(var(--mo-i, 0) * var(--mo-line-step, 55ms) + var(--mo-d, 0ms));
+}
+.mo.is-shown .mo-rule {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mo-line > span,
+  .mo-meta,
+  .mo-rule {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* --- the instrument's hand: short labels over catalogue numbers, coordinates and counts --- */
+.meta-caps {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* --- a chapter's label, set as the plate's number and name --- */
+.plate-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.plate-label-n {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 300;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.plate-label-rule {
+  align-self: center;
+  width: 2.75rem;
+  height: 1px;
+  background: var(--color-contour);
+}
+
+/*
+  The dark grounds have a tooth: a fine, fixed grain of light over the canopy, the slate and the umber
+  (a few per cent), under the type and above the ground. It reads as material — stone, bark, earth at
+  night — rather than as a screen's flat black, and it is gone the moment you look for it. One tiled
+  160 px tile, painted once; nothing about it moves.
+*/
+.ground-grain {
+  isolation: isolate;
+}
+.ground-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--grain);
+  background-size: 160px;
+  opacity: 0.035;
+}
+
+/* --- the neatline of a plate (PlateFrame.tsx): the opening's frame, drawn again --- */
+.plate-frame {
+  position: absolute;
+  inset: 1.25rem 1.5rem;
+  display: none;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .plate-frame {
+    display: block;
+  }
+}
+.plate-edge {
+  position: absolute;
+  background: var(--rule);
+  transition: transform 1.8s var(--ease-cinema) 0.2s;
+}
+.plate-edge.is-t,
+.plate-edge.is-b {
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: scaleX(0);
+}
+.plate-edge.is-l,
+.plate-edge.is-r {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: scaleY(0);
+}
+.plate-edge.is-t {
+  top: 0;
+  transform-origin: 0 0;
+}
+.plate-edge.is-b {
+  bottom: 0;
+  transform-origin: 100% 0;
+}
+.plate-edge.is-l {
+  left: 0;
+  transform-origin: 0 100%;
+}
+.plate-edge.is-r {
+  right: 0;
+  transform-origin: 0 0;
+}
+.plate-frame.is-shown .plate-edge {
+  transform: none;
+}
+.plate-note {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  display: flex;
+  gap: 1.5rem;
+  max-height: calc(100% - 4rem);
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  transform: translateY(-50%) rotate(180deg);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity 1.2s ease 1.2s;
+}
+.plate-frame.is-shown .plate-note {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plate-edge,
+  .plate-note {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Chapter 03 — the selection plate (SelectionChapter.tsx)
+   ========================================================================== */
+
+.selection {
+  --enter: 1;
+  --cp: 0.5;
+  --leave: 0;
+}
+/*
+  Above the field stage's fixed layer (z 1), so the dusk can lie over the leaving world's foot. The world's
+  own feather still runs; the dusk only changes what it dissolves into: night falling on the floodplain, the
+  canopy's dark rising into it from below, so the last world's light goes out instead of being cut.
+*/
+.selection[data-ground] {
+  z-index: 2;
+}
+.sel-dusk {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 46svh;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-canopy) 30%, transparent) 30%,
+    color-mix(in srgb, var(--color-canopy) 78%, transparent) 66%,
+    var(--color-canopy)
+  );
+}
+/* The selection's own light: one lamp low over the index, the rest of the canopy in shadow. */
+.selection::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 38% at 70% 22%, rgb(214 162 94 / 0.07), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgb(126 163 181 / 0.04), transparent 70%);
+}
+/*
+  The register's running line: plate number, a rule, the plate's contents in figures — the line a
+  printed atlas runs across the head of a plate. After the floodplain's last light it is the first
+  thing set in the dark.
+*/
+.sel-runhead {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: clamp(3.5rem, 8svh, 6rem);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.sel-runhead-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+@media (max-width: 767px) {
+  .sel-runhead > :last-child {
+    display: none;
+  }
+}
+.selection-title {
+  margin-top: 2.25rem;
+  max-width: 7.6em;
+  /* The display scale Chapter 02's statement is set at, so the chapters open on one voice. */
+  font-size: clamp(3rem, 6.2vw, 6.6rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  font-variation-settings: 'opsz' 72;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.selection-body {
+  margin-top: 2.25rem;
+  max-width: 22em;
+  font-size: clamp(1.15rem, 1.55vw, 1.5rem);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+}
+.selection-how {
+  margin-top: 2rem;
+  max-width: 23rem;
+  padding-left: 1.1rem;
+  border-left: 1px solid var(--color-contour);
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* The index: one ruled entry per species, its category's slot, its localities. */
+.sel-index-head {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* Wrapped onto two lines on a phone, the column's name still stands over the counts. */
+.sel-index-head > :last-child {
+  text-align: right;
+}
+.sel-index-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--ink-2);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--mo-rule-dur) var(--mo-ease-rule);
+}
+.sel-index.is-shown .sel-index-head::after {
+  transform: none;
+}
+.sel-group {
+  margin-top: 1.75rem;
+}
+.sel-group-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  /* A category's own colour, taken towards the ink so it holds 4.5:1 as text on either ground. */
+  color: color-mix(in srgb, var(--c) 62%, var(--color-canvas));
+}
+.sel-group-slot {
+  width: 1.75rem;
+  height: 3px;
+  background: var(--c);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.9s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 120ms);
+}
+.sel-index.is-shown .sel-group-slot {
+  transform: none;
+}
+.sel-group-n {
+  font-size: var(--text-micro);
+  color: var(--ink-3);
+}
+.sel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sel-row {
+  position: relative;
+  display: grid;
+  /* Number, name, localities. The scientific name takes a column of its own only where it is shown (below): a
+     column kept empty for it on a phone took the width the common names need and cut them mid-word. */
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 1rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem 0 0.55rem;
+  text-align: left;
+  color: var(--ink-2);
+  transition: color 0.3s var(--ease-emphasis);
+}
+/* The rule above each entry, drawn as the index arrives. */
+.sel-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--rule-2);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 1.2s var(--mo-ease-rule) calc(var(--mo-i, 0) * var(--mo-step));
+}
+.sel-index.is-shown .sel-row::after {
+  transform: none;
+}
+/* The mark of the species facing the reader in the dome, and of the one under the hand. */
+.sel-row::before {
+  content: '';
+  position: absolute;
+  left: -1.1rem;
+  top: 50%;
+  width: 3px;
+  height: 1.1rem;
+  margin-top: -0.55rem;
+  background: var(--c);
+  transform: scaleY(0);
+  transition: transform 0.45s var(--ease-out-expo);
+}
+.sel-row.is-current::before {
+  transform: none;
+}
+.sel-n {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  transition: color 0.3s;
+}
+.sel-name {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+  font-family: var(--font-serif);
+  font-size: clamp(1.15rem, 1.45vw, 1.45rem);
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -0.014em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sel-name > span {
+  display: inline-block;
+  transform: translate3d(0, 106%, 0);
+  transition:
+    transform 1.1s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 80ms),
+    translate 0.45s var(--ease-out-expo);
+}
+.sel-index.is-shown .sel-name > span {
+  transform: none;
+}
+.sel-sci {
+  display: none;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink-3);
+}
+@media (min-width: 1200px) {
+  .sel-row {
+    grid-template-columns: 2.4rem minmax(0, 1fr) auto 6.5rem;
+  }
+  .sel-sci {
+    display: block;
+  }
+}
+.sel-loc {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--ink-2);
+}
+/* One stroke per indicative locality: at three to seven strokes the column reads at a glance. */
+.sel-tally {
+  display: inline-flex;
+  gap: 3px;
+  align-self: center;
+  height: 0.8rem;
+}
+.sel-tally > span {
+  width: 1px;
+  height: 100%;
+  background: var(--ink-3);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.sel-index.is-shown .sel-tally > span {
+  transform: none;
+  transition-delay: calc(var(--mo-i, 0) * var(--mo-step) + 420ms);
+}
+.sel-row.is-current .sel-tally > span,
+.sel-row:hover .sel-tally > span {
+  background: color-mix(in srgb, var(--c) 70%, var(--color-canvas));
+}
+.sel-n,
+.sel-sci,
+.sel-loc {
+  opacity: 0;
+  transition:
+    opacity 0.7s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 300ms),
+    color 0.3s;
+}
+/* The binomial follows its common name along the line, into focus, a beat behind the row's figures. */
+.sel-sci {
+  filter: blur(var(--fx-blur));
+  translate: var(--fx-sci-x) 0;
+  transition:
+    opacity 0.9s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 420ms),
+    filter 0.9s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 420ms),
+    translate 0.9s var(--ease-out-expo) calc(var(--mo-i, 0) * 55ms + 420ms),
+    color 0.3s;
+}
+.sel-index.is-shown .sel-sci {
+  filter: none;
+  translate: none;
+}
+.sel-index.is-shown :is(.sel-n, .sel-sci, .sel-loc) {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .sel-row:hover .sel-name > span {
+    translate: 0.45rem 0;
+  }
+  .sel-row:hover {
+    color: var(--color-canvas);
+  }
+  .sel-row:hover .sel-n {
+    color: color-mix(in srgb, var(--c) 70%, var(--color-canvas));
+  }
+}
+.sel-row:focus-visible {
+  outline-offset: 4px;
+  color: var(--color-canvas);
+}
+.sel-row.is-current {
+  color: var(--color-canvas);
+}
+.sel-row.is-current .sel-n {
+  color: color-mix(in srgb, var(--c) 70%, var(--color-canvas));
+}
+.sel-row:active .sel-name > span {
+  translate: 0.2rem 0;
+  transition-duration: 1.1s, 0.12s;
+}
+.sel-foot {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 2rem;
+  margin-top: 1.75rem;
+  padding-top: 1.4rem;
+}
+.sel-foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--ink-2);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--mo-rule-dur) var(--mo-ease-rule) 0.75s;
+}
+.sel-index.is-shown .sel-foot::before {
+  transform: none;
+}
+.sel-foot-note {
+  max-width: 24rem;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.sel-foot-stat {
+  text-align: right;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sel-index-head::after,
+  .sel-group-slot,
+  .sel-row::after,
+  .sel-foot::before,
+  .sel-name > span,
+  .sel-tally > span {
+    transform: none;
+    transition: none;
+  }
+  .sel-n,
+  .sel-sci,
+  .sel-loc {
+    opacity: 1;
+    filter: none;
+    translate: none;
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   The dome at night (DomeGallery.tsx under the canopy)
+   One lamp over the sphere: the facing print is lit and stands on a pool of warm light; the far
+   side recedes into the canopy's dark, cooler and flatter, as things do at night.
+   ========================================================================== */
+.selection .dome-card {
+  filter: saturate(calc(1 - var(--d) * 0.55)) brightness(calc(1 - var(--d) * 0.55));
+}
+.selection .dome-tile.is-center .dome-card {
+  box-shadow:
+    0 0 0 1px rgb(232 225 207 / 0.08),
+    0 40px 80px -36px rgb(0 0 0 / 0.85);
+}
+.selection .dome-lamp {
+  background:
+    radial-gradient(ellipse 22% 5% at 50% 70.5%, rgb(214 162 94 / 0.16), transparent 100%),
+    radial-gradient(ellipse 34% 30% at 50% 44%, rgb(232 210 170 / 0.09), transparent 100%);
+}
+
+/* ==========================================================================
+   Chapter 03 — the ground under the dome (SelectionChapter.tsx, SelectionGround.tsx)
+   The survey's sheet returns with the twelve's localities set on it, lies back into a ground,
+   and the dome rises out of it. Pinned on a wide screen (.is-pinned); read in the flow elsewhere.
+   ========================================================================== */
+
+/* --- the flow: phones, narrow windows, reduced motion --- */
+.selection.is-flow .sel-text {
+  display: grid;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 8rem 1rem 3.5rem;
+}
+.selection.is-flow .sel-index {
+  margin-top: 3.5rem;
+}
+@media (min-width: 640px) {
+  .selection.is-flow .sel-text {
+    padding-inline: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .selection.is-flow .sel-text {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    /* The index spans down beside the statement; its height goes to the last, flexible row, not the title's. */
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 2rem;
+    padding: 11rem 3rem 6rem;
+  }
+  .selection.is-flow .sel-runhead {
+    grid-column: 1 / -1;
+  }
+  .selection.is-flow .selection-lead,
+  .selection.is-flow .sel-sheet {
+    grid-column: 1 / span 5;
+  }
+  .selection.is-flow .sel-index {
+    grid-column: 7 / span 6;
+    grid-row: 2 / -1;
+    margin-top: 0;
+  }
+}
+.selection.is-flow .sel-dome {
+  position: relative;
+}
+/* Under the sphere, clear of the caption the box runs on into. */
+.selection.is-flow .sel-ground {
+  top: 38%;
+}
+.selection.is-flow .sel-ground-key {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+@media (min-width: 640px) {
+  .selection.is-flow .sel-ground-key {
+    padding-inline: 2rem;
+  }
+}
+
+/* --- the pinned plate: the register on the left, the dome on its ground on the right --- */
+.selection.is-pinned {
+  height: 340svh;
+}
+.selection.is-pinned .sel-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.37fr) minmax(0, 0.63fr);
+  height: 100svh;
+  overflow: hidden;
+}
+.selection.is-pinned .sel-text {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  padding: clamp(4.75rem, 11svh, 6.5rem) 0 1.5rem clamp(1.5rem, 3vw, 3rem);
+}
+.selection.is-pinned .sel-runhead {
+  margin-bottom: clamp(1.25rem, 4svh, 2.5rem);
+}
+/* Leaving for Chapter 04, the words step back as the dome goes down, out of focus and a little up, as if the camera had
+   moved on past them: the chapter ends on its ground, and on the names crossing it. */
+.selection.is-pinned .sel-text {
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    filter 0.8s var(--ease-out-expo),
+    translate 0.9s var(--ease-out-expo);
+}
+.selection.is-pinned.is-leaving .sel-text {
+  opacity: 0;
+  filter: blur(10px);
+  translate: 0 -2.5svh;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .selection.is-pinned.is-leaving .sel-text {
+    filter: none;
+    translate: none;
+  }
+}
+/* The scientific names cross the sheet's last screen rather than following it on a band of their own; Chapter 04 is cut in sooner. */
+.selection.is-pinned + .names-ground {
+  z-index: 3;
+  margin-top: -45svh;
+  padding-bottom: 30svh;
+  /* Clear over the sheet; the canopy closes over its foot before the chapter ends, so the sheet is never seen cut off. */
+  background: linear-gradient(to bottom, transparent 20svh, var(--ground) 36svh);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent);
+}
+/* While the index and the dome's controls are still in hand beneath it, the names' line does not take the pointer from them. */
+.selection.is-pinned:not(.is-leaving) + .names-ground {
+  pointer-events: none;
+}
+.selection.is-pinned + .names-ground::after {
+  content: none;
+}
+.selection.is-pinned .selection-title {
+  margin-top: clamp(0.75rem, 2.4svh, 1.5rem);
+  font-size: clamp(2.4rem, min(4.1vw, 7.2svh), 4.7rem);
+}
+.selection.is-pinned :is(.sel-sheet, .sel-index) {
+  grid-row: 3;
+  grid-column: 1;
+  margin-top: clamp(1.25rem, 4svh, 2.5rem);
+}
+/* The statement gives way to the index as the dome comes up; both stay in the document for every reader. */
+.selection.is-pinned .sel-sheet {
+  transition:
+    opacity 0.6s var(--ease-out-expo),
+    translate 0.9s var(--ease-out-expo);
+}
+.selection.is-pinned.is-risen .sel-sheet {
+  opacity: 0;
+  translate: 0 -1.25rem;
+  pointer-events: none;
+}
+.selection.is-pinned .sel-sheet .selection-how {
+  margin-top: 1.5rem;
+}
+.selection.is-pinned .sel-index {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out-expo);
+}
+.selection.is-pinned.is-risen .sel-index,
+.selection.is-pinned .sel-index:focus-within {
+  opacity: 1;
+}
+/* A compact register beside the dome: the caption carries the scientific name of the species in front. */
+.selection.is-pinned .sel-group {
+  margin-top: clamp(0.5rem, 1.6svh, 1rem);
+}
+.selection.is-pinned .sel-group-name {
+  margin-bottom: 0.15rem;
+}
+.selection.is-pinned .sel-row {
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: clamp(0.15rem, 0.55svh, 0.35rem) 0;
+}
+.selection.is-pinned .sel-row::before {
+  left: -0.9rem;
+}
+.selection.is-pinned .sel-sci,
+.selection.is-pinned .sel-foot {
+  display: none;
+}
+.selection.is-pinned .sel-name {
+  font-size: clamp(1rem, min(1.25vw, 2.4svh), 1.3rem);
+}
+/* A short screen keeps the whole register beside the dome: the running head goes, the groups close up. */
+@media (max-height: 820px) {
+  .selection.is-pinned .sel-runhead {
+    display: none;
+  }
+  .selection.is-pinned .sel-index-head {
+    padding-bottom: 0.4rem;
+  }
+  .selection.is-pinned .sel-group {
+    margin-top: 0.4rem;
+  }
+}
+.sel-row.is-preview {
+  color: var(--color-canvas);
+}
+.sel-row.is-preview .sel-tally > span {
+  background: color-mix(in srgb, var(--c) 70%, var(--color-canvas));
+}
+/* While the species are being set, the line under the statement names the one going down. */
+.sel-setting {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.sel-setting-rule {
+  flex: none;
+  width: 1.75rem;
+  height: 1px;
+  background: var(--color-contour);
+}
+
+.selection.is-pinned .sel-dome {
+  position: relative;
+  height: 100svh;
+}
+.selection.is-pinned .dome {
+  min-height: 0;
+  height: 100%;
+  /* The ground runs on under the register (the stage clips at the screen); the register's own dark takes it in. */
+  overflow: visible;
+  /* Still its own block, so the stage's top margin stays inside it rather than pushing the whole dome down. */
+  display: flow-root;
+}
+.selection.is-pinned .sel-text::before {
+  content: '';
+  position: absolute;
+  inset: 0 -9vw 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to right, var(--color-canopy) 62%, color-mix(in srgb, var(--color-canopy) 70%, transparent) 82%, transparent);
+}
+.selection.is-pinned .dome-stage {
+  height: 72svh;
+  margin-top: 5svh;
+}
+.selection.is-pinned .dome-furniture {
+  top: clamp(4.75rem, 11svh, 6.5rem);
+}
+.selection.is-pinned .dome-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0 clamp(1.5rem, 3vw, 3rem) clamp(1.25rem, 3.5svh, 2.25rem) 1rem;
+}
+/* Until the dome has come up there is nothing to turn: its caption and controls wait with it. */
+.sel-dome :is(.dome-caption, .dome-furniture) {
+  transition: opacity 0.7s var(--ease-out-expo);
+}
+.sel-dome.is-waiting :is(.dome-caption, .dome-furniture) {
+  opacity: 0;
+}
+.sel-dome.is-waiting :is(.dome-stage, .dome-caption) {
+  pointer-events: none;
+}
+/* The ground's key takes the corner the bands' key held: it says what the sheet, the marks and the light are. */
+.selection .dome-key:not(.is-right) {
+  visibility: hidden;
+}
+.sel-ground-key {
+  max-width: 21rem;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+.selection.is-pinned .sel-ground-key {
+  position: absolute;
+  left: 1rem;
+  top: clamp(4.75rem, 11svh, 6.5rem);
+  z-index: 2;
+  transition: opacity 0.7s var(--ease-out-expo);
+}
+.sel-dome.is-waiting .sel-ground-key {
+  opacity: 0;
+}
+
+/* --- the ground: one sheet, tilted on the compositor (the chapter writes its transform) --- */
+.sel-ground {
+  --set: 12;
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: -1;
+  width: min(80%, calc(80svh * var(--aspect, 0.9)));
+  aspect-ratio: var(--aspect, 0.9);
+  transform: translate(-50%, -50%) translate3d(0, 20%, 0) perspective(1400px) rotateX(63deg) scale(1.6);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  will-change: transform;
+  /* The sheet fades at its own edges, in its own plane, so the ground has no rim when it lies back. */
+  -webkit-mask-image: radial-gradient(ellipse 66% 64% at 50% 50%, #000 72%, transparent 100%);
+  mask-image: radial-gradient(ellipse 66% 64% at 50% 50%, #000 72%, transparent 100%);
+}
+.sel-pan {
+  position: absolute;
+  inset: 0;
+  /* The country sliding under the dome to the species in front: slow, as a sheet moved on a table. */
+  transition: transform 1.3s var(--ease-out-expo);
+}
+.sel-ground.is-leaving .sel-pan {
+  transform: none !important;
+}
+.sel-ground-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sel-ground-lit {
+  opacity: 0;
+  transition:
+    opacity 0.8s var(--ease-out-expo),
+    filter 0.5s ease;
+}
+.sel-ground-lit.is-front {
+  opacity: 1;
+}
+.sel-marks {
+  position: absolute;
+  inset: 0;
+}
+/* A survey mark per locality, set when its species' turn comes (--set counts species, --i is the mark's). */
+.sel-mark {
+  --on: clamp(0, var(--set) - var(--i), 1);
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c) 72%, var(--color-canvas));
+  opacity: calc(var(--on) * 0.78);
+  scale: calc(0.2 + var(--on) * 0.8);
+  transition:
+    opacity 0.5s var(--ease-out-expo),
+    scale 0.7s var(--ease-out-expo),
+    background-color 0.5s;
+}
+.sel-mark.is-captive {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 72%, var(--color-canvas));
+}
+/* With a species lit, the others' marks step back and its own come forward, sounding over the ground. */
+.sel-ground.is-lit .sel-mark {
+  opacity: calc(var(--on) * 0.32);
+}
+.sel-ground.is-lit .sel-mark.is-lit {
+  opacity: var(--on);
+  scale: 1.35;
+  background: var(--c);
+}
+.sel-mark::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid var(--c);
+  opacity: 0;
+}
+.sel-mark.is-lit::after {
+  animation: sel-sound 2.8s var(--ease-out-expo) infinite;
+}
+@keyframes sel-sound {
+  from {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(4.2);
+  }
+}
+
+/* --- the choice, played before the profile opens (DomeGallery `commit`) --- */
+.dome-lens {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: scale 0.7s var(--ease-out-expo);
+}
+.dome[data-opening] .dome-lens {
+  scale: 1.14;
+}
+.dome[data-opening] .dome-tile:not(.is-center) :is(.dome-card, .dome-place) {
+  opacity: 0.08;
+  transition: opacity 0.45s ease;
+}
+.dome-caption-text {
+  position: relative;
+}
+.dome-caption-text::after {
+  content: '';
+  position: absolute;
+  left: 1.75rem;
+  right: 0;
+  bottom: -0.9rem;
+  height: 1px;
+  background: var(--status);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+.dome[data-opening] .dome-caption-text::after {
+  transform: none;
+  transition: transform 0.64s cubic-bezier(0.65, 0, 0.25, 1);
+}
+.dome[data-opening] .sel-ground-lit.is-front {
+  filter: brightness(1.6);
+}
+.dome[data-opening] .sel-mark.is-lit::after {
+  animation-duration: 0.64s;
+}
+
+/* The caption's line about the ground: the record's habitats, its localities, the ground under them. */
+.dome-ground {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 1rem;
+  margin-top: 0.55rem;
+  font-size: var(--text-label);
+  color: var(--ink-3);
+  animation: caption-meta 0.7s var(--ease-out-expo) 0.24s both;
+}
+.dome-ground-k {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--status) 60%, var(--color-canvas));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sel-mark,
+  .sel-ground-lit,
+  .sel-pan,
+  .dome-lens,
+  .selection .sel-sheet,
+  .selection .sel-index {
+    transition: none;
+  }
+  .sel-mark.is-lit::after {
+    animation: none;
+  }
+  .dome-ground {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Links that answer the hand: a faint rule, inked from the left under the pointer or focus
+   ========================================================================== */
+.line-link {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--color-canvas) 78%, transparent);
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(color-mix(in srgb, var(--color-canvas) 20%, transparent), color-mix(in srgb, var(--color-canvas) 20%, transparent));
+  background-size:
+    0% 1px,
+    100% 1px;
+  background-position:
+    0 calc(100% - 5px),
+    0 calc(100% - 5px);
+  background-repeat: no-repeat;
+  transition:
+    background-size 0.6s var(--ease-out-expo),
+    color 0.25s var(--ease-emphasis);
+}
+.line-link:hover,
+.line-link:focus-visible {
+  color: var(--color-canvas);
+  background-size:
+    100% 1px,
+    100% 1px;
+}
+.line-link:active {
+  color: color-mix(in srgb, var(--color-canvas) 70%, transparent);
+}
+.cta:focus-visible .cta-line {
+  transform: translateX(0.6rem);
+}
+
+/* ==========================================================================
+   The closing plate (FinalChapter.tsx): the opening's frame, the same parallel, the name signed on it
+   ========================================================================== */
+.final {
+  --tropic-y: 50%;
+  --map-shift: 0px;
+}
+/* Without the atlas world the closing is its own plate: the river's dark from the chapter above settles into slate. */
+.final[data-ground]:not([data-over-world]) {
+  background-image: linear-gradient(to bottom, var(--color-riverbed), var(--color-slate) 42svh);
+}
+.final-tropic {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  top: var(--tropic-y);
+  height: 0;
+  display: none;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .final-tropic {
+    display: block;
+  }
+}
+/* Dashed as the opening's flat sheet draws it, west to east, after the neatline. */
+.final-tropic-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--ink-4) 0 5px, transparent 5px 9px);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 2.6s var(--ease-cinema) 0.5s;
+}
+.final.is-shown .final-tropic-line {
+  transform: none;
+}
+.final-tropic-label {
+  /* Under the line, in the open ground between the name's column and the country's west coast. */
+  position: absolute;
+  right: calc(50% + 1.5rem);
+  top: 0.65rem;
+  display: flex;
+  gap: 0.6rem;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity 1.2s ease 2.8s;
+}
+.final-tropic-label span {
+  color: var(--ink-3);
+}
+.final.is-shown .final-tropic-label {
+  opacity: 1;
+}
+/*
+  Over the atlas world the closing holds still for a screen while the camera climbs (FinalChapter's frame is
+  pinned). The relief draws the parallel itself, so the sheet's dashed line steps aside; its label stays, and
+  the name rides the parallel the scene reports (--copy-shift), eased so it settles as the camera does.
+*/
+.final.is-world .final-copy {
+  translate: 0 var(--copy-shift, 0px);
+  transition: translate 1.1s var(--ease-out-expo);
+}
+.final.is-world .final-tropic-line {
+  display: none;
+}
+.final.is-world .final-tropic {
+  transition: opacity 0.8s ease;
+}
+.final-frame[data-tropic='off'] .final-tropic {
+  opacity: 0;
+}
+/* The parallel's name at its east end, past the country, where the line runs out over the sea. */
+.final.is-world .final-tropic-label {
+  right: 3.25rem;
+}
+/* As the colophon arrives the plate empties: its type steps back with the lamp, so nothing is left printed across the relief. */
+.final.is-world .final-frame > * {
+  opacity: calc(1 - clamp(0, var(--sink, 0) * 2.2, 1));
+}
+.final.is-world .final-map-col {
+  align-self: end;
+}
+.final.is-world .final-map-note {
+  margin: 0 0 0 auto;
+  max-width: 24rem;
+}
+.final-title {
+  margin-top: 2.5rem;
+  /* A signature on one line: capped so it never outgrows its six columns of the 1600 px sheet (it is masked, so it would be cut). */
+  font-size: min(var(--text-statement), 6.1rem);
+  line-height: 0.92;
+  letter-spacing: -0.042em;
+  color: var(--ink);
+}
+@media (min-width: 1024px) {
+  .final-title {
+    white-space: nowrap;
+  }
+}
+/*
+  Over the world the name is not cut in from its mask: it comes back together as the camera climbs (FinalChapter
+  writes --meet on the title), the opening's parting in reverse — "India" and "Atlas" in from the sides of the frame,
+  "Species" down from past the camera onto the parallel.
+*/
+.final-title .fw {
+  display: inline-block;
+}
+.final.is-world .final-title .mo-line {
+  overflow: visible;
+}
+.final.is-world .final-title .mo-line > span {
+  transform: none;
+  transition: none;
+}
+.final.is-world .fw-w {
+  translate: calc((1 - var(--meet, 1)) * (1 - var(--meet, 1)) * -40vw) 0;
+  opacity: calc(0.15 + var(--meet, 1) * 0.85);
+  filter: blur(calc((1 - var(--meet, 1)) * 0.05em));
+}
+.final.is-world .fw-e {
+  translate: calc((1 - var(--meet, 1)) * (1 - var(--meet, 1)) * 40vw) 0;
+  opacity: calc(0.15 + var(--meet, 1) * 0.85);
+  filter: blur(calc((1 - var(--meet, 1)) * 0.05em));
+}
+/* The italic comes down from past the camera: soft while it is near, sharp as it lands on the parallel. */
+.final.is-world .fw-c {
+  transform-origin: 50% 62%;
+  scale: calc(1 + (1 - var(--meet, 1)) * (1 - var(--meet, 1)) * 2.6);
+  opacity: var(--meet, 1);
+  filter: blur(calc((1 - var(--meet, 1)) * 0.09em));
+}
+.final-em {
+  font-style: italic;
+  font-weight: 200;
+  color: color-mix(in srgb, var(--color-canvas) 90%, var(--color-contour));
+}
+.final-baseline {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+/* The coda: three lines resolving out of focus, a line at a time, after the name. On the sheet they play once on
+   arrival; over the world the climb resolves them (--resolve, written by FinalChapter once the name has nearly met). */
+.final-coda-line {
+  transform-origin: 0 90%;
+  opacity: 0;
+  filter: blur(var(--fx-blur));
+  transform: translate3d(0, var(--fx-rise), 0) scale(var(--fx-depth));
+  transition:
+    opacity var(--fx-dur) var(--ease-out-expo),
+    filter calc(var(--fx-dur) * 0.85) var(--ease-out-expo),
+    transform var(--fx-dur) var(--ease-out-expo);
+  transition-delay: calc(500ms + var(--k) * 220ms);
+}
+.final.is-shown .final-coda-line {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+.final.is-world .final-coda-line {
+  --a: clamp(0, var(--resolve, 1) * 1.6 - var(--k) * 0.3, 1);
+  opacity: var(--a);
+  filter: blur(calc((1 - var(--a)) * var(--fx-blur)));
+  transform: translate3d(0, calc((1 - var(--a)) * var(--fx-rise)), 0) scale(calc(1 + (1 - var(--a)) * (var(--fx-depth) - 1)));
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .final-coda-line,
+  .final.is-world .final-coda-line,
+  .final.is-world :is(.fw-w, .fw-e, .fw-c) {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+}
+.final-coda {
+  margin-top: 2.4rem;
+  font-size: clamp(1.3rem, 1.95vw, 1.85rem);
+  line-height: 1.32;
+  letter-spacing: -0.012em;
+}
+.final-actions {
+  display: grid;
+  gap: 3rem;
+  margin-top: 3.25rem;
+}
+@media (min-width: 768px) {
+  .final-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17.5rem);
+    align-items: end;
+  }
+}
+.final-routes {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+.final-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.final-film {
+  width: 100%;
+}
+.final-map {
+  max-width: 35rem;
+  max-height: 70svh;
+  translate: 0 var(--map-shift);
+}
+/* The plate's foot is the colophon's head: the neatline runs down to the footer's rule instead of doubling it. */
+.final .plate-frame {
+  bottom: 0;
+}
+.final .plate-edge.is-b {
+  display: none;
+}
+.final .final-map-note {
+  max-width: 35rem;
+  margin: 1rem auto 0;
+  text-align: right;
+  color: var(--ink-3);
+  translate: 0 var(--map-shift);
+}
+/* The relief's own shadow on the slate: the country's outline, offset and soft. */
+.final .fm-shadow {
+  fill: rgb(0 0 0 / 0.5);
+  opacity: 0;
+  transition: opacity 2.4s var(--ease-cinema) 0.3s;
+}
+.final.is-shown .fm-shadow {
+  opacity: 1;
+}
+.final[data-ground].is-shown .fm-relief {
+  opacity: 0.82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .final-tropic-line,
+  .final-tropic-label {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Chapter 04's opening (ConservationMap.tsx, the pinned layout only)
+   The left column is drawn in with the sheet: every value below reads the
+   stage's --draw (0 → 1 as the chapter's top crosses from 85 % to 10 % of the
+   screen, scrubbed by ScrollTrigger), so it runs backwards with the scroll and
+   is right after a jump. By the time the pin holds, --draw is 1 and nothing
+   here is in effect.
+   ========================================================================== */
+.cons-label .cons-steps {
+  padding-left: 0.25rem;
+  border-left: 0;
+}
+
+/*
+  The plate (motion: plate, ground). While the chapter arrives (--draw 0 → 1) a plate is cut in the
+  selection's canopy: inset at first, with registration marks at its top corners and its caption in the
+  margin, then grown to the frame by the time the pin holds. Through it the reader sees the atlas world —
+  the same relief the page opened on, coming out of the dark under a light front (atlasWorld.ts sets the
+  canvas's clip from the same values). Without the world the plate is a sheet of umber, the map drawn on it.
+  Once pinned the ground follows the story: burnt earth under the pressures, river under the response
+  (--prot). Every value is the timeline's own, so it reverses and survives a jump.
+*/
+.cons-stage[data-ground] {
+  /* Grown by the time the plate's top is a quarter of the way down the screen; eased so it settles rather than stops. */
+  --plate-t: clamp(0, var(--draw) / 0.8, 1);
+  --plate: calc(1 - (1 - var(--plate-t)) * (1 - var(--plate-t)));
+  --plate-x: calc((1 - var(--plate)) * 4vw);
+  --plate-y: calc((1 - var(--plate)) * 10svh);
+  --night: color-mix(in oklab, var(--color-riverbed) calc(var(--prot) * 100%), var(--color-umber));
+  background: none;
+}
+.cons-ground {
+  position: absolute;
+  inset: 0;
+  background-color: var(--night);
+  clip-path: inset(var(--plate-y) var(--plate-x) 0 var(--plate-x));
+}
+/*
+  With the world: the plate is the canvas's own clip, from the world's arrival. The values are written on the few
+  elements that read them (ConservationMap `write`), not on the stage, so the long column under them is not restyled
+  every frame; the column itself arrives once, as `data-arrived` flips, and leaves the same way if the reader goes back.
+*/
+.cons-stage[data-world] :is(.cons-plate-head, .cons-wash) {
+  --plate: var(--plate-k, 1);
+  --plate-x: calc((1 - var(--plate)) * 6vw);
+  --plate-y: calc((1 - var(--plate)) * 14svh);
+}
+.cons-stage[data-world] {
+  --draw: 0;
+}
+.cons-stage[data-world][data-arrived='true'] {
+  --draw: 1;
+}
+.cons-stage[data-world] :is(.cons-label, .cons-title .cons-word, .phase-panel > p, .cons-list > li, .cons-readout-slot > .cons-readout.is-key) {
+  transition:
+    opacity 0.9s var(--ease-out-expo) calc(var(--i, 0) * 45ms),
+    translate 0.9s var(--ease-out-expo) calc(var(--i, 0) * 45ms);
+}
+.cons-stage[data-world] .cons-title .cons-word {
+  transition:
+    opacity 0.9s var(--ease-out-expo),
+    translate 0.9s var(--ease-out-expo),
+    filter 1.1s var(--ease-out-expo),
+    color 1.2s var(--ease-out-expo);
+}
+.cons-stage[data-world] .cons-title .cons-word:last-child {
+  transition-delay: 90ms;
+}
+.cons-stage[data-world] .cmap-strip {
+  transition: clip-path 1.1s var(--ease-cinema) calc(120ms + var(--i, 0) * 45ms);
+}
+/*
+  Type over the relief: a wash of the phase's own dark from the left, under the lists — the hero's left wash, in
+  umber and then river, so the column never needs a box.
+*/
+.cons-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --night: color-mix(in oklab, var(--color-riverbed) calc(var(--prot, 0) * 100%), var(--color-umber));
+  background: linear-gradient(to right, color-mix(in srgb, var(--night) 88%, transparent) 0%, color-mix(in srgb, var(--night) 62%, transparent) 26%, transparent 48%);
+  opacity: calc(var(--plate) * (1 - var(--close, 0)));
+}
+/*
+  With the world, the readout is the plate's legend, in its top-right corner. Where the north-east reaches under
+  it, a soft shade of the phase's own dark lies behind the type, as a legend's ground does on a printed sheet.
+*/
+.cons-stage[data-world] .cons-readout-slot {
+  left: auto;
+  right: 0;
+  top: 0;
+  bottom: auto;
+  width: min(18.5rem, 32%);
+  isolation: isolate;
+  --night: color-mix(in oklab, var(--color-riverbed) calc(var(--prot, 0) * 100%), var(--color-umber));
+}
+.cons-stage[data-world] .cons-readout-slot::before {
+  content: '';
+  position: absolute;
+  inset: -3rem -3rem -3rem -4rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--night) 86%, transparent), color-mix(in srgb, var(--night) 55%, transparent) 70%, transparent);
+}
+/* The hinge's large line is resolved a word at a time by the scroll: each word comes forward out of depth and focus over
+   two words' worth of --close, so the line is read, not faded up. The line itself stays put. */
+.cons-close .cons-close-b {
+  opacity: 1;
+  translate: none;
+}
+.cons-close .cc-w {
+  --a: clamp(0, (var(--t) * (var(--n) + 2) - var(--i)) / 2, 1);
+  display: inline-block;
+  transform-origin: 50% 90%;
+  opacity: var(--a);
+  filter: blur(calc((1 - var(--a)) * 0.11em));
+  transform: translate3d(0, calc((1 - var(--a)) * 0.22em), 0) scale(calc(1.04 - 0.04 * var(--a)));
+}
+.cons-close .cons-close-a,
+.cons-close .cons-close-c {
+  /* In em, so the small caps line is never blurred past reading while it is legible by its ink. */
+  filter: blur(calc((1 - var(--t)) * 0.16em));
+}
+@media (prefers-reduced-motion: reduce) {
+  .cons-close .cc-w,
+  .cons-close .cons-close-a,
+  .cons-close .cons-close-c,
+  .cons-stage .cons-title .cons-word {
+    filter: none;
+    transform: none;
+  }
+}
+/* The statement and its shade step back as the chapter leaves, so the closing's name arrives on clear ground. */
+.cons-stage .cons-close {
+  opacity: calc(1 - var(--exit, 0) * 0.85);
+}
+.cons-plate-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--plate-y);
+  z-index: 1;
+  height: 0;
+  pointer-events: none;
+  opacity: calc(1 - var(--plate));
+}
+/* Registration marks at the plate's top corners, outside the trim, in the margin's ink. */
+.cons-plate-mark {
+  position: absolute;
+  top: -0.9rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  background:
+    linear-gradient(var(--color-ivory), var(--color-ivory)) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--color-ivory), var(--color-ivory)) 0 50% / 100% 1px no-repeat;
+  opacity: 0.5;
+}
+.cons-plate-mark.is-l {
+  left: calc(var(--plate-x) - 0.55rem - 1rem);
+}
+.cons-plate-mark.is-r {
+  right: calc(var(--plate-x) - 0.55rem - 1rem);
+}
+.cons-plate-cap {
+  position: absolute;
+  left: var(--plate-x);
+  right: var(--plate-x);
+  bottom: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  translate: 0 calc(var(--plate) * -0.6rem);
+}
+
+/* The statement over what is protected: a low shade of the river's dark behind it, and the ink at full strength. */
+.cons-close::before {
+  background: radial-gradient(ellipse 52% 62% at 24% 54%, color-mix(in srgb, var(--color-riverbed) 84%, transparent), transparent 72%);
+}
+.cons-close .cons-close-a {
+  color: var(--ink-3);
+}
+.cons-close .cons-close-c {
+  color: var(--ink-3);
+}
+.cons-close .cons-close-c,
+.cons-eyebrow {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.cons-close .cons-close-c {
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+
+/*
+  The traced species' names on the relief (atlas world only): set in the narrative face at their anchor
+  localities, with a short leader down to the point and the catalogue number in the instrument's hand.
+*/
+.atlas-labels {
+  overflow: hidden;
+}
+.atlas-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  translate: -50% calc(-100% - 1.35rem);
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+.atlas-label::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  /* Down to the point, however far the label had to step up to clear another. */
+  height: calc(1.05rem + var(--lift, 0px));
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--c) 70%, var(--color-ivory)), transparent);
+}
+/* Hung under its point where the legend is in the way. */
+.atlas-label[data-below] {
+  translate: -50% 1.35rem;
+}
+.atlas-label[data-below]::after {
+  top: auto;
+  bottom: 100%;
+  height: 1.05rem;
+  background: linear-gradient(to top, color-mix(in srgb, var(--c) 70%, var(--color-ivory)), transparent);
+}
+.atlas-label-name {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-ivory);
+  text-shadow: 0 1px 10px rgb(4 6 5 / 0.9);
+}
+.atlas-label-n {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--c) 72%, var(--color-ivory));
+}
+
+.cons-stage .cons-label {
+  --t: clamp(0, (var(--draw) - 0.04) / 0.3, 1);
+  opacity: var(--t);
+  translate: 0 calc((1 - var(--t)) * 14px);
+}
+.cons-stage .cons-label .plate-label-rule {
+  transform: scaleX(var(--t));
+  transform-origin: 0 50%;
+}
+.cons-stage .cons-title .cons-word {
+  display: inline-block;
+  opacity: calc(var(--t) * 1);
+  translate: 0 calc((1 - var(--t)) * 0.42em);
+  /* Arriving out of focus; and the half of the title the scene is not reading recedes a little, out of the plane of
+     focus, as the phase turns (`--off`), so the chapter's argument is carried by focus as well as by ink. */
+  filter: blur(calc((1 - var(--t)) * 0.12em + var(--off, 0) * 0.022em));
+}
+.cons-stage .cons-title .cons-word:not(.is-on) {
+  --off: 1;
+}
+.cons-stage .cons-title .cons-word:first-child {
+  --t: clamp(0, (var(--draw) - 0.1) / 0.34, 1);
+}
+.cons-stage .cons-title .cons-word:last-child {
+  --t: clamp(0, (var(--draw) - 0.2) / 0.34, 1);
+}
+.cons-stage .phase-panel > p {
+  --t: clamp(0, (var(--draw) - 0.34) / 0.3, 1);
+  opacity: var(--t);
+  translate: 0 calc((1 - var(--t)) * 12px);
+}
+.cons-stage .cons-list > li {
+  --t: clamp(0, (var(--draw) - 0.42 - var(--i) * 0.035) / 0.24, 1);
+  opacity: var(--t);
+  translate: 0 calc((1 - var(--t)) * 10px);
+}
+/* Each threat's strip lights slot by slot as its row arrives. */
+.cons-stage .cmap-strip {
+  clip-path: inset(0 calc((1 - var(--t)) * 100%) 0 0);
+}
+.cons-stage .cons-readout-slot > .cons-readout.is-key {
+  --t: clamp(0, (var(--draw) - 0.6) / 0.3, 1);
+  opacity: var(--t);
+}
+
+/* ==========================================================================
+   Boundaries
+   ========================================================================== */
+/*
+  The hero's lit ground ends on a straight line a little above the loop's foot (its section's bottom edge).
+  The loop lays a foot of the page's ground over that edge, behind its own lettering, so the landing's glow
+  runs out into the page instead of stopping at a seam. The hero itself is untouched.
+*/
+.hero-tail-loop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent 35%, var(--color-forest-950) 82%);
+}
+
+/*
+  The colophon on the home page: the foot of the closing's world. Set in the same hands as the plates
+  (serif for what the atlas is, the instrument's mono for the headings over the facts), its links and
+  small print on the ink scale. Over the atlas world it lies on the relief's dark foot: a deepening wash
+  of slate rises under it, so the last lines are printed on ground, not on the picture.
+*/
+.colophon[data-ground] {
+  border-top-color: var(--rule);
+}
+.colophon[data-ground] .caps {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.colophon[data-ground] .colophon-facts {
+  color: var(--ink-2);
+}
+.colophon[data-ground] :is(.colophon-scale-label, .colophon-habitat) {
+  color: var(--ink-3);
+}
+.colophon[data-ground] .colophon-scale-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.colophon[data-ground] .footer-link {
+  color: var(--ink-2);
+}
+.colophon[data-ground] .footer-link:hover,
+.colophon[data-ground] .footer-link:focus-visible {
+  color: var(--ink);
+}
+.colophon[data-ground] .colophon-scale-line {
+  background: var(--ink-4);
+}
+.colophon[data-over-world] {
+  position: relative;
+  z-index: 2;
+  border-top-color: transparent;
+}
+.colophon[data-over-world]::before {
+  content: '';
+  position: absolute;
+  inset: -30svh 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-slate) 55%, transparent) 30%,
+    color-mix(in srgb, var(--color-slate) 90%, transparent) 55%,
+    var(--color-slate) 80%
+  );
+}
+
+/* The film's print is uncovered from its foot, like the plate it sits on, after the closing lines. */
+.final .film-entry-frame {
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 1.4s var(--ease-cinema) 0.9s;
+}
+.final.is-shown .film-entry-frame {
+  clip-path: inset(0 0 0 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .final .film-entry-frame {
+    clip-path: none;
+    transition: none;
+  }
+}
+
+/*
+  Five kinds of ground (GroundsPlate.tsx): the relief again as contours, the five studies set on it as survey marks,
+  and the dive into the first. Pinned for its scroll; with reduced motion one still plate.
+*/
+.grounds {
+  position: relative;
+}
+.grounds.is-pinned {
+  /* Its last screen is shared with the field studies (below), so the run ends in the first world, not before it. */
+  height: 420vh;
+}
+.grounds-stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+.grounds.is-pinned .grounds-stage {
+  position: sticky;
+  top: 0;
+  /* Over the field studies' stage, which waits whole beneath its last screen; the sheet keeps the page's ground until it dissolves. */
+  z-index: 3;
+  background-color: var(--color-forest-950);
+  pointer-events: none;
+}
+/* The first study's world opens under the plate's last screen rather than after it (GroundsPlate DISSOLVE). */
+.grounds.is-pinned + .fs-index {
+  margin-top: -100svh;
+}
+.grounds.is-still .grounds-stage {
+  height: min(100svh, 60rem);
+}
+.grounds-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The first study's light, opening around its mark as the camera reaches it. */
+.grounds-warm {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 120vmax;
+  height: 120vmax;
+  margin: -60vmax 0 0 -60vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(214 148 98 / 0.5), rgb(150 86 72 / 0.24) 42%, transparent 74%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.grounds-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.grounds-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform, opacity;
+}
+.grounds-ring {
+  position: absolute;
+  left: -0.6rem;
+  top: -0.6rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--c);
+}
+.grounds-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0.38rem;
+  border-radius: 50%;
+  background: var(--c);
+}
+/* The mark the text speaks for answers it: a ring going out over the ground, on the compositor. */
+.grounds-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid var(--c);
+  opacity: 0;
+}
+.grounds-mark.is-current .grounds-ring::before {
+  animation: grounds-sound 2.6s var(--ease-out-expo) infinite;
+}
+@keyframes grounds-sound {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3.4);
+  }
+}
+.grounds-mark-label {
+  position: absolute;
+  left: 1.05rem;
+  top: -0.45rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  text-shadow: 0 1px 8px rgb(6 9 7 / 0.95);
+  transition: color 0.6s ease;
+  /* The habitat's name sharpens as its mark settles on the sheet (--s, written on the mark with its opacity). */
+  filter: blur(calc((1 - var(--s, 1)) * 5px));
+  translate: calc((1 - var(--s, 1)) * -0.5rem) 0;
+}
+.grounds-mark.is-current .grounds-mark-label {
+  color: var(--color-canvas);
+}
+.grounds-mark-n {
+  color: var(--c);
+}
+.grounds-text {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 5.5rem;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .grounds-text {
+    left: max(3rem, calc((100vw - 1600px) / 2 + 3rem));
+    right: auto;
+    bottom: 0;
+    width: min(34rem, 36vw);
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 6rem 0 3rem;
+  }
+}
+.grounds-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 58%, transparent);
+}
+.grounds-rule {
+  width: 2.75rem;
+  height: 1px;
+  background: var(--color-contour);
+}
+.grounds-word {
+  margin: 0;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  font-size: clamp(3rem, 6.6vw, 7.6rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  font-variation-settings: 'opsz' 72;
+  color: var(--color-canvas);
+}
+.grounds-word-in {
+  display: inline-block;
+  /* Cut in fresh each time the ground changes, out of focus until it has cleared its mask: the name arrives with its mark. */
+  animation: fx-cut-in 1.15s var(--ease-out-expo) both;
+}
+.grounds-detail {
+  display: grid;
+  gap: 0.6rem;
+  animation: grounds-detail-in 0.9s ease 0.18s both;
+}
+@keyframes grounds-detail-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.6rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.grounds-species {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.15rem, 1.5vw, 1.45rem);
+  font-weight: 300;
+  color: var(--color-canvas);
+}
+.grounds-species em {
+  display: inline-block;
+  margin-left: 0.4rem;
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  /* The binomial follows the common name along the line, into focus. */
+  animation: fx-sci-in 1s var(--ease-out-expo) 0.42s both;
+}
+.grounds-place,
+.grounds-lede {
+  margin: 0;
+  max-width: 30rem;
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-canvas) 66%, transparent);
+}
+.grounds-read {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  margin: 0.4rem 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+}
+.grounds-read dt {
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 42%, transparent);
+}
+.grounds-read dd {
+  margin: 0.25rem 0 0;
+  color: color-mix(in srgb, var(--color-canvas) 85%, transparent);
+}
+.grounds-index {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  margin: 1.2rem 0 0;
+  padding: 0.9rem 0 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-canvas) 14%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 30%, transparent);
+}
+.grounds-index li {
+  transition: color 0.5s ease;
+}
+.grounds-index li.is-past {
+  color: color-mix(in srgb, var(--color-canvas) 52%, transparent);
+}
+.grounds-index li.is-current {
+  color: var(--color-canvas);
+}
+.grounds-source {
+  display: none;
+  margin: 0;
+  font-size: var(--text-micro);
+  color: color-mix(in srgb, var(--color-canvas) 40%, transparent);
+}
+@media (min-width: 1024px) {
+  .grounds-index {
+    display: flex;
+  }
+  .grounds-source {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grounds-word-in,
+  .grounds-species em,
+  .grounds-detail,
+  .grounds-mark.is-current .grounds-ring::before {
+    animation: none;
+  }
+}
+
+/*
+  Chapter 04, read by the scroll (ConservationMap `ThreatFeature`, `YearFeature`). The column is no longer a list
+  beside a map: one threat at a time is set large — how many of the twelve it is recorded against, its name, its
+  strip — while its species' lines light on the relief; then a year dial runs from the first programme to the last,
+  and each programme's sites come up as its year passes. The lists stay underneath as the index and the keyboard's
+  way in, compact. Each change is cut in (a mask, as the chapter titles are), never cross-faded.
+*/
+.cons-stage .cons-title {
+  font-size: clamp(2.1rem, 3.2vw, 3.8rem);
+}
+.cons-feature {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 1.1rem;
+}
+.cons-stage .cons-feature {
+  --t: clamp(0, (var(--draw) - 0.3) / 0.3, 1);
+  opacity: var(--t);
+}
+.cons-feature-k {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-canvas) 58%, transparent);
+}
+.cons-feature-k span {
+  color: color-mix(in srgb, var(--color-canvas) 36%, transparent);
+}
+.cons-feature-big {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin: 0;
+  overflow: hidden;
+  padding: 0.1em 0 0.06em;
+  line-height: 0.9;
+}
+.cons-feature-n {
+  display: inline-block;
+  font-size: clamp(4rem, 12svh, 8.6rem);
+  letter-spacing: -0.05em;
+  font-variation-settings: 'opsz' 72;
+  color: var(--color-canvas);
+  /* Cut in out of focus with each threat, as its species' lines light on the relief. */
+  animation: fx-cut-in 0.95s var(--ease-out-expo) both;
+}
+/* The year is written by the scroll every frame it changes; it does not cut in. */
+.cons-feature-year {
+  animation: none;
+  color: color-mix(in srgb, var(--color-canvas) 92%, rgb(120 180 205));
+}
+.cons-feature-of {
+  font-family: var(--font-serif);
+  font-size: clamp(1rem, 1.3vw, 1.3rem);
+  font-weight: 300;
+  color: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+}
+.cons-feature-name {
+  max-width: 22ch;
+  margin: 0;
+  font-size: clamp(1.4rem, 2vw, 2.15rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--color-canvas);
+  /* Its words resolve in reading order (FocusText, cut on each change); the line itself does not move. */
+  --fx-dur: 1s;
+  --fx-step: 60ms;
+}
+.cons-feature-latest {
+  margin: 0;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  animation: cons-rise-in 0.8s var(--ease-out-expo) 0.12s both;
+}
+.cons-stage .cons-feature-strip {
+  max-width: 24rem;
+  margin-top: 0.5rem;
+  clip-path: none;
+  animation: cons-strip-in 1s var(--ease-cinema) 0.1s both;
+}
+.cons-feature-strip .cmap-slot {
+  height: 4px;
+}
+.cons-feature-strip .cmap-slot.is-on {
+  background: var(--c);
+}
+@keyframes cons-rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.4em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cons-strip-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.cons-hint {
+  max-width: 25rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--color-canvas) 50%, transparent);
+}
+.cons-list.is-compact .cmap-strip {
+  display: none;
+}
+.cons-list.is-compact .cmap-threat {
+  padding-block: 0.3rem;
+}
+.cons-list.is-compact .cmap-threat .cmap-row-name {
+  font-size: clamp(0.92rem, 1vw, 1.02rem);
+}
+.cons-list.is-compact .cmap-row:not(.is-active) {
+  color: color-mix(in srgb, var(--color-canvas) 52%, transparent);
+}
+/* With the dial: the programmes not yet begun wait in the dark; each comes up as its year passes. */
+.cons-list.is-dialled .prog-row {
+  padding-block: 0.2rem;
+  color: color-mix(in srgb, var(--color-canvas) 26%, transparent);
+  transition: color 0.6s ease;
+}
+.cons-list.is-dialled .prog-row .cmap-year {
+  opacity: 0.4;
+  transition: opacity 0.6s ease;
+}
+.cons-list.is-dialled .prog-row.is-begun {
+  color: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+}
+.cons-list.is-dialled .prog-row.is-begun .cmap-year,
+.cons-list.is-dialled .prog-row.is-active .cmap-year {
+  opacity: 1;
+}
+.cons-list.is-dialled .prog-row.is-active {
+  color: var(--color-canvas);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cons-feature-n,
+  .cons-feature-name,
+  .cons-feature-latest,
+  .cons-stage .cons-feature-strip {
+    animation: none;
+  }
+}
+
+/*
+  The map, in fragments (RegionFragments.tsx): the end of Chapter 01. On a wide screen with motion, one sticky frame
+  and a track the vertical scroll moves sideways — the section is as tall as the sideways run needs (`--frags-run`,
+  about 0.55 of the track's travel, so a fragment passes in under a screen of scrolling). Each fragment is a figure
+  (the country faint behind; the piece, relief and edges and marks, lifted out of it) beside its words; alternate
+  fragments sit a little higher or lower, so the run reads as a sheet coming apart rather than a row of cards. The
+  country behind each piece fades out at the figure's edge, so neighbouring fragments never draw over each other.
+*/
+.frags {
+  --frag-w: 48vw;
+  --frags-run: 219vw;
+  position: relative;
+}
+.frags.is-moving {
+  height: calc(100svh + var(--frags-run));
+}
+.frags-frame {
+  position: relative;
+}
+.frags.is-moving .frags-frame {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  /* clip, not hidden: a hidden box can still be scrolled sideways by focus, and would slip out from under the track. */
+  overflow: clip;
+}
+.frags.is-moving .frags-track {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  height: 100%;
+  padding-inline: 6vw 4vw;
+  will-change: transform;
+}
+
+/* --- the opening: the eight region grounds --- */
+.frags-intro {
+  display: grid;
+  gap: 3rem;
+  align-items: center;
+}
+.frags.is-moving .frags-intro {
+  width: 38vw;
+  max-width: 40rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding-top: 6svh;
+}
+.frags-title {
+  margin-top: 1.4rem;
+  font-size: clamp(2.8rem, 5vw, 6.2rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.frags-lead {
+  margin-top: 1.6rem;
+  max-width: 30rem;
+  font-size: var(--text-small, 0.9rem);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.frags-cue {
+  margin-top: 2.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.frags-cue-line {
+  width: 3.5rem;
+  height: 1px;
+  background: linear-gradient(to right, var(--color-contour), transparent);
+}
+/* --- a fragment --- */
+.frag {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+.frags.is-moving .frag {
+  width: var(--frag-w);
+  grid-template-columns: minmax(0, 28fr) minmax(0, 18fr);
+  column-gap: 2vw;
+  padding-top: 4svh;
+  padding-bottom: 16svh;
+}
+.frags.is-moving .frag:nth-of-type(even) {
+  padding-top: 12svh;
+  padding-bottom: 10svh;
+}
+.frag-figure {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  max-height: 68svh;
+  justify-self: center;
+}
+.frags.is-moving .frag-figure {
+  width: min(100%, 68svh);
+}
+.frag-sheet,
+.frag-piece,
+.frag-piece > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.frags.is-moving :is(.frag-sheet, .frag-piece, .frag-text) {
+  will-change: transform;
+}
+.frag-sheet {
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+}
+.frag-sheet-land {
+  fill: color-mix(in srgb, var(--color-canvas) 3%, transparent);
+  stroke: var(--rule);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+.frag-piece {
+  /* Lifted off the sheet: the shadow falls on the country it was cut from. Painted once; only the transform moves. */
+  filter: drop-shadow(0 1.4rem 1.6rem rgb(0 0 0 / 0.55));
+}
+.frag-piece-ground {
+  fill: #2c3a2c;
+}
+.frag-piece-relief {
+  opacity: 0.96;
+  filter: saturate(0.88) contrast(1.02) brightness(0.94);
+  transition: filter 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: frag-relief-in 0.9s ease both;
+}
+.frag.is-at .frag-piece-relief {
+  filter: saturate(1.08) contrast(1.04) brightness(1.01);
+}
+.frag.is-hot .frag-piece-relief {
+  filter: saturate(1.32) contrast(1.09) brightness(1.08);
+}
+.frag-figure::after {
+  position: absolute;
+  z-index: 2;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--frag-grade, #c4a560) 16%, transparent), transparent 68%);
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.frag.is-at .frag-figure::after {
+  opacity: 0.38;
+}
+.frag.is-hot .frag-figure::after {
+  opacity: 1;
+}
+@keyframes frag-relief-in {
+  from {
+    opacity: 0;
+  }
+}
+.frag-piece-edge {
+  fill: none;
+  stroke: var(--color-contour);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.frag-mark {
+  fill: var(--c);
+  stroke: rgb(12 14 12 / 0.85);
+  stroke-width: 1.4;
+  transition:
+    opacity 0.3s ease,
+    r 0.3s var(--ease-out-expo);
+}
+.frag-mark.is-back {
+  opacity: 0.25;
+}
+
+.frag-text {
+  min-width: 0;
+}
+.frag-name {
+  margin-top: 1rem;
+  font-size: clamp(2rem, 2.7vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.frag-blurb {
+  margin-top: 1rem;
+  max-width: 26rem;
+  font-size: var(--text-small, 0.9rem);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.frag-states {
+  margin-top: 0.9rem;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.frag-states-k {
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.frag-count {
+  margin-top: 1.3rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: var(--text-micro);
+  color: var(--ink-3);
+}
+.frag-count-n {
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--ink);
+}
+.frag-species {
+  margin-top: 0.6rem;
+  border-top: 1px solid var(--rule-2);
+}
+.frag-sp {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid var(--rule-2);
+  text-align: left;
+  font-size: var(--text-small, 0.9rem);
+  color: var(--ink-2);
+  transition: color 0.25s ease;
+}
+.frag-sp:hover,
+.frag-sp:focus-visible {
+  color: var(--ink);
+}
+.frag-sp:focus-visible {
+  outline: 1px solid var(--color-contour);
+  outline-offset: 4px;
+}
+.frag-sp-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c);
+}
+.frag-sp-name {
+  flex: 1;
+}
+.frag-sp-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--ink-3);
+}
+
+/* --- the end: whole again --- */
+.frags-outro {
+  display: grid;
+  gap: 3rem;
+  align-items: center;
+}
+.frags.is-moving .frags-outro {
+  width: 38vw;
+  max-width: 40rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding-top: 6svh;
+}
+.frags-outro-line {
+  margin-top: 1.4rem;
+  font-size: clamp(2rem, 3.2vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.frags-down {
+  margin-top: 1.6rem;
+  display: inline-block;
+  font-size: var(--text-small, 0.9rem);
+}
+
+/* --- the frame's foot: where in the run, and what the drawing claims --- */
+.frags-foot {
+  position: absolute;
+  left: 6vw;
+  right: 4vw;
+  bottom: 2.6svh;
+  display: grid;
+  grid-template-columns: minmax(16rem, auto) minmax(0, 1fr);
+  grid-template-areas: 'ruler ruler' 'now note';
+  align-items: start;
+  gap: 0.8rem 3rem;
+  pointer-events: none;
+}
+.frags-foot .frags-now {
+  grid-area: now;
+}
+.frags-foot .frags-ruler {
+  grid-area: ruler;
+}
+.frags-foot .frags-note {
+  grid-area: note;
+  justify-self: end;
+  max-width: 44rem;
+  text-align: right;
+}
+.frags-now {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.frags-now span {
+  color: var(--ink);
+}
+.frags-ruler {
+  position: relative;
+  height: 3px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ink-3) 68%, transparent) 1px, transparent 1.4px) left center / 9px 3px repeat-x;
+}
+.frags-ruler-fill {
+  position: absolute;
+  inset: 1px 0;
+  background: linear-gradient(to right, var(--color-emerald-700), var(--color-emerald-400));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+.frags-note {
+  font-size: var(--text-micro);
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* --- narrow or reduced motion: the same fragments, read straight down --- */
+.frags.is-stacked {
+  padding: 6rem 1rem 2rem;
+}
+.frags.is-stacked .frags-track {
+  display: grid;
+  gap: 5rem;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+.frags.is-stacked .frag-figure {
+  max-width: 28rem;
+}
+.frags-note-stacked {
+  max-width: 72rem;
+  margin: 3rem auto 0;
+}
+@media (min-width: 48rem) {
+  .frags.is-stacked {
+    padding-inline: 2rem;
+  }
+  .frags.is-stacked .frag {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 3rem;
+  }
+  .frags.is-stacked :is(.frags-intro, .frags-outro) {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 38rem;
+    margin-inline: auto;
+  }
+}
+
+.map-wheel-hint {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-forest-950) 88%, transparent);
+  font-size: var(--text-small, 0.9rem);
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.3s ease;
+}
+.map-wheel-hint.is-on {
+  opacity: 1;
+}

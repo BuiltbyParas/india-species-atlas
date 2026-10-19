@@ -3,6 +3,7 @@ import type { HabitatId, RegionId } from '../../types';
 import { STATUS_INFO, THREATENED_ORDER } from '../../data/statusInfo';
 import { HABITAT_LABELS, REGIONS } from '../../data/regions';
 import type { useSpeciesFilters } from '../../hooks/useSpeciesFilters';
+import { cn } from '../../utils/cn';
 
 type Filters = ReturnType<typeof useSpeciesFilters>;
 
@@ -20,7 +21,7 @@ function CheckRow({
   hint?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-md px-1.5 py-1.5 text-sm hover:bg-forest-800/60">
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-xs px-1.5 py-1.5 text-sm hover:bg-forest-800/60">
       <input
         type="checkbox"
         checked={checked}
@@ -34,7 +35,7 @@ function CheckRow({
           )}
           {label}
         </span>
-        {hint && <span className="block text-xs text-canvas/45">{hint}</span>}
+        {hint && <span className="block text-xs text-canvas/62">{hint}</span>}
       </span>
     </label>
   );
@@ -42,19 +43,31 @@ function CheckRow({
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="border-t border-forest-700/60 py-3 first:border-t-0 first:pt-0">
-      <legend className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">{title}</legend>
+    <fieldset className="filter-group border-t border-forest-700/60 py-3 first:border-t-0 first:pt-0">
+      <legend className="mb-1 caps">{title}</legend>
       {children}
     </fieldset>
   );
 }
 
-export function FilterPanel({ filters }: { filters: Filters }) {
+/**
+ * `stack` is the atlas sidebar's narrow column. `columns` lays the three groups side by side as one index sheet, for a
+ * panel that opens across the page (the species directory), with `children` as a last column.
+ */
+export function FilterPanel({
+  filters,
+  layout = 'stack',
+  children,
+}: {
+  filters: Filters;
+  layout?: 'stack' | 'columns';
+  children?: React.ReactNode;
+}) {
   const { filters: state, activeCount, reset, toggleStatus, toggleRegion, toggleHabitat } = filters;
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
+    <div className={cn(layout === 'columns' && 'filter-columns')}>
+      <div className="filter-head mb-2 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-canvas">Filters</h2>
         {activeCount > 0 && (
           <button
@@ -101,6 +114,7 @@ export function FilterPanel({ filters }: { filters: Filters }) {
           />
         ))}
       </Group>
+      {children}
     </div>
   );
 }

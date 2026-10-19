@@ -9,7 +9,9 @@ import { FilterPanel } from '../components/species/FilterPanel';
 import { SpeciesCard } from '../components/species/SpeciesCard';
 import { SpeciesGallery } from '../components/species/SpeciesGallery';
 import { SectionHeading } from '../components/ui/SectionHeading';
+import { EmptySheet } from '../components/ui/EmptySheet';
 import { buttonClasses } from '../components/ui/buttonClasses';
+import { useTabKeys } from '../components/ui/useTabKeys';
 import { cn } from '../utils/cn';
 
 type View = 'gallery' | 'grid';
@@ -18,14 +20,17 @@ const VIEWS: Array<{ id: View; label: string; icon: typeof Boxes }> = [
   { id: 'gallery', label: 'Gallery', icon: Boxes },
   { id: 'grid', label: 'Grid', icon: LayoutGrid },
 ];
+const VIEW_IDS = VIEWS.map((v) => v.id);
 
 export function SpeciesPage() {
   const filters = useSpeciesFilters();
   const [view, setView] = useState<View>('gallery');
+  const viewTab = useTabKeys(VIEW_IDS, view, setView);
   const [savedOnly, setSavedOnly] = useState(false);
-  // On a phone the unfiltered directory is what a reader wants first: with the
-  // panel open by default, seventeen checkboxes stand between the page heading
-  // and the first species. It stays open from `lg` up, where it costs nothing.
+  // The unfiltered directory is what a reader wants first: with the panel open
+  // by default, seventeen checkboxes stand between the page heading and the
+  // first species (and, beside the gallery, a third of its stage). The toggle
+  // carries the count of filters set, so a filtered view is never unannounced.
   const [showFilters, setShowFilters] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -101,7 +106,7 @@ export function SpeciesPage() {
       />
 
       {sharedIds && (
-        <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-forest-600 bg-forest-800/50 p-4">
+        <div className="mt-8 flex flex-wrap items-center gap-3 rounded-xs border border-forest-600 bg-forest-800/50 p-4">
           <Share2 className="h-4 w-4 shrink-0 text-forest-300" aria-hidden="true" />
           <p className="flex-1 text-sm text-canvas/85">
             You are looking at a shared list of {sharedIds.length} species. It is held in the link, not in
@@ -117,148 +122,143 @@ export function SpeciesPage() {
         </div>
       )}
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[264px_1fr] lg:gap-10">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <SearchBar value={filters.filters.query} onChange={filters.setQuery} />
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            aria-expanded={showFilters}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-between rounded-lg border border-forest-700 bg-forest-900 px-3 py-2 text-sm font-medium text-canvas lg:hidden"
-          >
-            <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-              Filters &amp; saved list {filters.activeCount > 0 && `(${filters.activeCount})`}
-            </span>
-            <span>{showFilters ? 'Hide' : 'Show'}</span>
-          </button>
-          <div
-            className={cn(
-              'mt-3 rounded-xl border border-forest-800 bg-forest-900/70 p-4 lg:block',
-              showFilters ? 'block' : 'hidden',
-            )}
-          >
-            <FilterPanel filters={filters} />
-
-            <div className="mt-3 border-t border-forest-700/60 pt-3">
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-forest-300">
-                Saved species
-              </p>
+      {/* One rule of tools under the heading — search, the filter sheet, the count, the view — so the gallery below
+          has the page's whole width as its stage, not two thirds of it beside a column of checkboxes. */}
+      <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-canvas/10 py-3">
+        <SearchBar value={filters.filters.query} onChange={filters.setQuery} className="w-full sm:w-72" />
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+          aria-controls="directory-filters"
+          className={cn(
+            'inline-flex min-h-11 basis-full items-center justify-between gap-4 rounded-xs border px-3 py-2 text-sm font-medium transition-colors sm:basis-auto',
+            showFilters || filters.activeCount > 0 || savedOnly
+              ? 'border-canvas/35 text-canvas'
+              : 'border-forest-700 text-canvas/80 hover:border-forest-500 hover:text-canvas',
+          )}
+        >
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            Filters &amp; saved list {filters.activeCount > 0 && `(${filters.activeCount})`}
+          </span>
+          <span className="text-canvas/60">{showFilters ? 'Hide' : 'Show'}</span>
+        </button>
+        <p className="text-sm text-canvas/60 sm:ml-auto" aria-live="polite">
+          Showing {shown.length} species
+          {sharedIds
+            ? ' from a shared list'
+            : savedOnly
+              ? ' from your saved list'
+              : filters.activeCount > 0 || filters.filters.query
+                ? ' (filtered)'
+                : ''}
+        </p>
+        <div
+          role="tablist"
+          aria-label="Directory view"
+          className="ml-auto inline-flex rounded-xs border border-canvas/15 p-1 sm:ml-0"
+        >
+          {VIEWS.map((v) => {
+            const Icon = v.icon;
+            const active = v.id === view;
+            return (
               <button
+                key={v.id}
                 type="button"
-                aria-pressed={savedOnly}
-                disabled={savedCount === 0 || !!sharedIds}
-                onClick={() => setSavedOnly((v) => !v)}
+                {...viewTab(v.id)}
+                aria-controls="directory-panel"
+                onClick={() => setView(v.id)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-md border px-2.5 py-2 text-sm transition-colors disabled:opacity-50',
-                  savedOnly && !sharedIds
-                    ? 'border-clay/70 bg-clay/15 text-clay'
-                    : 'border-forest-700 text-canvas/75 hover:border-forest-500 hover:text-canvas',
+                  'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-3 py-1.5 text-sm font-medium transition-colors duration-200 sm:min-h-0',
+                  active ? 'bg-canvas text-ink' : 'text-canvas/60 hover:bg-canvas/[0.05] hover:text-canvas',
                 )}
               >
-                <span className="inline-flex items-center gap-2">
-                  <Heart className="h-4 w-4" fill={savedOnly ? 'currentColor' : 'none'} aria-hidden="true" />
-                  Show only saved
-                </span>
-                <span className="font-mono text-xs">{savedCount}</span>
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {v.label}
               </button>
-              {savedCount > 0 && (
-                <button
-                  type="button"
-                  onClick={copyShareLink}
-                  className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-forest-300 hover:bg-forest-800 hover:text-forest-200"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Link copied
-                    </>
-                  ) : (
-                    <>
-                      <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      Copy a link to this list
-                    </>
-                  )}
-                </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div id="directory-filters" className={cn('border-b border-canvas/10 py-5', showFilters ? 'block' : 'hidden')}>
+        <FilterPanel filters={filters} layout="columns">
+          <div className="filter-saved border-t border-forest-700/60 pt-3">
+            <p className="mb-1.5 caps">Saved species</p>
+            <button
+              type="button"
+              aria-pressed={savedOnly}
+              disabled={savedCount === 0 || !!sharedIds}
+              onClick={() => setSavedOnly((v) => !v)}
+              className={cn(
+                'flex w-full items-center justify-between rounded-xs border px-2.5 py-2 text-sm transition-colors disabled:opacity-50',
+                savedOnly && !sharedIds
+                  ? 'border-clay/70 bg-clay/15 text-clay'
+                  : 'border-forest-700 text-canvas/75 hover:border-forest-500 hover:text-canvas',
               )}
-              <p className="mt-1.5 text-[11px] leading-snug text-canvas/45">
-                Saved species are kept in this browser only — there are no accounts here.
-              </p>
-            </div>
-          </div>
-        </aside>
-
-        <div className="min-w-0">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-canvas/60" aria-live="polite">
-              Showing {shown.length} species
-              {sharedIds
-                ? ' from a shared list'
-                : savedOnly
-                  ? ' from your saved list'
-                  : filters.activeCount > 0 || filters.filters.query
-                    ? ' (filtered)'
-                    : ''}
-            </p>
-            <div
-              role="tablist"
-              aria-label="Directory view"
-              className="inline-flex rounded-lg border border-forest-800 bg-forest-900 p-1"
             >
-              {VIEWS.map((v) => {
-                const Icon = v.icon;
-                const active = v.id === view;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setView(v.id)}
-                    className={cn(
-                      'inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200 sm:min-h-0',
-                      active
-                        ? 'bg-forest-600 text-white'
-                        : 'text-canvas/60 hover:bg-forest-800/70 hover:text-canvas',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {v.label}
-                  </button>
-                );
-              })}
-            </div>
+              <span className="inline-flex items-center gap-2">
+                <Heart className="h-4 w-4" fill={savedOnly ? 'currentColor' : 'none'} aria-hidden="true" />
+                Show only saved
+              </span>
+              <span className="font-mono text-xs">{savedCount}</span>
+            </button>
+            {savedCount > 0 && (
+              <button
+                type="button"
+                onClick={copyShareLink}
+                className="mt-1.5 inline-flex w-full items-center justify-center gap-1.5 rounded-xs px-2.5 py-1.5 text-xs font-medium text-forest-300 hover:bg-forest-800 hover:text-forest-200"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Link copied
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Copy a link to this list
+                  </>
+                )}
+              </button>
+            )}
+            <p className="mt-1.5 text-micro leading-snug text-canvas/62">
+              Saved species are kept in this browser only — there are no accounts here.
+            </p>
           </div>
+        </FilterPanel>
+      </div>
 
-          {shown.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-forest-700 bg-forest-900/40 p-10 text-center">
-              <p className="font-medium text-canvas">
-                {savedOnly && savedCount === 0
-                  ? 'You have not saved any species yet'
-                  : 'No species match those filters'}
-              </p>
-              <p className="mt-1 text-sm text-canvas/60">
-                {savedOnly && savedCount === 0
-                  ? 'Use the heart on any species card to keep it here.'
-                  : 'Try removing a filter or clearing the search.'}
-              </p>
+      <div className="mt-6 min-w-0">
+        {shown.length === 0 ? (
+          <EmptySheet
+            eyebrow={savedOnly && savedCount === 0 ? 'Saved species' : 'No match on the sheet'}
+            title={
+              savedOnly && savedCount === 0 ? 'You have not saved any species yet' : 'No species match those filters'
+            }
+            actions={
               <button
                 type="button"
                 onClick={() => {
                   filters.reset();
                   setSavedOnly(false);
                 }}
-                className={buttonClasses('secondary', 'md', 'mt-5')}
+                className={buttonClasses('secondary', 'md')}
               >
                 Reset filters
               </button>
-            </div>
-          ) : view === 'gallery' ? (
-            <SpeciesGallery species={shown} fallback={grid} />
-          ) : (
-            grid
-          )}
-        </div>
+            }
+          >
+            {savedOnly && savedCount === 0
+              ? 'Use the heart on any species card to keep it here.'
+              : 'Try removing a filter or clearing the search.'}
+          </EmptySheet>
+        ) : (
+          <div id="directory-panel" role="tabpanel" aria-label={view === 'gallery' ? 'Gallery' : 'Grid'}>
+            {view === 'gallery' ? <SpeciesGallery species={shown} fallback={grid} /> : grid}
+          </div>
+        )}
       </div>
     </div>
   );
