@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { buildGrid, GROUNDS, type GridSpec, type GroundName } from '../grounds';
+import { buildGrid, GROUNDS, sampleHeights, type GridSpec, type GroundName } from '../grounds';
+import type { SolidGrid } from './sunlight';
 
 /**
  * A field study's ground: a grid shaped by one of the height functions in
@@ -16,17 +17,18 @@ export interface Heightfield {
 }
 
 type Grid = { position: Float32Array; normal: Float32Array; index: Uint32Array };
+type Reply = Grid & { solid?: Float32Array };
 
 let worker: Worker | null = null;
 let failed = false;
 let seq = 0;
-const waiting = new Map<number, (grid: Grid | null) => void>();
+const waiting = new Map<number, (reply: Reply | null) => void>();
 
 function getWorker(): Worker | null {
   if (worker || failed || typeof Worker === 'undefined') return worker;
   try {
     worker = new Worker(new URL('../ground.worker.ts', import.meta.url), { type: 'module' });
-    worker.onmessage = (e: MessageEvent<Grid & { id: number }>) => {
+    worker.onmessage = (e: MessageEvent<Reply & { id: number }>) => {
       waiting.get(e.data.id)?.(e.data);
       waiting.delete(e.data.id);
     };
@@ -68,4 +70,22 @@ export async function makeHeightfield(
   geometry.setIndex(new THREE.BufferAttribute(grid.index, 1));
   geometry.computeBoundingSphere();
   return { geometry, height: GROUNDS[ground] };
+}
+
+/**
+ * A ground's heights on a finer grid than its mesh, for a world's sun grid (gl/sunlight.ts) — sampled in the
+ * worker, so the page keeps scrolling while it is made.
+ */
+export async function groundGrid(ground: GroundName, rect: [number, number, number, number], nx: number, nz: number): Promise<SolidGrid> {
+  const w = getWorker();
+  let solid: Float32Array | null = null;
+  if (w) {
+    const id = ++seq;
+    const reply = await new Promise<Reply | null>((resolve) => {
+      waiting.set(id, resolve);
+      w.postMessage({ id, heights: { ground, rect, nx, nz } });
+    });
+    solid = reply?.solid ?? null;
+  }
+  return { rect, nx, nz, solid: solid ?? sampleHeights(ground, rect, nx, nz) };
 }

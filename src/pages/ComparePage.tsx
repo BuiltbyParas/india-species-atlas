@@ -6,7 +6,7 @@ import { SPECIES, SPECIES_BY_ID } from '../data/species';
 import { HABITAT_LABELS, REGION_LABELS } from '../data/regions';
 import { THREAT_BY_ID } from '../data/threats';
 import { PROGRAMME_BY_ID } from '../data/programmes';
-import { STATUS_INFO } from '../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../data/statusInfo';
 import { useFavourites } from '../hooks/useFavourites';
 import { SpeciesImage } from '../components/ui/SpeciesImage';
 import { PhotoCredit } from '../components/ui/PhotoCredit';
@@ -55,7 +55,7 @@ const ROWS: Array<{
   },
   {
     label: 'Assessment cited',
-    render: (s) => <span className="font-mono text-xs">{s.statusAssessedYear}</span>,
+    render: (s) => <span className="font-mono text-xs">{redListYears(s)}</span>,
   },
   {
     label: 'Listed in this category since',
@@ -64,10 +64,10 @@ const ROWS: Array<{
       return first ? (
         <span>
           <span className="font-mono text-xs">{first.year}</span>
-          <span className="block text-xs text-canvas/55">{first.note}</span>
+          <span className="block text-xs text-canvas/70">{first.note}</span>
         </span>
       ) : (
-        <span className="text-xs text-canvas/50">Not recorded in this atlas</span>
+        <span className="text-xs text-canvas/70">Not recorded in this atlas</span>
       );
     },
   },
@@ -106,7 +106,7 @@ const ROWS: Array<{
     label: 'Programmes',
     render: (s) =>
       s.conservationProgrammes.length === 0 ? (
-        <span className="text-xs text-canvas/50">None linked in this atlas</span>
+        <span className="text-xs text-canvas/70">None linked in this atlas</span>
       ) : (
         <ul className="space-y-0.5">
           {s.conservationProgrammes.map((id) => {
@@ -114,7 +114,7 @@ const ROWS: Array<{
             return p ? (
               <li key={id}>
                 {p.name}
-                {p.startedYear && <span className="text-canvas/50"> · {p.startedYear}</span>}
+                {p.startedYear && <span className="text-canvas/70"> · {p.startedYear}</span>}
               </li>
             ) : null;
           })}
@@ -125,7 +125,7 @@ const ROWS: Array<{
     label: 'Key protected areas',
     render: (s) =>
       s.protectedAreas.length === 0 ? (
-        <span className="text-xs text-canvas/50">None listed</span>
+        <span className="text-xs text-canvas/70">None listed</span>
       ) : (
         <ul className="space-y-0.5">
           {s.protectedAreas.map((a) => (
@@ -236,7 +236,7 @@ export function ComparePage() {
         <>
         <CompareGeography species={selected} />
         <div className="mt-12">
-          <p className="mb-2 text-xs text-canvas/55 sm:hidden">
+          <p className="mb-2 text-xs text-canvas/70 sm:hidden">
             Scroll the table sideways to reach the other species — the attribute column stays in place.
           </p>
           <div className="overflow-x-auto rounded-xs border border-forest-800">

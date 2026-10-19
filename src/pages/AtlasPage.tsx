@@ -76,19 +76,19 @@ export function AtlasPage() {
   }, [filters.results, selectedState]);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
-        <div>
-          <p className="eyebrow">The working map</p>
-          <h1 className="mt-3 font-serif text-heading font-light text-canvas">
+    <div className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:px-12 lg:py-8">
+      <header className="page-head page-head--compact mb-6">
+        <div className="page-head-title">
+          <p className="eyebrow mb-4">The working map</p>
+          <h1 className="font-serif font-light text-canvas">
             <LineTitle text="Interactive map" seed={2} />
           </h1>
         </div>
-        <p className="hidden max-w-xl text-small text-canvas/60 sm:block">
+        <p className="page-head-lede">
           Pan and zoom, click a state to list its species, click a marker to open a profile, and switch between
           Species, Threats and Conservation. The filters narrow every view at once.
         </p>
-      </div>
+      </header>
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         {/* Sidebar */}
@@ -195,7 +195,7 @@ export function AtlasPage() {
           <div id="atlas-map-panel" role="tabpanel" aria-label="Map" className="h-[70vh] min-h-[420px] overflow-hidden rounded-xs border border-forest-800 sm:h-[62vh]">
             <Suspense
               fallback={
-                <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/50">
+                <div className="grid h-full place-items-center bg-forest-900 text-sm text-canvas/70">
                   Loading map…
                 </div>
               }
@@ -234,7 +234,7 @@ export function AtlasPage() {
             {selectedState ? (
               <StatePanel state={selectedState} onClear={() => setSelectedState(null)} />
             ) : (
-              <div className="sheet text-sm text-canvas/55">
+              <div className="sheet text-sm text-canvas/70">
                 <p className="text-canvas/80">No state selected</p>
                 <p className="mt-1">
                   Click any state on the map to see which of the atlas&rsquo; species occur there and open their

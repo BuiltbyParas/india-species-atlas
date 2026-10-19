@@ -11,7 +11,8 @@ async function open(opts = {}, abort = false) {
   page.on('pageerror', (e) => errs.push('pageerror ' + e.message));
   page.on('request', (r) => { if (/spiti/.test(r.url())) reqs.push(r.url().split('/').pop() + ' ' + (r.headers().range ?? '')); });
   page.on('requestfailed', (r) => reqs.push('FAILED ' + r.url().split('/').pop() + ' ' + r.failure()?.errorText));
-  if (abort) await page.route('**/snow-leopard-spiti-*.webm', (r) => r.abort());
+  // Both sources (AV1 and its H.264 fallback) refused: the poster must stay.
+  if (abort) await page.route(/snow-leopard-spiti-[^/]*\.(webm|mp4)$/, (r) => r.abort());
   await page.goto(`${BASE}/field/snow-leopard`); await sleep(3000);
   return { ctx, page, errs, reqs };
 }

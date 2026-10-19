@@ -167,7 +167,7 @@ export function DocumentaryPage() {
         </div>
         {portrait && !capture && (
           <p
-            className="absolute inset-x-0 px-6 text-center text-small text-canvas/55"
+            className="absolute inset-x-0 px-6 text-center text-small text-canvas/70"
             style={{ top: `calc(50% + ${(1080 * scale) / 2}px + 1.5rem)` }}
           >
             The documentary is a wide picture. Turn your phone sideways to see it larger.
@@ -209,7 +209,7 @@ export function DocumentaryPage() {
               Back to the atlas
             </Link>
           </div>
-          <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-label text-canvas/50" aria-label="Chapters">
+          <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-label text-canvas/70" aria-label="Chapters">
             {CHAPTERS.map((c) => (
               <li key={c.id}>
                 <button type="button" onClick={() => setT(c.t)} className="hover:text-canvas">

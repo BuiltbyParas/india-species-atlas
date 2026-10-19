@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Species } from '../../types';
-import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
+import { localityCoords, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { threadPath } from '../../geo/line/paths';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
@@ -39,7 +39,7 @@ export function SpeciesLocator({ species, className }: { species: Species; class
         <circle cx={x} cy={y} r="11" className="locator-dot" />
       </svg>
       <p className="locator-coords tabular-nums">
-        {formatDeg(a.lat, 'lat')} {formatDeg(a.lng, 'lng')}
+        {localityCoords(a)}
         <span>{a.label.split(',')[0]}</span>
       </p>
     </div>

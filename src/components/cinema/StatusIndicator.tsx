@@ -38,7 +38,7 @@ export function StatusIndicator({ status, className }: { status: IucnStatus; cla
         </span>
         <span className="text-sm text-canvas">
           {info.name}
-          <span className="ml-2 text-canvas/45">IUCN {info.code}</span>
+          <span className="ml-2 text-canvas/62">IUCN {info.code}</span>
         </span>
       </button>
       <div

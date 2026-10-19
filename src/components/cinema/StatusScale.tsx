@@ -35,7 +35,7 @@ export function StatusScale({ status, className }: { status: IucnStatus; classNa
   const at = SCALE.findIndex((s) => s.code === status);
   if (at < 0) {
     return (
-      <p className={cn('text-label text-canvas/55', className)}>
+      <p className={cn('text-label text-canvas/70', className)}>
         {info.name}: not placed on the scale — the IUCN could not assess its risk from the data available.
       </p>
     );

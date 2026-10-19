@@ -1,10 +1,13 @@
 import { useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { SPECIES } from '../../data/species';
+import { FIELD_STUDIES } from '../../content/fieldStudies';
 import { formatDeg } from '../../geo/india';
 import { useInView } from '../../motion/useInView';
 import { totalSpecies } from '../../utils/stats';
 import { cn } from '../../utils/cn';
+import { useAtlasLive } from '../home/atlasWorld';
+import { useReducedMotion, useWideLayout } from '../../motion/preferences';
 
 const LINKS = [
   { to: '/atlas', label: 'Map' },
@@ -36,9 +39,21 @@ const fmtDate = (iso: string) =>
 export function Footer() {
   const ref = useRef<HTMLElement>(null);
   const seen = useInView(ref, { rootMargin: '0px 0px -8% 0px' });
+  // On the home page the colophon is the foot of the closing's world: the relief sinks into the slate it is printed on.
+  const home = useLocation().pathname === '/';
+  const live = useAtlasLive();
+  const wide = useWideLayout();
+  const reduced = useReducedMotion();
+  const overWorld = home && live && wide && !reduced;
 
   return (
-    <footer ref={ref} className={cn('site-footer colophon', seen && 'is-shown')}>
+    <footer
+      ref={ref}
+      data-ground={home ? 'slate' : undefined}
+      data-env={home ? 'slate' : undefined}
+      data-over-world={overWorld ? 'true' : undefined}
+      className={cn('site-footer colophon', home && 'ground-grain relative', seen && 'is-shown')}
+    >
       <div className="mx-auto max-w-[1600px] px-4 pb-10 pt-16 sm:px-8 lg:px-12 lg:pt-20">
         <div className="colophon-scale" aria-hidden="true">
           <span className="colophon-scale-line" />
@@ -64,7 +79,7 @@ export function Footer() {
               A digital field study of {totalSpecies} threatened species, drawn on one sheet of India.
             </p>
             <p className="colophon-sign mt-8 text-small">
-              <span className="text-canvas/50">Designed and built by</span>{' '}
+              <span className="text-canvas/70">Designed and built by</span>{' '}
               <span className="colophon-name">Paras Attri</span>
             </p>
           </div>
@@ -92,7 +107,19 @@ export function Footer() {
             </div>
           </dl>
 
-          <nav aria-label="Footer" className="lg:col-span-3">
+          <nav aria-label="Footer" className="colophon-nav lg:col-span-3">
+            <p className="caps colophon-nav-head">Field studies</p>
+            <ul className="colophon-links colophon-studies">
+              {FIELD_STUDIES.map((f) => (
+                <li key={f.id}>
+                  <Link to={`/field/${f.id}`} className="footer-link">
+                    {f.species.commonName}
+                    <span className="colophon-habitat">{f.habitat}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="caps colophon-nav-head">The atlas</p>
             <ul className="colophon-links">
               {LINKS.map((l) => (
                 <li key={l.to}>
@@ -105,7 +132,7 @@ export function Footer() {
           </nav>
         </div>
 
-        <p className="mt-14 max-w-4xl text-micro leading-relaxed text-canvas/35">
+        <p className="mt-14 max-w-4xl text-micro leading-relaxed text-canvas/70">
           An educational atlas, begun as an environmental-studies / CAI project. Status follows the IUCN Red List (via
           BirdLife International for birds); map locations are indicative localities, not range boundaries. Basemap
           &copy; Esri, Garmin, GEBCO, NOAA NGDC and other contributors. Species photographs by their individual

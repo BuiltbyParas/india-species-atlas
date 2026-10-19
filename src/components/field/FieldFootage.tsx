@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Footage } from '../../content/footage';
+import { footageSources, type Footage } from '../../content/footage';
 import { useReducedMotion } from '../../motion/preferences';
 import { cn } from '../../utils/cn';
 
@@ -74,7 +74,6 @@ export function FieldFootage({ footage, active = true, className }: { footage: F
           <video
             ref={video}
             className="fs-footage-video"
-            src={footage.src}
             poster={footage.poster}
             muted
             loop
@@ -84,11 +83,24 @@ export function FieldFootage({ footage, active = true, className }: { footage: F
             tabIndex={-1}
             onPlaying={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onError={() => {
-              console.warn('[footage] could not load', footage.src);
-              setFailed(true);
-            }}
-          />
+          >
+            {footageSources(footage).map((s, i, all) => (
+              <source
+                key={s.src}
+                src={s.src}
+                type={s.type}
+                // Only the last source's failure means nothing would play.
+                onError={
+                  i === all.length - 1
+                    ? () => {
+                        console.warn('[footage] could not load', footage.src);
+                        setFailed(true);
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </video>
         )}
         {!failed && (
           <button

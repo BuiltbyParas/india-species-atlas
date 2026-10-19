@@ -23,12 +23,12 @@ export function StateDensityLegend({ max }: { max: number }) {
         </div>
         <span className="text-canvas/60">{max}</span>
       </div>
-      <p className="mt-2 text-canvas/55">
+      <p className="mt-2 text-canvas/70">
         Shading counts the species in the current selection that are recorded in each state, not the number
         of pins. Hover or focus a state to read its count as a number — the shade is a summary, not the
         value.
       </p>
-      <p className="mt-1.5 text-canvas/45">
+      <p className="mt-1.5 text-canvas/62">
         India is drawn as on its political map: Jammu &amp; Kashmir is one territory with Ladakh, so records for
         Ladakh are counted and listed there.
       </p>

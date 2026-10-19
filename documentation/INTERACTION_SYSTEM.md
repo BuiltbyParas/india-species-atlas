@@ -385,3 +385,85 @@ The page still lands composed:
 - Captions are on by default.
 - WebGL is never the only way to information: the hero has its flat fallback, the gallery and conservation scenes have flat equivalents, and the probe's readings are decorative (`aria-hidden`) over data that is in the page.
 - The focus outline uses the environment's line colour, which reads on every ground listed above.
+
+## 22. The lamp (12 October 2026)
+
+The hero's pointer response, rebuilt for the regional relief (`LUSION_LEVEL_PASS.md`, `RENDERING_ARCHITECTURE.md` §5).
+Everything above still holds; this section is what changed.
+
+**What it is.** Moving a fine pointer over the hero swings the scene's one light — a low lamp — over the relief. The
+mountains' shadows are cast (a heightfield shadow on the elevation grid), so they swing with it: the hand reads the
+ground by light, the way a hill-shader sets a lamp over a model. The survey probe (coordinates, height, or the sea
+floor's depth; snap to a lit locality within 34 px) is unchanged and runs alongside.
+
+**Mapping.** Pointer x (−1 → 1) → azimuth 295° ± 46°, across the north only (light from the camera's side flattens the
+ground). Pointer y (−1 top → 1 bottom) → elevation 12° ± 8° (the hand up the frame, towards the horizon, lowers the
+lamp). Reach falls to 25 % by halfway down the descent, where the lamp settles into the west at 17°.
+
+**Physics.** Two `Spring`s (azimuth, elevation) on the shared model (`interaction/spring.ts`), tuning `SPRINGS.lamp`:
+stiffness 42, damping 10.1, mass 1 (ω ≈ 6.5 rad/s, ζ ≈ 0.78 — about 2 % overshoot, settled in ~0.5 s), fixed 1/240 s
+sub-steps, rest within 0.0004 rad. Their targets are the pointer value the scene has already damped
+(`POSE_LAMBDA`), so a flick is smoothed twice: once as intent, once as weight.
+
+**Entrance.** First visit only: the lamp starts 2.5° below the horizon and 16° south of its rest, and rises over
+3.6 s (`EMERGE_MS`) while the camera tilts from plan view to the three-quarter view. Summits catch it first.
+
+**Touch, keyboard, reduced motion.** Touch: a tap (not a scroll) sets the probe down for 2.2 s, as before, and now
+also swings the lamp towards the tap for that time, then back; nothing follows the finger while it scrolls.
+Keyboard: the hero's controls are the two links (scroll cue, working map), unchanged. Reduced motion: no scene, the
+flat shaded relief. The margin note says "Move to turn the light · point at the ground to read it" only where the
+pointer is fine (`.hero-hint`).
+
+**Failure.** If the lamp pass cannot be built (no regional grid), the scene uses the India-only relief with the
+probe's old behaviour (the key turns a little towards the probe).
+
+## 23. The field studies' light, by hand (12 October 2026)
+
+Until now only a mouse turned a field study's sun (the stage read the pointer; touch and keyboard had nothing). Every
+visitor can now turn it, through one value on the stage. Record: `FIELD_STUDIES_POLISH.md`.
+
+**One value, one spring.** `FieldStage.setLight(x)` (−1 → 1) sets the hand's aim; the stage steps it on the homepage
+lamp's spring (`SPRINGS.lamp`, `interaction/spring.ts`) and passes the worlds `input.light` = the smoothed mouse +
+that aim, clamped. Each world turns its sun by `input.light` and its camera by `input.pointer` (mouse only), so a
+finger or a key turns the light without swinging the view. Nothing per habitat: the five worlds changed one line each
+(`setSun(AZ + i.light.x * …)`). With reduced motion the aim is set at once (no swing) and the stage renders that one
+frame and stops, as before.
+
+**The control** (`components/field/FieldLight.tsx`, in the study's furniture over the anchor's coordinates; on a
+phone it takes the coordinates' place over the way out): a real `<input type="range">` drawn as a short line with
+the sun on it, labelled "Light". Keyboard: Tab to it, arrows / Home / End turn the sun; it has the field's focus
+outline; its name is "Turn the sun over the forest" (or the study's habitat) and its value text says where the sun
+is ("The sun turned left"). It is shown only when the world is drawn (`status === 'ready'`), not over the photograph
+fallback. A new study starts with its sun at its own hour.
+
+**Touch.** A sideways drag anywhere on the study turns the light: about two-thirds of the screen's width moves it
+from one end of its reach to the other. The gesture is decided once, after 10 px: more sideways than upright (1.3 : 1)
+turns the light, anything else is left to the page. The study sets `touch-action: pan-y pinch-zoom`, so the browser
+keeps vertical scrolling and pinch-zoom and hands the sideways part of a touch to the page; there is no horizontal
+scrolling in a study to lose. A touch that starts on a control (link, button, input, the footage) is ignored. No tap
+action: a tap that stops a fling must not swing the sun. Listeners: one `pointerdown` on the study; `pointermove`,
+`pointerup` and `pointercancel` on the window only while a touch is down, removed when it ends and on unmount
+(checked: no growth across study changes, `scripts/audit/field-polish-touch.mjs`).
+
+**Discoverable, not furniture.** On a screen without hover the label is replaced for a few seconds, once a session,
+by "Drag sideways to turn the light", on the control's own row (so it never prints over the study's type); the first
+turn dismisses it. Mouse behaviour is unchanged.
+
+**Not checked:** a real phone or tablet. The gesture was exercised with Chromium's touch emulation (CDP touch
+events) only; iOS Safari's handling of `touch-action: pan-y pinch-zoom` was not tested on a device.
+
+## 24. Hand-overs without a jump in the light (12 October 2026)
+
+Record: `WHOLE_EXPERIENCE_REVIEW.md` §6.2. Going into a study, on to the next or back to the index, the stage lifts its
+world over the page (`stage.hold`) through the route change, and every page layer that shaded the world — scrims, veils,
+the furniture's foot — is then under it. Lifted or handed back at once, the light jumped by up to 57 grey levels in a frame.
+
+- **Before the lift**, the page clears: the index's scrim fades during the camera's move (`.fs-index.is-leaving`); a study's
+  words, scrim and furniture fade for 0.45 s first (`fieldNav.ts` `clearPage`, `.fs-study.is-leaving`). Reduced motion: no wait.
+- **After the hand-back**, the page arrives: a study entered through its world keeps its title, first chapter, scrim and
+  furniture back until the stage is released (`FieldStudyPage.tsx` `held` → `is-arrived`); the index back from a study keeps
+  its composition, list and scrim back the same way (`FieldStudiesIndex.tsx` `held`). Darkening layers ease in on
+  `--ease-cinema` over 1.2 s (an expo-out start reads as a pop).
+- **While held**, a study does not follow the scroll (still the previous page's until the route settles); it measures again
+  when the world is handed back. `FieldStage.show()` drops a request superseded while its world was being built, so the
+  index passing study 01 on its way back cannot leave the wrong world under its words.

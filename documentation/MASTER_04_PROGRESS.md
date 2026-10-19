@@ -640,3 +640,45 @@ Reproduction: `ROUNDS=4 node scripts/audit/lifecycle.mjs`. Test conditions for *
 ## 16. Long chapters arrive readable (10 October 2026)
 
 Detail and measurements: `CREATIVE_QUALITY_AUDIT.md` §9. One CSS rule (`field.css`, desktop only): chapters that hold a list or map start near the top of their stretch instead of centred, so their first lines appear just below mid-screen when the chapter becomes current (before: y 471–834 of 900, mostly under the foot). Five studies, footage, WebGL recovery and photograph fallbacks untouched. `tsc -b` and build pass; scroll test 2 of 3 runs fully OK, one rhinoceros governor abandonment under load on a fast reverse scroll (reruns passed; baseline not re-run). New `scripts/audit/creative-arrival.mjs`.
+
+## 17. Checkpoint verification of fd06c14 (10 October 2026)
+
+`fd06c14` changes one CSS rule (desktop, `.fs-ch.is-long .fs-ch-inner`), a measuring script and docs. No stage, governor or WebGL code.
+
+**Rhinoceros fallback: pre-existing and load-dependent, not a regression.** New `scripts/audit/rhino-fastup.mjs`: per trial, fresh context, load `/field/indian-rhinoceros`, 30 fast wheel steps down, 30 up, settle; records stage state, `failReason`, `modeLog`, governor windows, context events. Same machine, same stressed conditions (live wallpaper running, about 700 MB RAM available, swap in use):
+
+| Version | Fallbacks (8 trials) | Common signature |
+|---|---|---|
+| `fd06c14` | 3 | `mode=off tier=low rung=2 failed=true(too-slow)`, `host>off` about 10 s after load, 0 context lost/restored, no console output; governor windows rung 2 at 0.4-0.8 slow frames, 550-717 ms |
+| parent (`fd06c14^` CSS swapped in temporarily, restored afterwards) | 7 | identical signature (load average was higher, 2.6 vs 1.1) |
+
+The CSS cannot be shown to cause it: the failure appears on both and is the governor's designed "persistently too slow" abandonment at the lowest rung. No source change made. The bustard, rhinoceros and tiger also abandoned in later scroll runs under load 10-12 with about 300 MB available (also bustard in the first run), so this is the same environmental limit, not a rhinoceros-specific fault. A clean-machine baseline (wallpaper stopped) is still not run.
+
+**Audits.** `lifecycle.mjs` and `creative-scroll.mjs` were run under heavy load (load average 6-12, 300-470 MB available): lifecycle failed from the first direct entry (stage never reached 3 calls, then too-slow), and scroll passed for rhinoceros and tiger in one run and failed in a second, so neither is a usable pass/fail signal on this machine now. The lifecycle result of §15 (15 of 15 rounds) was on a less loaded machine. Not re-confirmed.
+
+**Chapter arrival (`creative-arrival.mjs`, 1280×800, 1440×900, 1920×1080).** Top of every long chapter's text on arrival: 198-347 at 800, 264-486 at 900, 302-499 at 1080; no top is near the header band. Text bottoms often fall below the foot fade (about 84 % of the height): this is expected for long lists and maps, which keep scrolling; their first lines are in the clear on arrival. Not measured: reading while scrolling through the foot fade by eye; header and fixed UI overlap by screenshot (only arrival tops were measured).
+
+**Build.** `tsc -b` passes; `npm run build` passes (23 route pages).
+
+**Left alone.** No source change. This section and `scripts/audit/rhino-fastup.mjs` are uncommitted; `scripts/audit/out/creative/` untouched. Nothing pushed or merged.
+
+## 18. Hero, memory, film and reduced-motion verification (10 October 2026)
+
+**Hero.** Settled at 9 s (one Chromium session, 1440×900), the home hero has no cropped band; the earlier band was a loading state. Scroll through the map, the five studies and the selection chapter showed no defect. `/atlas`, `/species`, `/compare`, `/conservation`, `/about`, `/sources` were screenshotted top to bottom; none had a defect worth changing.
+
+**One fix.** Reduced-motion/flat hero (`FlatIndia`, `CinematicHero.tsx`): the 92 %-high map was centred and its northern tip sat in the header band beside the "Map" link. Now `top-[55%] h-[84%]`; the tip clears the header (screenshot checked). Nothing else changed in code.
+
+**Memory (scripts `memcycle.mjs`, `memspa.mjs`, `memspa-which.mjs`).** Full-reload cycles through seven routes, three times: JS heap after forced GC 18-31 MB per page, no growth between cycles; all browser processes' RSS 1.29-1.41 GB, flat to falling. Client-side route changes (no reload), four cycles through eight routes: heap 33.9, 34.9, 35.9, 35.4 MB; RSS 1372, 1361, 1334, 1280 MB. CDP `Nodes` rose by about 2,050 and listeners by 118 per cycle with live DOM constant; a heap snapshot taken after three home to about hops contains **zero detached DOM nodes**, so the counter is not JS-retained DOM (not explained further; not shown to be a leak). Conclusion: the page's own JS is about 20-35 MB; the rest of the baseline is browser and GPU process overhead. No application leak confirmed. No optimisation is claimed.
+
+**`preload="metadata"`** kept. The film player only mounts when the film is opened (the entry is a still), so no byte count before/after was measured and no gain is claimed.
+
+**Film (`film-playback.mjs`).** Opens from the end of the home page, plays (AV1 mp4, 69 s), seeks to 50 %, 90 %, 10 % in 84-125 ms each to the exact target, ArrowRight +5 s, Space pause/play, Escape closes; no console errors. The `/documentary` route (scripted DOM page) was not played through.
+
+**Reduced motion.** Home hero, chapters and the tiger field study render as static compositions with no console errors. Not tested: reduced motion with the film, the atlas map, or touch.
+
+## 19. Visual quality pass 2: the field studies relit (12 October 2026)
+
+All five worlds rebuilt on one light model shared with the homepage (sun grids, air, film, subject, foliage in
+`src/world/field/gl/`), each at its own hour; every study now on a dark ground with ivory type; new cut-outs for the
+bustards and the dolphin and a matted leopard. Uncommitted. Record, measurements and remaining weaknesses:
+`FIELD_STUDIES_VISUAL_PASS.md`. Pre-change tree: `refs/backups/pre-field-pass-2`.

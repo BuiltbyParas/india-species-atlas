@@ -19,6 +19,7 @@ export function RevealText({
   play,
   delay = 0,
   stagger = 0.055,
+  focus,
 }: {
   text: string;
   as?: ElementType;
@@ -28,6 +29,8 @@ export function RevealText({
   play?: boolean;
   delay?: number;
   stagger?: number;
+  /** Each word also comes into focus as it clears the mask (`.reveal-focus`). */
+  focus?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const seen = useInView(ref);
@@ -35,7 +38,7 @@ export function RevealText({
   const words = text.split(/\s+/).filter(Boolean);
 
   return (
-    <Tag ref={ref} className={cn('reveal-text', shown && 'is-shown', className)}>
+    <Tag ref={ref} className={cn('reveal-text', focus && 'reveal-focus', shown && 'is-shown', className)}>
       {words.map((word, i) => (
         <Fragment key={i}>
           <span className="reveal-word">

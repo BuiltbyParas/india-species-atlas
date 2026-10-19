@@ -159,6 +159,18 @@ export function formatDeg(value: number, axis: 'lat' | 'lng'): string {
   return `${deg}°${String(min).padStart(2, '0')}′${hemi}`;
 }
 
+/** Shown in place of a locality's coordinates where its record withholds them. */
+export const COORDS_WITHHELD = 'coordinates withheld';
+
+/**
+ * A locality's coordinates, wherever a record's place is named: "26°47′N 70°38′E", or `COORDS_WITHHELD` for a
+ * record that withholds them (`DistributionPoint.withholdCoordinates`). Readouts of the pointer, the camera or the
+ * map's own frame are instruments, not records, and use `formatDeg` directly.
+ */
+export function localityCoords(p: { lat: number; lng: number; withholdCoordinates?: true }): string {
+  return p.withholdCoordinates ? COORDS_WITHHELD : `${formatDeg(p.lat, 'lat')} ${formatDeg(p.lng, 'lng')}`;
+}
+
 /**
  * A smooth path through points (centripetal-ish Catmull-Rom as cubic Béziers).
  * Used for every drawn "line" that joins places, so they read as a hand's

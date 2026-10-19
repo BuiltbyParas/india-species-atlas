@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { DistributionPoint, Species, ThreatId } from '../../types';
 import { THREAT_LABELS } from '../../data/threats';
-import { formatDeg, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
+import { localityCoords, type IndiaGeo, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { chain, threadPath } from '../../geo/line/paths';
 import { GEOJSON_STATE_ALIASES } from '../../utils/stateCounts';
@@ -255,15 +255,15 @@ export function SpeciesMap({
           role="tooltip"
         >
           <p className="text-small leading-snug text-canvas">{hover.point.label}</p>
-          <p className="mt-0.5 text-micro tabular-nums text-canvas/50">
-            {formatDeg(hover.point.lat, 'lat')} {formatDeg(hover.point.lng, 'lng')}
+          <p className="mt-0.5 text-micro tabular-nums text-canvas/70">
+            {localityCoords(hover.point)}
           </p>
           {hover.point.note && <p className="mt-1 text-label leading-snug text-canvas/70">{hover.point.note}</p>}
         </div>
       )}
 
       {showLegend && (
-        <div className="sm-legend pointer-events-none absolute left-0 top-0 isolate h-28 w-[17rem]" data-phase={legendPhase}>
+        <div className="sm-legend pointer-events-none absolute left-0 top-0 isolate h-28 w-[min(17rem,calc(100%-2.5rem))]" data-phase={legendPhase}>
           <p className="sm-legend-range">
             Shaded: states of record. Points: indicative localities, not a range boundary. The ringed point is {anchor.label.split(',')[0]}.
           </p>

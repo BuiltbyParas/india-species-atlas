@@ -15,6 +15,16 @@ export function rgb(hex: string): THREE.Vector3 {
   return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
+/**
+ * A colour as linear light, times `k`. Worlds that render through the film (gl/look.ts) light their scenes in
+ * linear values — a sun of 3, a snowfield's albedo of 0.8 — and the film's curve brings them to the screen.
+ */
+export function lin(hex: string, k = 1): THREE.Vector3 {
+  const c = rgb(hex);
+  const f = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)) * k;
+  return c.set(f(c.x), f(c.y), f(c.z));
+}
+
 /** The atlas palette the worlds draw with (index.css tokens and environment lines). */
 export const PALETTE = {
   canvas: '#e8e1cf',

@@ -33,6 +33,12 @@ export interface Shot {
   pos: [number, number, number];
   look: [number, number, number];
   fov?: number;
+  /**
+   * The same moment composed for a phone held upright, where the words sit above and below the world rather than
+   * beside it. Taken over from the wide shot as the screen narrows (aspect 0.85 → 0.6); a shot without one is the
+   * wide shot on every screen.
+   */
+  narrow?: { pos: [number, number, number]; look: [number, number, number]; fov?: number };
 }
 
 export interface RigOptions {
@@ -65,6 +71,19 @@ function catmull(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3: TH
   );
 }
 
+/** A cubic from p1 to p2 that never leaves [p1, p2] (Fritsch–Carlson tangents: flat at a turn, limited elsewhere). */
+function monotone(p0: number, p1: number, p2: number, p3: number, t: number) {
+  const d0 = p1 - p0;
+  const d1 = p2 - p1;
+  const d2 = p3 - p2;
+  const tangent = (a: number, b: number) => (a * b <= 0 ? 0 : Math.sign(b) * Math.min(Math.abs((a + b) / 2), 3 * Math.abs(a), 3 * Math.abs(b)));
+  const m1 = tangent(d0, d1);
+  const m2 = tangent(d1, d2);
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * p1 + (t3 - 2 * t2 + t) * m1 + (-2 * t3 + 3 * t2) * p2 + (t3 - t2) * m2;
+}
+
 export interface RigInput {
   engage: number;
   enter: number;
@@ -79,15 +98,35 @@ export class CameraRig {
   private readonly o: RigOptions;
   private readonly pos: THREE.Vector3[];
   private readonly look: THREE.Vector3[];
+  private readonly fovs: number[];
   private readonly cur = { pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 40 };
   private readonly want = { pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 40 };
   private first = true;
+  /** 0 on a wide screen, 1 on an upright phone: how much of each shot's `narrow` composition is used. */
+  private narrowness = -1;
 
   constructor(camera: THREE.PerspectiveCamera, options: RigOptions) {
     this.camera = camera;
     this.o = options;
     this.pos = options.path.map((s) => v(s.pos, new THREE.Vector3()));
     this.look = options.path.map((s) => v(s.look, new THREE.Vector3()));
+    this.fovs = options.path.map((s) => s.fov ?? 40);
+  }
+
+  /** The path's poses for this screen's shape (only shots that have a narrow composition change). */
+  private fit() {
+    const k = THREE.MathUtils.smoothstep(0.85 - this.camera.aspect, 0, 0.25);
+    if (Math.abs(k - this.narrowness) < 1e-3) return;
+    this.narrowness = k;
+    this.o.path.forEach((s, i) => {
+      v(s.pos, this.pos[i]);
+      v(s.look, this.look[i]);
+      this.fovs[i] = s.fov ?? 40;
+      if (!s.narrow || k <= 0) return;
+      this.pos[i].lerp(v(s.narrow.pos, tmpB), k);
+      this.look[i].lerp(v(s.narrow.look, tmpB), k);
+      this.fovs[i] += ((s.narrow.fov ?? this.fovs[i]) - this.fovs[i]) * k;
+    });
   }
 
   /** The path's pose at `p`, into `out`. */
@@ -97,7 +136,7 @@ export class CameraRig {
     if (n === 1 || p <= path[0].at) {
       out.pos.copy(this.pos[0]);
       out.look.copy(this.look[0]);
-      out.fov = path[0].fov ?? 40;
+      out.fov = this.fovs[0];
       return;
     }
     let i = 0;
@@ -108,8 +147,19 @@ export class CameraRig {
     const i0 = Math.max(0, i - 1);
     const i3 = Math.min(n - 1, i + 2);
     catmull(this.pos[i0], this.pos[i], this.pos[i + 1], this.pos[i3], t, out.pos);
-    catmull(this.look[i0], this.look[i], this.look[i + 1], this.look[i3], t, out.look);
-    out.fov = (a.fov ?? 40) + ((b.fov ?? 40) - (a.fov ?? 40)) * t;
+    // Height never overshoots the two shots it travels between. Next to a shot far above the others (the forest's view
+    // over the crowns) the uniform curve's tangent is steep enough to carry the camera through the ground on the
+    // following leg; a monotone curve in height keeps the swoop and lands on the ground's side of it.
+    out.pos.y = monotone(this.pos[i0].y, this.pos[i].y, this.pos[i + 1].y, this.pos[i3].y, t);
+    // What the camera looks at never overshoots either: next to the crowns shot, whose target lies far up the forest,
+    // the uniform curve swung the target back past the camera, which then stared at its own feet.
+    const l0 = this.look[i0];
+    const l1 = this.look[i];
+    const l2 = this.look[i + 1];
+    const l3 = this.look[i3];
+    out.look.set(monotone(l0.x, l1.x, l2.x, l3.x, t), monotone(l0.y, l1.y, l2.y, l3.y, t), monotone(l0.z, l1.z, l2.z, l3.z, t));
+
+    out.fov = this.fovs[i] + (this.fovs[i + 1] - this.fovs[i]) * t;
   }
 
   update(input: RigInput) {
@@ -120,6 +170,7 @@ export class CameraRig {
     const pLook = v(preview.look, prevLook).lerp(v(engage.look, tmpB), e);
     const pFov = (preview.fov ?? 40) + ((engage.fov ?? 40) - (preview.fov ?? 40)) * e;
 
+    this.fit();
     this.along(input.progress, this.want);
     const k = easeInOut(Math.min(1, Math.max(0, input.enter)));
     this.want.pos.lerpVectors(pPos, this.want.pos, k);

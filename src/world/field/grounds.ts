@@ -57,14 +57,18 @@ export function mountains(x: number, z: number): number {
   const dist = Math.min(1, Math.max(0, (-z - 30) / 1500));
   const axis = Math.sin(z * 0.006) * 40 + Math.sin(z * 0.0021 + 1) * 90;
   const wall = sstep(50, 380, Math.abs(x - axis));
-  // Broad massifs, then the spurs and gullies cut into them. Detail fades with distance: the far
-  // sheet's cells are too wide to carry it, and it would alias into needles.
+  // Broad massifs joined by long ridgelines: the noise is warped so ridges curve and meet as arêtes, and blended
+  // with a smoother field so two ridges crossing make a summit, not a needle. Detail fades with distance: the far
+  // sheet's cells are too wide to carry it, and it would alias into spikes.
   const farMix = sstep(200, 800, -z);
-  const massif = Math.pow(ridged(x * 0.0017 + 3, z * 0.0017, 5, 9), 1.15);
-  const spurs = (1 - farMix) * ridged(x * 0.011 + 5, z * 0.011, 4, 4) + farMix * ridged(x * 0.0042 + 5, z * 0.0042, 3, 4);
+  const wx = x + (fbm(x * 0.0011, z * 0.0011, 2, 31) - 0.5) * 520;
+  const wz = z + (fbm(x * 0.0011 + 9, z * 0.0011, 2, 32) - 0.5) * 520;
+  const ridge = ridged(wx * 0.0016 + 3, wz * 0.0016, 5, 9);
+  const massif = Math.pow(ridge * 0.78 + fbm(wx * 0.0012, wz * 0.0012, 3, 10) * 0.32, 1.25);
+  const spurs = (1 - farMix) * ridged(x * 0.011 + 5, z * 0.011, 4, 4) + farMix * 0.55 * ridged(wx * 0.0034 + 5, wz * 0.0034, 3, 4);
   const gully = (1 - farMix) * ridged(x * 0.04, z * 0.04 + 9, 3, 6);
   const relief = 30 + 560 * Math.pow(dist, 0.85) + 150 * wall;
-  let h = massif * relief * (0.5 + 0.4 * spurs + 0.12 * gully);
+  let h = massif * relief * (0.55 + 0.36 * spurs + 0.1 * gully);
   // The range behind the terrace: a long snow slope that climbs to a ridge.
   h += sstep(30, 170, -z) * (1 - sstep(170, 330, -z)) * 55 * (0.65 + 0.35 * fbm(x * 0.01, z * 0.01, 3, 12));
   // Broken crags across the middle ground, behind the terrace and along the valley's walls.
@@ -145,4 +149,16 @@ export function buildGrid(spec: GridSpec): { position: Float32Array; normal: Flo
     }
   }
   return { position, normal, index };
+}
+
+/** Heights only, on a grid of nx × nz points spanning `rect` (x0, z0, x1, z1), rows along x: for a world's sun grid. */
+export function sampleHeights(ground: GroundName, rect: [number, number, number, number], nx: number, nz: number): Float32Array {
+  const h = GROUNDS[ground];
+  const out = new Float32Array(nx * nz);
+  const [x0, z0, x1, z1] = rect;
+  for (let iz = 0; iz < nz; iz++) {
+    const z = z0 + ((z1 - z0) * iz) / (nz - 1);
+    for (let ix = 0; ix < nx; ix++) out[iz * nx + ix] = h(x0 + ((x1 - x0) * ix) / (nx - 1), z);
+  }
+  return out;
 }

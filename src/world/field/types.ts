@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import type { Species } from '../../types';
 import type { QualityTier } from '../quality';
+import type { Grade } from './gl/look';
 
 /**
  * What the stage tells a world every frame.
@@ -20,6 +21,12 @@ export interface FieldInput {
   pointerRaw: { x: number; y: number };
   /** Screen pixels per second of hand movement. */
   pointerSpeed: number;
+  /**
+   * The hand on the sun, −1 → 1: the mouse (smoothed, as `pointer`) plus what the visitor set with the light
+   * control or by dragging across the scene on a touch screen (on the lamp's spring). Worlds turn their sun by this,
+   * and their camera by `pointer`, so a finger turns the light without swinging the view.
+   */
+  light: { x: number; y: number };
   pointerDown: boolean;
   engage: number;
   enter: number;
@@ -36,6 +43,13 @@ export interface FieldWorld {
   camera: THREE.PerspectiveCamera;
   /** The colour the world clears to. */
   clear: string;
+  /**
+   * A world that carries a grade writes linear light and is finished by the stage's film (gl/look.ts): exposure,
+   * the homepage's tone curve, bloom, a grade. A world without one draws straight to the screen.
+   */
+  grade?: Grade;
+  /** Light scattered in the air (the forest's shafts): drawn by the film over the frame, given its depth. */
+  volume?: THREE.ShaderMaterial;
   update(input: FieldInput): void;
   resize(width: number, height: number, dpr: number): void;
   /** Step down: 1, then 2. The world drops its most expensive layers first. */

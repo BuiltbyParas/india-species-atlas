@@ -25,10 +25,38 @@ gsap.registerPlugin(ScrollTrigger);
  */
 ScrollTrigger.disable();
 let holders = 0;
+/*
+ * ScrollTrigger re-measures on window resize, not when the document itself
+ * changes height. The documentary's does: the 3D hero giving way to the flat
+ * one removes thousands of pixels above every later chapter, and lazily sized
+ * sections settle after first paint. Without a re-measure, Chapter 04's scrub
+ * runs from stale offsets — its map undrawn while pinned, then surfacing as a
+ * sliver over the closing statement. So while held, a change in document
+ * height (debounced) re-measures every trigger.
+ */
+let heightWatch: ResizeObserver | null = null;
+let lastHeight = 0;
+let refreshTimer = 0;
 export function holdScrollTrigger() {
-  if (holders++ === 0) ScrollTrigger.enable();
+  if (holders++ === 0) {
+    ScrollTrigger.enable();
+    lastHeight = document.documentElement.scrollHeight;
+    heightWatch = new ResizeObserver(() => {
+      const h = document.documentElement.scrollHeight;
+      if (Math.abs(h - lastHeight) < 2) return;
+      lastHeight = h;
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 160);
+    });
+    heightWatch.observe(document.body);
+  }
   return () => {
-    if (--holders === 0) ScrollTrigger.disable();
+    if (--holders === 0) {
+      heightWatch?.disconnect();
+      heightWatch = null;
+      window.clearTimeout(refreshTimer);
+      ScrollTrigger.disable();
+    }
   };
 }
 

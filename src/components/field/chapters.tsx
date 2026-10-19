@@ -4,9 +4,9 @@ import type { FieldStudy } from '../../content/fieldStudies';
 import { FIELD_STUDIES, firstSentence } from '../../content/fieldStudies';
 import type { Species } from '../../types';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
-import { STATUS_INFO } from '../../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../../data/statusInfo';
 import { THREAT_BY_ID } from '../../data/threats';
-import { formatDeg } from '../../geo/india';
+import { localityCoords } from '../../geo/india';
 import { useReducedMotion } from '../../motion/preferences';
 import { cn } from '../../utils/cn';
 import { FOOTAGE } from '../../content/footage';
@@ -93,7 +93,7 @@ function Status({ s }: { s: Species }) {
     <div className="fs-status">
       <StatusIndicator status={s.status} />
       <p className="fs-status-line">
-        <span style={{ color: info.colorVar }}>{s.statusFullName}</span>, IUCN Red List, assessed {s.statusAssessedYear}.
+        <span style={{ color: info.colorVar }}>{s.statusFullName}</span>, IUCN Red List, {redListYears(s)}.
       </p>
       {s.statusHistory?.map((h) => (
         <p key={h.year} className="fs-body">
@@ -154,9 +154,7 @@ function Localities({ s }: { s: Species }) {
       {s.distributionPoints.map((p) => (
         <li key={p.label}>
           <span>{p.label}</span>
-          <span className="tabular-nums">
-            {formatDeg(p.lat, 'lat')} {formatDeg(p.lng, 'lng')}
-          </span>
+          <span className="tabular-nums">{localityCoords(p)}</span>
         </li>
       ))}
     </ul>
@@ -267,7 +265,7 @@ function Bustard({ study, current, next, previous, onNext, onPrevious, onExit }:
     <>
       <Chapter i={0} {...c} align="right">
         <Lede>{s.summary}</Lede>
-        <Note>The grassland is drawn: an impression of the Thar, not a terrain model. The birds are the record&rsquo;s photograph, set into it.</Note>
+        <Note>The grassland and its evening light are drawn: an impression of the Thar, not a terrain model, at an hour chosen for the picture. The birds are the record&rsquo;s photograph, cut out and toned to that light.</Note>
       </Chapter>
       <Chapter i={1} {...c} hold>
         <Lede>{firstSentence(s.indianDistribution)}</Lede>
@@ -284,7 +282,7 @@ function Bustard({ study, current, next, previous, onNext, onPrevious, onExit }:
       </Chapter>
       <Chapter i={4} {...c} hold>
         <Status s={s} />
-        <Body>{sentenceWith(s, 'low hundreds') ?? s.description}</Body>
+        <Body>{sentenceWith(s, '130 ± 21') ?? s.description}</Body>
         <Threats s={s} />
         <RecordMap s={s} phase="threats" on={current === 4} />
       </Chapter>
@@ -311,7 +309,7 @@ function SnowLeopard({ study, current, next, previous, onNext, onPrevious, onExi
     <>
       <Chapter i={0} {...c} align="low">
         <Lede>{s.summary}</Lede>
-        <Note>The mountains are drawn, an impression of high Himalayan country and not a map of any valley. The leopard is a photograph.</Note>
+        <Note>The mountains and their first light are drawn, an impression of high Himalayan country and not a map of any valley; the hour is chosen. The leopard is the record&rsquo;s photograph, cut out with the ledge it stands on and toned to the terrace&rsquo;s shade.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{firstSentence(s.habitatNote)}</Lede>
@@ -357,7 +355,7 @@ function Dolphin({ study, current, next, previous, onNext, onPrevious, onExit }:
     <>
       <Chapter i={0} {...c} align="right">
         <Lede>{s.summary}</Lede>
-        <Note>The river, its banks and sandbars are drawn, an impression of a lowland river and not of any reach. The dolphin is the record’s photograph.</Note>
+        <Note>The river, its banks, sandbars and morning light are drawn, an impression of a lowland river and not of any reach; the hour is chosen. The dolphin is the record’s photograph, cut out and toned to that light.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
@@ -400,7 +398,7 @@ function Tiger({ study, current, next, previous, onNext, onPrevious, onExit }: C
   return (
     <>
       <Chapter i={0} {...c} align="low">
-        <Note>The forest is drawn, an impression of a central Indian forest and not of any one reserve. The tiger is the record’s photograph, cut out of its background.</Note>
+        <Note>The forest and the light through it are drawn, an impression of a central Indian forest and not of any one reserve; the hour is chosen. The tiger is the record’s photograph, cut out of its background and toned to that light.</Note>
       </Chapter>
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
@@ -457,7 +455,7 @@ function Rhino({ study, current, next, previous, onNext, onPrevious, onExit }: C
       <Chapter i={1} {...c} align="right">
         <Lede>{s.habitatNote}</Lede>
         <Body>{firstSentence(s.indianDistribution)}</Body>
-        <Note>The floodplain is drawn, an impression of a Brahmaputra floodplain and not of any one park. The rhinoceros is a photograph, cut out of its background.</Note>
+        <Note>The floodplain and its storm light are drawn, an impression of a Brahmaputra floodplain and not of any one park; the weather is chosen, not recorded. The rhinoceros is a photograph, cut out of its background and toned to that light.</Note>
       </Chapter>
       <Chapter i={2} {...c} hold>
         {concentration && <Lede>{concentration}</Lede>}

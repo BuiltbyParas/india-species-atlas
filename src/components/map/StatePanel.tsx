@@ -23,7 +23,7 @@ export function StatePanel({
             Selected state / UT
           </p>
           <h3 className="font-serif text-2xl font-light tracking-tight text-canvas">{state}</h3>
-          {state === 'Jammu and Kashmir' && <p className="text-xs text-canvas/55">Including Ladakh, as on India&rsquo;s political map</p>}
+          {state === 'Jammu and Kashmir' && <p className="text-xs text-canvas/70">Including Ladakh, as on India&rsquo;s political map</p>}
         </div>
         <button
           type="button"
@@ -55,7 +55,7 @@ export function StatePanel({
                 >
                   <span>
                     <span className="block text-sm font-medium text-canvas">{s.commonName}</span>
-                    <span className="block text-xs italic text-canvas/50">{s.scientificName}</span>
+                    <span className="block text-xs italic text-canvas/70">{s.scientificName}</span>
                   </span>
                   <StatusBadge status={s.status} size="sm" />
                 </button>

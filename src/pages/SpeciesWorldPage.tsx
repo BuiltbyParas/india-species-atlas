@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Species, ThreatId } from '../types';
 import { SPECIES, SPECIES_BY_ID } from '../data/species';
-import { STATUS_INFO } from '../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../data/statusInfo';
 import { HABITAT_LABELS, REGION_LABELS } from '../data/regions';
 import { PROGRAMME_BY_ID } from '../data/programmes';
-import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../geo/india';
+import { COORDS_WITHHELD, formatDeg, localityCoords, MAP_VIEWBOX, project, useIndiaGeo } from '../geo/india';
 import { GeoLine } from '../geo/line/GeoLine';
 import { bowedLeg, chain } from '../geo/line/paths';
 import { useReducedMotion } from '../motion/preferences';
@@ -85,7 +85,7 @@ function World({ species }: { species: Species }) {
   useEffect(() => {
     document.title = `${species.commonName} (${species.scientificName}) — India Species Atlas`;
     return () => {
-      document.title = 'India Species Atlas — Mapping Endangered Species & Conservation Status in India';
+      document.title = 'India Species Atlas — Mapping Threatened Species & Conservation Status in India';
     };
   }, [species]);
 
@@ -144,9 +144,7 @@ function World({ species }: { species: Species }) {
                 <dt>Anchor locality</dt>
                 <dd>
                   {anchor.label.split(',')[0]}
-                  <span className="block tabular-nums text-contour">
-                    {formatDeg(anchor.lat, 'lat')} {formatDeg(anchor.lng, 'lng')}
-                  </span>
+                  <span className="block tabular-nums text-contour">{localityCoords(anchor)}</span>
                 </dd>
               </div>
               <div>
@@ -161,7 +159,10 @@ function World({ species }: { species: Species }) {
               </div>
               <div>
                 <dt>Assessed</dt>
-                <dd className="tabular-nums">{species.statusAssessedYear}, IUCN Red List</dd>
+                <dd className="tabular-nums">
+                  {species.statusAssessedYear}, IUCN Red List
+                  {species.statusPublishedYear !== species.statusAssessedYear && ` (published ${species.statusPublishedYear})`}
+                </dd>
               </div>
             </dl>
           </div>
@@ -257,13 +258,16 @@ function useLocalityFlight(tableRef: React.RefObject<HTMLTableElement | null>, m
         io.disconnect();
         void fly();
       },
-      { rootMargin: '0px 0px -30% 0px' },
+      // On a phone the map is a band held over the top of the screen and the register is read in the lower half
+      // under it: waiting for the table to reach the upper 70% left a reader looking at empty ruled rows.
+      { rootMargin: window.matchMedia('(min-width: 1024px)').matches ? '0px 0px -30% 0px' : '0px 0px -8% 0px' },
     );
     let live = true;
-    // The map draws its points in as it arrives; wait until they are there to be lifted off.
+    // The map draws its points in as it arrives; wait until they are there to be lifted off — but not long, since the
+    // table stands empty while it waits (a reader who has arrived at the register should not be kept from it).
     const pointsDrawn = async () => {
       const start = performance.now();
-      while (live && performance.now() - start < 1400) {
+      while (live && performance.now() - start < 700) {
         const dot = mapRef.current?.querySelector('.sm-point:last-of-type .sm-point-dot');
         const r = dot?.getBoundingClientRect();
         if (r && r.width >= 4 && getComputedStyle(dot!.closest('.sm-point')!).opacity === '1') return;
@@ -383,8 +387,14 @@ function RangeChapter({
                   {p.label}
                   {p.note && <span className="block text-label text-canvas/45">{p.note}</span>}
                 </th>
-                <td>{formatDeg(p.lat, 'lat')}</td>
-                <td>{formatDeg(p.lng, 'lng')}</td>
+                {p.withholdCoordinates ? (
+                  <td colSpan={2}>{COORDS_WITHHELD}</td>
+                ) : (
+                  <>
+                    <td>{formatDeg(p.lat, 'lat')}</td>
+                    <td>{formatDeg(p.lng, 'lng')}</td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
@@ -442,7 +452,7 @@ function RecordChapter({ species }: { species: Species }) {
         </p>
         <p className="mt-2 text-body text-canvas/70">{status.definition}</p>
         <p className="mt-2 text-label text-canvas/45">
-          From the {species.statusAssessedYear} assessment. {species.endemicToIndia ? 'Endemic to India.' : ''}
+          From the Red List assessment cited ({redListYears(species)}). {species.endemicToIndia ? 'Endemic to India.' : ''}
         </p>
       </div>
       {history.length > 0 ? (
@@ -460,6 +470,26 @@ function RecordChapter({ species }: { species: Species }) {
           No earlier assessment is recorded in this atlas for the {species.commonName}; the Red List may hold ones not
           checked here.
         </p>
+      )}
+      {species.population && species.population.length > 0 && (
+        <div>
+          <p className="caps">Population figures</p>
+          <ul className="mt-3 space-y-4">
+            {species.population.map((e) => (
+              <li key={e.scope}>
+                <p className="font-serif text-lede font-light tabular-nums text-canvas/90">{e.value}</p>
+                <p className="mt-1 text-body text-canvas/75">
+                  {e.scope}, surveyed {e.surveyed}.
+                </p>
+                {e.method && <p className="mt-1 text-label text-canvas/62">{e.method}.</p>}
+                {e.caveat && <p className="mt-1 text-label text-canvas/62">{e.caveat}</p>}
+                <a href={e.source.url} target="_blank" rel="noreferrer" className="sw-source mt-1 inline-block text-label">
+                  {e.source.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       <div>
         <p className="caps">Sources</p>
@@ -519,8 +549,7 @@ function Onwards({ from, next, prev }: { from: Species; next: Species; prev: Spe
             <circle cx={b[0]} cy={b[1]} r="7" className="sw-stop is-next" />
           </svg>
           <p className="mt-3 text-right text-label tabular-nums text-canvas/45">
-            {formatDeg(from.distributionPoints[0].lat, 'lat')} {formatDeg(from.distributionPoints[0].lng, 'lng')} →{' '}
-            {formatDeg(next.distributionPoints[0].lat, 'lat')} {formatDeg(next.distributionPoints[0].lng, 'lng')}
+            {localityCoords(from.distributionPoints[0])} → {localityCoords(next.distributionPoints[0])}
           </p>
         </div>
       </div>

@@ -52,3 +52,25 @@ export function markFirstFrame() {
 export function whenFirstFrame(): Promise<void> {
   return firstFramePromise;
 }
+
+/**
+ * Where the hero's relief stands in its opening frame (the land's west and east
+ * edges at 22°N, in CSS pixels), so the loader's outline can settle onto it as
+ * the sheet lifts. Null until the live scene has reported, and where there is
+ * no live scene.
+ */
+export interface HeroFootprint {
+  wx: number;
+  wy: number;
+  ex: number;
+  ey: number;
+}
+let footprint: HeroFootprint | null = null;
+
+export function setHeroFootprint(at: HeroFootprint) {
+  footprint = at;
+}
+
+export function getHeroFootprint(): HeroFootprint | null {
+  return footprint;
+}

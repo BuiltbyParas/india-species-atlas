@@ -176,7 +176,7 @@ export function ConservationView({
 
   if (!sites.length) {
     return (
-      <div className="grid h-full place-items-center bg-forest-900 p-6 text-center text-sm text-canvas/55">
+      <div className="grid h-full place-items-center bg-forest-900 p-6 text-center text-sm text-canvas/70">
         <p className="max-w-sm">
           None of the species in the current selection is linked to a conservation programme, so there is
           nothing for this view to raise. Clear a filter, or switch back to the map.
@@ -204,7 +204,7 @@ export function ConservationView({
         />
 
         {!ready && (
-          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/45">
+          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/62">
             Raising the programme states…
           </p>
         )}
@@ -279,10 +279,10 @@ export function ConservationView({
                 <ProgrammeShape identity={current.identity} />
                 {current.programme.name}
               </p>
-              <p className="mt-0.5 text-xs text-canvas/55">{current.programme.authority}</p>
+              <p className="mt-0.5 text-xs text-canvas/70">{current.programme.authority}</p>
               <p className="mt-1.5 text-sm text-canvas/75">
                 {current.species.commonName}{' '}
-                <span className="italic text-canvas/50">({current.species.scientificName})</span> ·{' '}
+                <span className="italic text-canvas/70">({current.species.scientificName})</span> ·{' '}
                 <span style={{ color: 'var(--color-forest-300)' }}>{current.label}</span>
               </p>
             </div>
@@ -295,7 +295,7 @@ export function ConservationView({
             </button>
           </div>
         ) : (
-          <p className="text-sm text-canvas/55">
+          <p className="text-sm text-canvas/70">
             {sites.length} programme site{sites.length === 1 ? '' : 's'} across {raisedStates.size} state
             {raisedStates.size === 1 ? '' : 's'} and union territories. Click a marker to see the programme it
             stands for.

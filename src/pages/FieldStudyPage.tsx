@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { nextStudy as nextOf, previousStudy as previousOf, STUDY_BY_ID, type FieldStudy } from '../content/fieldStudies';
-import { formatDeg } from '../geo/india';
+import { nextStudy as nextOf, previousStudy as previousOf, STUDY_BY_ID, studyTone, type FieldStudy } from '../content/fieldStudies';
+import { localityCoords } from '../geo/india';
 import { onScroll } from '../interaction/scroll';
 import { useOpenMedia } from '../interaction/media';
 import { scrollToTarget } from '../motion/SmoothScroll';
@@ -11,6 +11,7 @@ import { useFieldStage } from '../components/field/useFieldStage';
 import { exitStudy, nextStudy, releaseOnArrival } from '../components/field/fieldNav';
 import { FlatGround } from '../components/field/FieldStudiesIndex';
 import { StudyProgress } from '../components/field/StudyProgress';
+import { FieldLight } from '../components/field/FieldLight';
 import { StudyChapters } from '../components/field/chapters';
 import { NotFoundPage } from './NotFoundPage';
 
@@ -57,6 +58,8 @@ function Study({ study }: { study: FieldStudy }) {
   const [current, setCurrent] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [arrived, setArrived] = useState(false);
+  /** The world is held over the page through the route change (entered from the index or the previous study). */
+  const [held, setHeld] = useState(false);
   const anchor = study.species.distributionPoints[0];
 
   useEffect(() => {
@@ -70,8 +73,16 @@ function Study({ study }: { study: FieldStudy }) {
     const via = stage.showing === study.id && stage.enterValue > 0.98;
     let release: (() => void) | undefined;
     if (via) {
-      if (stage.layerMode === 'front') release = releaseOnArrival(() => stage.release());
-      setArrived(true);
+      // Held over the page through the route change, the world covers the study's words and scrim: they arrive
+      // when it is handed back, not unseen beneath it (which printed them, and the scrim's shade, all at once).
+      if (stage.layerMode === 'front') {
+        setHeld(true);
+        release = releaseOnArrival(() => {
+          stage.release();
+          setHeld(false);
+          setArrived(true);
+        });
+      } else setArrived(true);
     } else {
       void stage
         .show(study.id, { cut: true, reset: { progress: 0, enter: 0, engage: 0, drag: 0 } })
@@ -114,8 +125,11 @@ function Study({ study }: { study: FieldStudy }) {
       while (i < boxes.length - 1 && y >= boxes[i + 1].top) i++;
       const local = Math.min(1, Math.max(0, (y - boxes[i].top) / boxes[i].height));
       const p = Math.min(1, (i + local) / N);
+      // Held over the page through the route change, the world stands where the move left it: the scroll read here is
+      // still the previous page's until the route settles, and following it swung the new study's camera through
+      // shots of its middle before its opening. Read again once the world is handed back (`held` below).
       // Reduced motion: each chapter is one composition, held at its middle.
-      stage?.set({ progress: reduced ? (i + 0.5) / N : p });
+      if (stage?.layerMode !== 'front') stage?.set({ progress: reduced ? (i + 0.5) / N : p });
       typeRef.current?.style.setProperty('--p', p.toFixed(4));
       if (i !== last) setCurrent((last = i));
       // Once the study's end is on screen the page below takes over: the furniture steps aside
@@ -135,7 +149,7 @@ function Study({ study }: { study: FieldStudy }) {
       ro.disconnect();
       off();
     };
-  }, [stage, reduced, N]);
+  }, [stage, reduced, N, held]);
 
   const exit = () => void exitStudy(navigate, study.id, () => setLeaving(true));
   const goNext = () => void nextStudy(navigate, study.id, next.id, () => setLeaving(true));
@@ -168,10 +182,11 @@ function Study({ study }: { study: FieldStudy }) {
       ref={articleRef}
       className={cn('fs-study', leaving && 'is-leaving', arrived && 'is-arrived')}
       data-study={study.id}
-      data-tone={study.id === 'great-indian-bustard' || study.id === 'snow-leopard' || study.id === 'ganges-river-dolphin' || study.id === 'indian-rhinoceros' ? 'light' : 'dark'}
+      data-tone={studyTone(study.id)}
       data-env={study.env}
       data-current={current}
       data-status={status}
+      data-held={held || undefined}
       style={{ ['--n' as string]: N } as CSSProperties}
       aria-labelledby="fs-title"
     >
@@ -210,9 +225,10 @@ function Study({ study }: { study: FieldStudy }) {
       <div className="fs-hud-layer">
         <div className="fs-hud">
           <StudyProgress study={study} current={current} onJump={jumpTo} />
+          {status === 'ready' && <FieldLight stage={stage} surface={articleRef} label={study.habitat.toLowerCase()} />}
           <p className="fs-hud-coord tabular-nums" aria-hidden="true">
             <span>{anchor.label.split(',')[0]}</span>
-            {formatDeg(anchor.lat, 'lat')} {formatDeg(anchor.lng, 'lng')}
+            {localityCoords(anchor)}
           </p>
           <button type="button" className="fs-exit" onClick={exit} data-cursor="Return" data-magnetic="0.2">
             <span className="fs-exit-rule" aria-hidden="true" />

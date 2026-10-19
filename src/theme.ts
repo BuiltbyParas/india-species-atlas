@@ -7,9 +7,9 @@
  * in `src/index.css`.
  */
 export const PALETTE = {
-  forest950: '#0e1411',
-  forest900: '#131a16',
-  forest800: '#1a231e',
+  forest950: '#0b0e0c',
+  forest900: '#111612',
+  forest800: '#171c17',
   forest700: '#27332c',
   forest600: '#3a4a40',
   forest500: '#50705e',
@@ -22,6 +22,13 @@ export const PALETTE = {
   clay: '#b07a52',
   contour: '#b07a52',
   river: '#7ea3b5',
+  // The home page's dark grounds, one per job (index.css `@theme`, documentation/HOMEPAGE_DARK_JOURNEY.md).
+  canopy: '#0c110d',
+  umber: '#140e0a',
+  riverbed: '#081215',
+  slate: '#0a0e10',
+  terracotta: '#b4673f',
+  amber: '#d6a25e',
 } as const;
 
 export const STATUS_HEX = {

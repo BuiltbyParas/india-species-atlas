@@ -43,9 +43,11 @@ export function useFieldStage(hostRef: RefObject<HTMLElement | null>, enabled = 
     const host = hostRef.current;
     if (!stage || !host) return;
     const offFail = stage.onFail(() => setStatus('flat'));
+    const offRecover = stage.onRecover(() => setStatus('ready'));
     const detach = stage.attach(host);
     return () => {
       offFail();
+      offRecover();
       detach();
     };
   }, [stage, hostRef]);

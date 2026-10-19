@@ -67,7 +67,7 @@ export function SpeciesCard({ species }: { species: Species }) {
             {species.commonName}
           </Link>
         </h3>
-        <p className="mt-0.5 text-sm italic text-canvas/55">{species.scientificName}</p>
+        <p className="mt-0.5 text-sm italic text-canvas/70">{species.scientificName}</p>
         <p className="mt-2.5 line-clamp-3 text-sm leading-relaxed text-canvas/70">{species.summary}</p>
         <div className="mt-3.5 flex flex-wrap gap-1.5">
           {species.regions.slice(0, 2).map((r) => (
@@ -93,7 +93,7 @@ export function SpeciesCard({ species }: { species: Species }) {
           <button
             type="button"
             onClick={() => open(species.id)}
-            className="relative z-20 text-xs text-canvas/55 underline-offset-4 hover:text-canvas hover:underline"
+            className="relative z-20 text-xs text-canvas/70 underline-offset-4 hover:text-canvas hover:underline"
           >
             Quick profile
           </button>

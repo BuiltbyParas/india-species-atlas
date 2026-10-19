@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { damp } from '../../interaction/spring';
+import { SPRINGS, Spring, damp } from '../../interaction/spring';
 import { onPointerMove, pointer, pointerVelocity } from '../../interaction/pointer';
 import { onScroll } from '../../interaction/scroll';
 import { prefersReducedMotion } from '../../motion/preferences';
@@ -8,6 +8,7 @@ import { FrameGovernor, pixelRatio, qualityTier } from '../quality';
 import { registerScene } from '../sceneRegistry';
 import { SPECIES_BY_ID } from '../../data/species';
 import { Compositor } from './gl/composite';
+import { FieldLook } from './gl/look';
 import { rgb } from './gl/color';
 import { sizeLines } from './gl/line';
 import { easeInOut } from './noise';
@@ -96,6 +97,10 @@ export class FieldStage {
   failReason = '';
   /** Mode changes and what caused them (newest last). */
   readonly modeLog: string[] = [];
+  /** How many times the stage came back after a too-slow verdict; bounded by MAX_RECOVERIES. */
+  recoveries = 0;
+  private recoverTimer = 0;
+  private recoverers = new Set<() => void>();
 
   private worlds = new Map<string, FieldWorld>();
   private used = new Map<string, number>();
@@ -105,17 +110,23 @@ export class FieldStage {
   private wanted: string | null = null;
   private transition: Transition | null = null;
   private compositor: Compositor | null = null;
+  /** The film the graded worlds are finished by; made with the first of them. */
+  private look: FieldLook | null = null;
   private warm: THREE.WebGLRenderTarget | null = null;
   private host: HTMLElement | null = null;
   private unregister: (() => void) | null = null;
   private mode: LayerMode = 'off';
   private active = true;
   private raf = 0;
+  private featherKey = '';
   private last = 0;
   private time = 0;
   private snapNext = new Set<string>();
   private targets = { engage: 0, progress: 0, drag: 0 };
   private values = { engage: 0, progress: 0, drag: 0, enter: 0, px: 0, py: 0 };
+  /** The light set by hand without a mouse (the light control, a drag on a touch screen): the homepage lamp's spring. */
+  private aim = new Spring(0, SPRINGS.lamp);
+  private aimMoving = false;
   private tween: Tween | null = null;
   private governor: FrameGovernor;
   /** The frame governor's rung: 0 is full quality, 2 the lowest before the stage gives up. */
@@ -141,7 +152,9 @@ export class FieldStage {
     this.dpr = pixelRatio(1.75);
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: qualityTier() !== 'low',
+      // Every world renders through the film, which multisamples its own target; the screen's buffer only
+      // receives the finished picture and needs none of its own.
+      antialias: false,
       alpha: false,
       powerPreference: 'high-performance',
     });
@@ -158,6 +171,7 @@ export class FieldStage {
         this.renderer.setPixelRatio(this.dpr);
         this.resize(true);
         for (const w of this.worlds.values()) w.setRung(rung);
+        this.look?.setRung(rung);
       },
       onTooSlow: () => this.fail('too-slow'),
     });
@@ -186,6 +200,8 @@ export class FieldStage {
   attach(host: HTMLElement): () => void {
     this.unregister?.();
     this.host = host;
+    // A new host has no feather written on it yet.
+    this.featherKey = '';
     this.unregister = registerScene('field', { setActive: (a) => this.setActive(a) }, host, '10% 0px');
     if (this.mode !== 'front') this.setMode('host');
     this.request();
@@ -193,6 +209,7 @@ export class FieldStage {
       if (this.host !== host) return;
       this.unregister?.();
       this.unregister = null;
+      delete host.dataset.feather;
       this.host = null;
       this.active = true;
       if (this.mode === 'host') this.setMode('off');
@@ -219,7 +236,7 @@ export class FieldStage {
 
   /** What a test needs to tell a stage that gave up from one that is merely idle. */
   get diagnostics() {
-    return { windows: this.governor.windows, raf: this.raf !== 0, worldCount: this.worlds.size };
+    return { recoveries: this.recoveries, windows: this.governor.windows, raf: this.raf !== 0, worldCount: this.worlds.size };
   }
 
   get layerMode(): LayerMode {
@@ -234,6 +251,10 @@ export class FieldStage {
     this.layer.dataset.mode = mode;
     if (mode === 'front') this.layer.style.transform = '';
     if (mode === 'off') this.stop();
+    // Back on its host (after a recovery, or a hand-over): placed against where the host is now, not where it was when the
+    // layer last moved. A host that is off screen asks for no frame, so without this the layer would come back with its stale
+    // position and last picture over whatever the reader has scrolled to.
+    if (mode === 'host') this.place();
   }
 
   private setActive(active: boolean) {
@@ -246,12 +267,53 @@ export class FieldStage {
     return () => this.failures.delete(fn);
   }
 
+  /** Called when the stage comes back after a too-slow verdict. */
+  onRecover(fn: () => void): () => void {
+    this.recoverers.add(fn);
+    return () => this.recoverers.delete(fn);
+  }
+
   private fail(reason: string) {
     if (this.failed) return;
     this.failed = true;
     this.failReason = reason;
     this.setMode('off');
     for (const f of this.failures) f();
+    if (reason === 'too-slow' && this.recoveries < MAX_RECOVERIES) this.scheduleRecovery();
+  }
+
+  /**
+   * A too-slow verdict is usually the machine (another app, a heavy tab), not the world. After a quiet spell, and
+   * only while the tab is visible, the stage tries again from its lowest rung. Twice at most per session, so a
+   * device that really cannot hold one world still ends on the photograph.
+   */
+  private scheduleRecovery() {
+    window.clearTimeout(this.recoverTimer);
+    this.recoverTimer = window.setTimeout(() => {
+      if (document.hidden) {
+        const wake = () => {
+          if (document.hidden) return;
+          document.removeEventListener('visibilitychange', wake);
+          this.recover();
+        };
+        document.addEventListener('visibilitychange', wake);
+        return;
+      }
+      this.recover();
+    }, RECOVERY_DELAY_MS * (this.recoveries + 1));
+  }
+
+  private recover() {
+    if (!this.failed || this.failReason !== 'too-slow') return;
+    this.recoveries++;
+    this.failed = false;
+    this.failReason = '';
+    this.governor.reset(10);
+    this.last = 0;
+    this.setMode(this.host ? 'host' : 'off');
+    this.request();
+    if (this.wanted && this.wanted !== this.current && !this.transition) void this.show(this.wanted, { cut: true });
+    for (const f of this.recoverers) f();
   }
 
   /* --------------------------------------------------------------- worlds */
@@ -286,8 +348,15 @@ export class FieldStage {
         // in an idle moment, instead of on the first frame it is shown.
         this.warm ??= new THREE.WebGLRenderTarget(16, 16);
         world.prerender?.(this.renderer);
-        this.renderer.setRenderTarget(this.warm);
-        this.renderer.render(world.scene, world.camera);
+        if (world.grade) {
+          const fresh = !this.look;
+          const look = this.filmFor();
+          if (fresh) look.warmUp();
+          look.render(world.scene, world.camera, world.grade, world.clear, this.warm, world.volume);
+        } else {
+          this.renderer.setRenderTarget(this.warm);
+          this.renderer.render(world.scene, world.camera);
+        }
         this.renderer.setRenderTarget(null);
         this.worlds.set(id, world);
         this.evict(id);
@@ -363,7 +432,12 @@ export class FieldStage {
     // A world that cannot be built (a chunk that failed to load, a shader error) is tried once more;
     // if it still fails the stage gives up, so the study shows its photograph rather than an empty layer.
     let world = await this.prepare(id);
+    // Asked for another world while this one was being built (the index passing study 01 on its way back to the one
+    // the reader left): that request stands. Acting on this one when its build finished put the wrong world under the
+    // index's words seconds later.
+    if (this.wanted !== id) return;
     if (!world && !this.failed) world = await this.prepare(id);
+    if (this.wanted !== id) return;
     if (!world && !this.failed) {
       console.error('[field] the world for', id, 'could not be built; falling back to the photograph');
       this.fail('build');
@@ -429,6 +503,22 @@ export class FieldStage {
     this.request();
   }
 
+  /**
+   * Turn the sun by hand, −1 → 1 (the light control, a drag across the scene on a touch screen, the keyboard). The
+   * sun swings there on the lamp's spring; with reduced motion, or `now`, it is simply there.
+   */
+  setLight(x: number, now = false) {
+    const v = Math.max(-1, Math.min(1, x));
+    if (now || prefersReducedMotion()) this.aim.jump(v);
+    else this.aim.target = v;
+    this.aimMoving = true;
+    this.request();
+  }
+
+  get lightAim(): number {
+    return this.aim.target;
+  }
+
   /** The preview → study move, 0 → 1 (and back), over `duration` ms. */
   enter(to: number, duration = 1100): Promise<void> {
     this.tween?.resolve();
@@ -469,6 +559,7 @@ export class FieldStage {
     this.canvas.style.width = `${w}px`;
     this.canvas.style.height = `${h}px`;
     this.compositor?.setSize(Math.round(w * this.mixScale), Math.round(h * this.mixScale));
+    this.look?.setSize(w * this.dpr, h * this.dpr);
     for (const world of this.worlds.values()) {
       world.resize(w, h, this.dpr);
       sizeLines(world.scene, w, h, this.dpr);
@@ -499,7 +590,35 @@ export class FieldStage {
     this.layer.style.visibility = '';
     this.layer.style.transform = `translate3d(0, ${r.top.toFixed(1)}px, 0)`;
     this.layer.style.height = `${Math.min(vh, r.height).toFixed(1)}px`;
+    this.feather(r, vh);
     return true;
+  }
+
+  /**
+   * Where a world arrives from, or leaves to, a different ground, it dissolves
+   * over the first stretch of its edge instead of cutting: the layer is masked
+   * by a feather that is as deep as the stretch of the screen the edge still
+   * has to cross, and gone once the world holds the screen. Written as custom
+   * properties the layer's mask reads (field.css); no mask while it is whole.
+   */
+  private feather(r: DOMRect, vh: number) {
+    const reduced = prefersReducedMotion();
+    const top = reduced ? 0 : Math.max(0, Math.min(r.top, vh * 0.9)) * 0.26;
+    const bottom = reduced ? 0 : Math.max(0, Math.min(vh - r.bottom, vh * 0.9)) * 0.26;
+    const key = `${Math.round(top)}|${Math.round(bottom)}`;
+    if (key === this.featherKey) return;
+    this.featherKey = key;
+    // The host carries the same feather, so the type's scrim over the world dissolves with it instead of printing a square edge.
+    for (const el of [this.layer, this.host]) {
+      if (!el) continue;
+      if (top <= 0.5 && bottom <= 0.5) {
+        delete el.dataset.feather;
+        continue;
+      }
+      el.dataset.feather = '';
+      el.style.setProperty('--feather-top', `${top.toFixed(0)}px`);
+      el.style.setProperty('--feather-bottom', `${bottom.toFixed(0)}px`);
+    }
   }
 
   private input(dt: number, override?: Transition['frozen'], snap = false): FieldInput {
@@ -511,6 +630,7 @@ export class FieldStage {
       pointer: { x: this.values.px, y: this.values.py },
       pointerRaw: { x: pointer.nx, y: -pointer.ny },
       pointerSpeed: vel.speed,
+      light: { x: Math.max(-1, Math.min(1, this.values.px + this.aim.value)), y: this.values.py },
       pointerDown: pointer.down,
       engage: v.engage,
       enter: v.enter,
@@ -526,9 +646,24 @@ export class FieldStage {
     if (!world) return;
     world.update(input);
     world.prerender?.(this.renderer);
+    if (world.grade) {
+      this.filmFor().render(world.scene, world.camera, world.grade, world.clear, target, world.volume);
+      return;
+    }
     this.renderer.setRenderTarget(target);
     this.renderer.setClearColor(world.clear, 1);
     this.renderer.render(world.scene, world.camera);
+  }
+
+  private filmFor(): FieldLook {
+    if (!this.look) {
+      // Four samples on the high tier, two on the balanced (an integrated GPU pays for every sample of a half-float target).
+      const tier = qualityTier();
+      this.look = new FieldLook(this.renderer, tier === 'high' ? 4 : tier === 'balanced' ? 2 : 0);
+      this.look.setSize(this.width * this.dpr, this.height * this.dpr);
+      if (this.governor.rung) this.look.setRung(this.governor.rung);
+    }
+    return this.look;
   }
 
   private frame(now: number) {
@@ -550,6 +685,7 @@ export class FieldStage {
     const py = inside && !reduced ? -pointer.ny : 0;
     v.px = damp(v.px, px, 2.6, dt);
     v.py = damp(v.py, py, 2.6, dt);
+    if (this.aimMoving) this.aimMoving = this.aim.step(dt);
     if (this.tween) {
       const k = Math.min(1, (now - this.tween.start) / this.tween.duration);
       v.enter = this.tween.from + (this.tween.to - this.tween.from) * k;
@@ -588,7 +724,8 @@ export class FieldStage {
       Math.abs(v.progress - t.progress) < 1e-4 &&
       Math.abs(v.drag - t.drag) < 1e-3 &&
       Math.abs(v.px - px) < 1e-3 &&
-      Math.abs(v.py - py) < 1e-3;
+      Math.abs(v.py - py) < 1e-3 &&
+      !this.aimMoving;
     if (reduced && settled) {
       this.last = 0;
       return;
@@ -607,6 +744,9 @@ const SWEEPS: Record<string, [number, number]> = {
   'indian-rhinoceros': [-1, 0.1],
 };
 
+const MAX_RECOVERIES = 2;
+const RECOVERY_DELAY_MS = 15000;
+
 /** How long each world took to build on the main thread (for the performance notes). */
 const buildMs: Record<string, number> = {};
 
@@ -623,6 +763,12 @@ export function getFieldStage(): FieldStage | null {
     return null;
   }
   return stage;
+}
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  // Development only: the stage itself, for measuring what each layer of a world costs (scene children, the film).
+  (window as unknown as { __fieldStage?: () => object | null }).__fieldStage = () =>
+    stage ? { worlds: (stage as unknown as { worlds: Map<string, FieldWorld> }).worlds, look: (stage as unknown as { look: FieldLook | null }).look } : null;
 }
 
 if (typeof window !== 'undefined') {

@@ -19,8 +19,9 @@ export interface SpringConfig {
 
 /**
  * The tunings. Damping ratios are near or above critical: the atlas settles,
- * it does not bounce. `release` is the one exception, a single small
- * overshoot when a pressed control lets go.
+ * it does not bounce. Two exceptions: `release`, a single small overshoot when
+ * a pressed control lets go, and `lamp`, the hero's light, which carries a
+ * little weight past where the hand stops (ζ ≈ 0.78, about 2 % over).
  */
 export const SPRINGS = {
   /** The reticle following the hand: close behind, never sloppy. */
@@ -35,6 +36,8 @@ export const SPRINGS = {
   parallax: { stiffness: 38, damping: 14 },
   /** A line changing shape. */
   line: { stiffness: 90, damping: 19 },
+  /** The hero's lamp swinging over the relief (radians): ω ≈ 6.5 rad/s, settled in about half a second. */
+  lamp: { stiffness: 42, damping: 10.1, precision: 0.0004 },
 } satisfies Record<string, SpringConfig>;
 
 const STEP = 1 / 240;

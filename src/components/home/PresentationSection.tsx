@@ -21,7 +21,7 @@ function CaptureCard() {
     >
       <p className="caps">India Species Atlas</p>
       <h3 className="mt-2 font-serif text-3xl font-light tracking-tight text-canvas sm:text-3xl">
-        Mapping Endangered Species &amp; Their Conservation Status in India
+        Mapping Threatened Species &amp; Their Conservation Status in India
       </h3>
 
       <div className="mt-6 grid grid-cols-3 gap-3 text-center">
@@ -96,7 +96,7 @@ function ShareCard() {
           <p className="w-44 p-6 text-xs text-ink">QR code unavailable — use the link below.</p>
         )}
       </div>
-      <p className="mt-3 max-w-[16rem] break-all text-xs text-canvas/55">{url || 'Deploy the site to generate a link'}</p>
+      <p className="mt-3 max-w-[16rem] break-all text-xs text-canvas/70">{url || 'Deploy the site to generate a link'}</p>
       <button
         type="button"
         onClick={copy}
@@ -105,7 +105,7 @@ function ShareCard() {
         {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
         {copied ? 'Copied' : 'Copy link'}
       </button>
-      <p className="mt-3 text-micro leading-snug text-canvas/45">
+      <p className="mt-3 text-micro leading-snug text-canvas/62">
         The QR code is generated from the live address in your browser, so it always points to wherever this
         atlas is deployed.
       </p>

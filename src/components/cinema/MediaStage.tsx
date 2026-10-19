@@ -311,7 +311,7 @@ function Film({ film, playing }: { film: FilmRequest; playing: boolean }) {
         className="media-picture"
         poster={film.poster}
         playsInline
-        preload="auto"
+        preload="metadata"
         muted={muted}
         onClick={toggle}
         onPlay={() => setPaused(false)}

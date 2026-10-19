@@ -84,6 +84,14 @@ export async function enterStudy(navigate: NavigateFunction, id: string, onLeave
   }
 }
 
+/**
+ * The study's words, scrim and furniture fade (`.fs-study.is-leaving`) before the world is lifted over the page:
+ * lifted at once, everything that shaded it vanished in one frame and the light jumped.
+ */
+function clearPage(): Promise<void> {
+  return prefersReducedMotion() ? Promise.resolve() : new Promise((r) => window.setTimeout(r, 450));
+}
+
 /** Out of a study, back to the index: the camera retreats to the preview. */
 export async function exitStudy(navigate: NavigateFunction, id: string, onLeave?: () => void) {
   if (busy) return;
@@ -92,6 +100,7 @@ export async function exitStudy(navigate: NavigateFunction, id: string, onLeave?
     const stage = await stageOrNull();
     onLeave?.();
     if (stage && stage.showing === id) {
+      await clearPage();
       stage.hold();
       await stage.enter(0, prefersReducedMotion() ? 0 : 1300);
     }
@@ -111,6 +120,7 @@ export async function nextStudy(navigate: NavigateFunction, from: string, to: st
     const stage = await stageOrNull();
     onLeave?.();
     if (stage) {
+      await clearPage();
       stage.hold();
       await stage.show(to, { duration: prefersReducedMotion() ? 0 : 1500, reset: { progress: 0, enter: 1, engage: 0, drag: 0 } });
     }

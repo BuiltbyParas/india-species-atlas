@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SPECIES } from '../../data/species';
 import { FEATURED } from '../../content/featured';
-import { formatDeg, loadIndiaGeo, MAP_VIEWBOX, project, SHEET_CENTRE, smoothPath, useIndiaGeo } from '../../geo/india';
-import { markIntroDone, whenFirstFrame } from '../../motion/intro';
+import { formatDeg, loadIndiaGeo, MAP_VIEWBOX, MAP_WIDTH, project, SHEET_CENTRE, smoothPath, useIndiaGeo } from '../../geo/india';
+import { getHeroFootprint, markIntroDone, whenFirstFrame } from '../../motion/intro';
 import { prefersReducedMotion } from '../../motion/preferences';
 import { lockScroll } from '../../motion/SmoothScroll';
 import { canRender3D } from '../../utils/canRender3D';
@@ -69,6 +69,9 @@ export function Loader({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<SVGSVGElement>(null);
+  /** Set once the outline has been given the hero relief's place to settle onto. */
+  const [settling, setSettling] = useState(false);
   const skipRef = useRef<() => void>(() => undefined);
 
   // The route: one continuous, gently smoothed stroke through the featured
@@ -145,6 +148,19 @@ export function Loader({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (!leaving) return;
+    // The outline travels to where the relief stands, so one map becomes the other rather than the sheet wiping one away.
+    const map = mapRef.current;
+    const foot = getHeroFootprint();
+    if (map && foot && foot.ex > foot.wx) {
+      const rect = map.getBoundingClientRect();
+      const [wsx, wsy] = project(68.2, 22);
+      const [esx] = project(97.2, 22);
+      const k = (foot.ex - foot.wx) / (esx - wsx) / (rect.width / MAP_WIDTH);
+      const tcx = foot.wx - wsx * k * (rect.width / MAP_WIDTH) + (rect.width * k) / 2;
+      const tcy = foot.wy - wsy * k * (rect.width / MAP_WIDTH) + (rect.height * k) / 2;
+      map.style.transform = `translate(-50%, -50%) translate(${(tcx - (rect.left + rect.width / 2)).toFixed(1)}px, ${(tcy - (rect.top + rect.height / 2)).toFixed(1)}px) scale(${k.toFixed(4)})`;
+      setSettling(true);
+    }
     try {
       sessionStorage.setItem(SEEN_KEY, '1');
     } catch {
@@ -169,7 +185,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
   return (
     <div
       ref={rootRef}
-      className={`loader ${leaving ? 'is-leaving' : ''}`}
+      className={`loader ${leaving ? 'is-leaving' : ''} ${settling ? 'is-settling' : ''}`}
       role="progressbar"
       aria-label="Preparing the atlas"
       aria-valuemin={0}
@@ -181,7 +197,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
         <span className="loader-cross" />
         <span className="loader-centre-label tabular-nums">
           {formatDeg(SHEET_CENTRE.lat, 'lat')} {formatDeg(SHEET_CENTRE.lng, 'lng')}
-          <span className="block text-canvas/40">middle of the sheet</span>
+          <span className="block text-canvas/62">middle of the sheet</span>
         </span>
       </div>
 
@@ -199,7 +215,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
         </div>
       )}
 
-      <svg className="loader-map" viewBox={MAP_VIEWBOX} aria-hidden="true">
+      <svg ref={mapRef} className="loader-map" viewBox={MAP_VIEWBOX} aria-hidden="true">
         {geo?.states.map((s, i) => (
           <GeoLine key={s.name} d={s.d} role="survey" className="loader-state" style={{ ['--i' as string]: i }} />
         ))}
@@ -213,7 +229,7 @@ export function Loader({ onDone }: { onDone: () => void }) {
         <p className="font-serif text-[clamp(1.6rem,2.6vw,2.4rem)] font-light leading-none tracking-tight text-canvas">
           India Species Atlas
         </p>
-        <p className="mt-3 max-w-[22rem] text-small text-canvas/50">
+        <p className="mt-3 max-w-[22rem] text-small text-canvas/70">
           {SPECIES.length} threatened species, drawn onto the map of the country they depend on.
         </p>
       </div>

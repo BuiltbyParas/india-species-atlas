@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Species } from '../../types';
 import { STATUS_INFO } from '../../data/statusInfo';
-import { formatDeg } from '../../geo/india';
+import { localityCoords } from '../../geo/india';
 import { PALETTE } from '../../theme';
 import { cn } from '../../utils/cn';
 import { photoSources } from '../../utils/photo';
@@ -52,8 +52,8 @@ function Placeholder({ species, className }: { species: Species; className?: str
             {species.commonName}
           </span>
           {a && (
-            <span className="mt-1 block text-micro tabular-nums text-canvas/45">
-              {formatDeg(a.lat, 'lat')} {formatDeg(a.lng, 'lng')}
+            <span className="mt-1 block text-micro tabular-nums text-canvas/62">
+              {localityCoords(a)}
             </span>
           )}
         </span>

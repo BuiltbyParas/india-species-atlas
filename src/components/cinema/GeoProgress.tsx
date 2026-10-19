@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Species } from '../../types';
-import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
+import { localityCoords, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { bowedLeg } from '../../geo/line/paths';
 import { useCurrentChapter } from '../../motion/chapters';
@@ -24,7 +24,8 @@ import { onScroll as subscribeScroll } from '../../interaction/scroll';
  * top of the next. The finale is the last stop, so the closing leg returns to
  * the Thar as the ending arrives. The map steps aside once the footer comes
  * up, and once the finale's own map arrives, so it never sits on top of
- * either.
+ * either — nor over a chapter that marks itself `data-geo-quiet` because it
+ * draws the whole country itself (Chapter 04).
  *
  * Driven from one RAF-throttled scroll handler that writes `--draw` on each
  * leg and text into the readout; React is touched only when the map shows or
@@ -53,6 +54,8 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
   useEffect(() => {
     let tops: number[] = [];
     let footerTop = Infinity;
+    /** Spans of chapters that carry a national map of their own, over which this one would only repeat it. */
+    let quiet: Array<[number, number]> = [];
     let raf = 0;
     let wasShown: boolean | null = null;
     let lastStop = -2;
@@ -62,6 +65,10 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
       tops = nodes.map((n) => n.getBoundingClientRect().top + window.scrollY);
       const footer = document.querySelector<HTMLElement>('.site-footer');
       footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : Infinity;
+      quiet = [...document.querySelectorAll<HTMLElement>('[data-geo-quiet]')].map((n) => {
+        const r = n.getBoundingClientRect();
+        return [r.top + window.scrollY, r.bottom + window.scrollY];
+      });
     };
     const update = () => {
       raf = 0;
@@ -71,7 +78,11 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
       // own map takes over; never over the footer.
       const end = tops[tops.length - 1] ?? Infinity;
       const next =
-        tops.length > 0 && y > tops[0] - window.innerHeight * 0.4 && y < end + window.innerHeight * 0.2 && bottom < footerTop + 40;
+        tops.length > 0 &&
+        y > tops[0] - window.innerHeight * 0.4 &&
+        y < end + window.innerHeight * 0.2 &&
+        bottom < footerTop + 40 &&
+        !quiet.some(([a, b]) => bottom > a + window.innerHeight * 0.25 && window.scrollY < b - window.innerHeight * 0.25);
       // Only touch React when visibility actually flips, not on every frame.
       if (next !== wasShown) {
         wasShown = next;
@@ -98,7 +109,7 @@ export function GeoProgress({ stops }: { stops: Species[] }) {
         lastStop = reached;
         const p = anchors[reached];
         placeRef.current.textContent = p.label.split(',')[0];
-        coordRef.current.textContent = `${formatDeg(p.lat, 'lat')} ${formatDeg(p.lng, 'lng')}`;
+        coordRef.current.textContent = localityCoords(p);
       }
     };
     const onScroll = () => {

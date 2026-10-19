@@ -27,7 +27,8 @@ export function ModeSwitch({
       <div
         role="tablist"
         aria-label="Map mode"
-        className="inline-flex rounded-xs border border-canvas/15 p-1"
+        // The three tabs share the row and wrap onto a second only on the narrowest phones, never past the column.
+        className="flex max-w-full flex-wrap rounded-xs border border-canvas/15 p-1 sm:inline-flex"
       >
         {MODES.map((m) => {
           const Icon = m.icon;
@@ -41,7 +42,7 @@ export function ModeSwitch({
               type="button"
               onClick={() => onChange(m.id)}
               className={cn(
-                'inline-flex min-h-11 items-center gap-1.5 rounded-xs px-3 py-1.5 text-sm font-medium transition sm:min-h-0',
+                'inline-flex min-h-11 flex-auto items-center justify-center gap-1.5 rounded-xs px-3 py-1.5 text-sm font-medium transition sm:min-h-0 sm:flex-none',
                 active ? 'bg-canvas text-ink' : 'text-canvas/65 hover:text-canvas',
               )}
             >
@@ -51,7 +52,7 @@ export function ModeSwitch({
           );
         })}
       </div>
-      <p className="mt-1 text-xs text-canvas/50">{MODES.find((m) => m.id === mode)?.hint}</p>
+      <p className="mt-1 text-xs text-canvas/70">{MODES.find((m) => m.id === mode)?.hint}</p>
     </div>
   );
 }

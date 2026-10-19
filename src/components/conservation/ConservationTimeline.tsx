@@ -55,7 +55,8 @@ export function ConservationTimeline() {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-describedby="timeline-summary"
-            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-forest-700 accent-forest-400"
+            aria-valuetext={`${year}: ${listedSpecies} species with a dated listing, ${programmes} programmes begun`}
+            className="range-input min-w-0 flex-1"
           />
           <output htmlFor="timeline-year" className="w-16 shrink-0 text-right font-mono text-xl text-canvas">
             {year}
@@ -125,7 +126,7 @@ export function ConservationTimeline() {
       </ol>
 
       {hidden > 0 && (
-        <p className="mt-3 text-sm text-canvas/55" aria-live="polite">
+        <p className="mt-3 text-sm text-canvas/70" aria-live="polite">
           {hidden} later event{hidden === 1 ? '' : 's'} {hidden === 1 ? 'is' : 'are'} not shown. Move the
           slider to {lastYear} for the whole record.
         </p>

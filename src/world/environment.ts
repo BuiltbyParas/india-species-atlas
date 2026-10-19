@@ -1,5 +1,6 @@
 import { emit, on } from '../interaction/events';
 import { onScroll } from '../interaction/scroll';
+import { excuseFrames } from './quality';
 
 /**
  * The atmosphere the reader is standing in.
@@ -21,9 +22,10 @@ import { onScroll } from '../interaction/scroll';
  * An overlay that takes the screen (the film) holds an environment over
  * whatever the page says (`holdEnvironment`), and gives it back on release.
  *
- * Today the environments drive the instrument's line and accent, the running
- * head's rule and the film; the home page's grounds are left as they are until
- * its recomposition is decided (documentation/HOMEPAGE_CREATIVE_DECONSTRUCTION.md §4, §16).
+ * The environments drive the instrument's line and accent, the running head's
+ * ink and veil, and the film. The grounds themselves are painted by the
+ * sections (`data-ground`, index.css); on the home page the two move together
+ * through one night, a different dark for each job (documentation/HOMEPAGE_DARK_JOURNEY.md).
  */
 export type Environment =
   | 'calibration'
@@ -35,11 +37,18 @@ export type Environment =
   | 'floodplain'
   | 'data'
   | 'cinema'
-  | 'final';
+  | 'final'
+  // The home page's second half, one dark per job: the selection, the pressures, the response, what remains.
+  | 'canopy'
+  | 'umber'
+  | 'riverbed'
+  | 'slate';
 
 let page: Environment = 'atlas';
 let held: Environment | null = null;
 let published: Environment | null = null;
+/** The environment of whatever lies under the fixed header, which can lag or lead the middle of the screen. */
+let under: Environment = 'atlas';
 let installed = false;
 let sections: HTMLElement[] = [];
 let rescanQueued = false;
@@ -47,11 +56,17 @@ let timer = 0;
 let lastCheck = 0;
 /** At most this often while scrolling, plus once when the scroll stops. */
 const CHECK_MS = 120;
+/** Where the fixed header's lower edge sits, px from the top. */
+const HEADER_LINE = 48;
 
 function publish() {
   const next = held ?? page;
+  const beneath = held ?? under;
+  if (beneath !== document.documentElement.dataset.under) document.documentElement.dataset.under = beneath;
   if (next === published) return;
   published = next;
+  // Every element inherits the tokens: the next frame restyles the whole page, which no scene should be judged by.
+  excuseFrames(400);
   document.documentElement.dataset.env = next;
   emit('environment:change', { env: next });
 }
@@ -74,10 +89,18 @@ function check() {
     if (!best || best.contains(el)) best = el;
   }
   const env = best?.dataset.env as Environment | undefined;
-  if (env && env !== page) {
-    page = env;
-    publish();
+  // The header is fixed to the top edge: its ink and veil follow the ground behind it, not the one at mid-screen.
+  let beneath: HTMLElement | null = null;
+  for (const el of sections) {
+    const r = el.getBoundingClientRect();
+    if (r.top > HEADER_LINE || r.bottom < HEADER_LINE) continue;
+    if (!beneath || beneath.contains(el)) beneath = el;
   }
+  const underEnv = (beneath?.dataset.env as Environment | undefined) ?? 'atlas';
+  const changed = (env && env !== page) || underEnv !== under;
+  if (env && env !== page) page = env;
+  under = underEnv;
+  if (changed) publish();
 }
 
 function queueCheck() {
@@ -111,6 +134,7 @@ export function installEnvironments() {
   on('navigation:end', () => {
     // A page without declared sections is on the atlas sheet.
     page = 'atlas';
+    under = 'atlas';
     publish();
     queueRescan();
   });

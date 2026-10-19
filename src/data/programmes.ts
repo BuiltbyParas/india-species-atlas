@@ -1,4 +1,5 @@
 import type { ConservationProgramme } from '../types';
+import { REPORTS } from './sources';
 
 /**
  * Government and partner conservation programmes.
@@ -26,13 +27,8 @@ export const PROGRAMMES: ConservationProgramme[] = [
     description:
       'A centrally sponsored scheme providing financial and technical support to elephant-range states for the protection of elephants, their habitats and migratory corridors, and for managing human–elephant conflict. It also designates Elephant Reserves.',
     speciesIds: ['asian-elephant'],
-    sources: [
-      {
-        label: 'Project Elephant — PIB release',
-        url: 'https://pib.gov.in/PressReleaseIframePage.aspx?PRID=1884356',
-        publisher: 'Press Information Bureau, Government of India',
-      },
-    ],
+    // The release cited here before (PRID 1884356) was an unrelated Ministry of Steel notice.
+    sources: [REPORTS.projectElephant],
   },
   {
     id: 'project-dolphin',
@@ -129,7 +125,7 @@ export const PROGRAMMES: ConservationProgramme[] = [
     speciesIds: ['gharial'],
     sources: [
       {
-        label: 'Gharial conservation research',
+        label: 'Wildlife Institute of India (home page)',
         url: 'https://wii.gov.in/',
         publisher: 'Wildlife Institute of India',
       },
@@ -155,14 +151,15 @@ export const PROGRAMMES: ConservationProgramme[] = [
     id: 'project-nilgiri-tahr',
     name: 'Project Nilgiri Tahr',
     authority: 'Tamil Nadu Forest Department',
-    startedYear: 2023,
+    startedYear: 2022,
     description:
-      'A state programme launched by Tamil Nadu in 2023 to conserve the Nilgiri Tahr through population and habitat surveys, reintroduction planning, disease monitoring, and restoration of shola-grassland habitat in the Western Ghats.',
+      'A state programme ordered by Tamil Nadu on 28 December 2022, for 2022–27 at a cost of ₹25.14 crore, to conserve the Nilgiri Tahr through population and habitat surveys, reintroduction planning, disease monitoring, and restoration of shola-grassland habitat in the Western Ghats.',
     speciesIds: ['nilgiri-tahr'],
     sources: [
+      REPORTS.tahrProject,
       {
         label: 'Project Nilgiri Tahr — Tamil Nadu',
-        url: 'https://www.forests.tn.gov.in/',
+        url: 'https://tnprojectnilgiritahr.com/',
         publisher: 'Tamil Nadu Forest Department',
       },
     ],

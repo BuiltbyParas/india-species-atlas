@@ -23,6 +23,25 @@
   contain: strict;
   will-change: transform;
 }
+.field-layer[data-feather] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+}
+.field-layer[data-mode='front'][data-feather] {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* On the index the whole stage — its world's type as well as its scrim — takes the world's feather, so a study's
+   name never outlives its world at the section's edge and prints over the next chapter. */
+.fs-index-stage[data-feather] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+}
+/* The scrim and the flat ground above the world take the world's feather (written on the host), so no square edge prints over it. */
+[data-feather]:not(.fs-index-stage) > :is(.fs-scrim, .fs-flat) {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--feather-top, 0px), #000 calc(100% - var(--feather-bottom, 0px)), transparent 100%);
+}
 .field-layer[data-mode='off'] {
   display: none;
 }
@@ -51,74 +70,52 @@
   --fs-scrim: rgba(238, 224, 198, 0.66);
 }
 [data-study='great-indian-bustard'] {
-  --fs-line: #7a3f1d;
-  --fs-ground: #e6d4b2;
+  --fs-line: #d9a26a;
+  --fs-ground: #1a1418;
+}
+[data-tone='dark'][data-study='great-indian-bustard'] {
+  --fs-scrim: rgba(18, 11, 12, 0.58);
 }
 [data-study='snow-leopard'] {
-  --fs-line: #3d5a73;
-  --fs-ground: #d4e1ee;
+  --fs-line: #a9c6d3;
+  --fs-ground: #0f1a2c;
 }
-[data-tone='light'][data-study='snow-leopard'] {
-  --fs-ink: #14222e;
-  --fs-muted: rgba(20, 34, 46, 0.74);
-  --fs-faint: rgba(20, 34, 46, 0.7);
-  --fs-scrim: rgba(226, 236, 245, 0.72);
+[data-tone='dark'][data-study='snow-leopard'] {
+  --fs-scrim: rgba(7, 12, 24, 0.6);
 }
 [data-study='ganges-river-dolphin'] {
-  --fs-line: #4a6670;
-  --fs-ground: #d9dccb;
+  --fs-line: #9fb6c2;
+  --fs-ground: #151b20;
 }
-[data-tone='light'][data-study='ganges-river-dolphin'] {
-  --fs-ink: #16221f;
-  --fs-muted: rgba(22, 34, 31, 0.76);
-  --fs-faint: rgba(22, 34, 31, 0.72);
-  --fs-scrim: rgba(226, 230, 218, 0.74);
+[data-tone='dark'][data-study='ganges-river-dolphin'] {
+  --fs-scrim: rgba(10, 14, 17, 0.58);
+}
+/* The river faces a low sun through morning haze, and the haze's forward scatter (not bloom) takes its whole sky
+   close to white, where the chapters' words stand. A graduated filter, as a photographer would set over that sky:
+   darkest at the top, eased off by the far bank, nothing over the water. The sun stays the brightest thing. */
+[data-study='ganges-river-dolphin'] .fs-scrim {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 17, 0.62) 0%, rgba(10, 14, 17, 0.5) 30%, rgba(10, 14, 17, 0.22) 50%, transparent 64%),
+    linear-gradient(90deg, var(--fs-scrim) 0%, transparent 46%),
+    linear-gradient(0deg, var(--fs-scrim) 0%, transparent 34%);
+}
+@media (max-width: 900px) {
+  [data-study='ganges-river-dolphin'] .fs-scrim {
+    background:
+      linear-gradient(180deg, rgba(10, 14, 17, 0.62) 0%, rgba(10, 14, 17, 0.5) 30%, rgba(10, 14, 17, 0.22) 50%, transparent 64%),
+      linear-gradient(0deg, var(--fs-scrim) 0%, transparent 70%);
+  }
 }
 [data-study='bengal-tiger'] {
   --fs-line: #b9d3c1;
-  --fs-ground: #4a5a3c;
+  --fs-ground: #121a12;
 }
 [data-study='indian-rhinoceros'] {
-  --fs-line: #6d5a3a;
-  --fs-ground: #cfd2b4;
+  --fs-line: #d6b27a;
+  --fs-ground: #141a20;
 }
-[data-tone='light'][data-study='indian-rhinoceros'] {
-  --fs-ink: #1f2417;
-  --fs-muted: rgba(31, 36, 23, 0.76);
-  --fs-faint: rgba(31, 36, 23, 0.72);
-  --fs-scrim: rgba(222, 224, 200, 0.74);
-}
-
-/*
-  The header floats over a light world: its type turns to ink and its veil to the world's own
-  ground, never the forest-black bar. The Thar, the Himalaya, the river and the floodplain are
-  light; the forest keeps the dark veil.
-*/
-:root[data-env='thar'] .site-header[data-open='false'] {
-  --header-ink: #2a1b10;
-  --header-ground: #eadbbf;
-}
-:root[data-env='himalaya'] .site-header[data-open='false'] {
-  --header-ink: #14222e;
-  --header-ground: #dfe8f1;
-}
-:root[data-env='river'] .site-header[data-open='false'] {
-  --header-ink: #16221f;
-  --header-ground: #dde0cf;
-}
-:root[data-env='floodplain'] .site-header[data-open='false'] {
-  --header-ink: #1f2417;
-  --header-ground: #d8dabe;
-}
-:root:is([data-env='thar'], [data-env='himalaya'], [data-env='river'], [data-env='floodplain']) .site-header[data-open='false'] {
-  --color-canvas: var(--header-ink);
-}
-:root:is([data-env='thar'], [data-env='himalaya'], [data-env='river'], [data-env='floodplain']) .site-header[data-open='false']::before {
-  background: linear-gradient(to bottom, var(--header-ground) 0%, color-mix(in srgb, var(--header-ground) 85%, transparent) 50%, transparent 100%);
-}
-:root[data-env='thar'] .geo-progress {
-  --color-canvas: #2a1b10;
-  --color-forest-950: #e6d4b2;
+[data-tone='dark'][data-study='indian-rhinoceros'] {
+  --fs-scrim: rgba(10, 13, 17, 0.6);
 }
 
 /* ---------------------------------------------------------- shared */
@@ -129,7 +126,30 @@
   pointer-events: none;
   background: linear-gradient(90deg, var(--fs-scrim) 0%, transparent 46%), linear-gradient(0deg, var(--fs-scrim) 0%, transparent 34%);
   opacity: 0.85;
-  transition: background 0.9s var(--ease-out-expo);
+  transition:
+    background 0.9s var(--ease-out-expo),
+    opacity 1.2s var(--ease-cinema);
+}
+/* Going into a study the world is lifted over the page (stage.hold), above every scrim. The index's scrim leaves
+   while the camera goes in, and a study's arrives with its words once the world is handed back, so the light does
+   not jump at either hand-over. */
+/* On a phone the sky fills the top of the frame, and the index's head sits in it: a short shade from the top, in the
+   world's own scrim, keeps "Featured field studies" and the count off a bright sun. */
+@media (max-width: 899px) {
+  .fs-index .fs-scrim {
+    background:
+      linear-gradient(180deg, var(--fs-scrim) 0%, transparent 24%),
+      linear-gradient(90deg, var(--fs-scrim) 0%, transparent 46%),
+      linear-gradient(0deg, var(--fs-scrim) 0%, transparent 34%);
+  }
+}
+.fs-index.is-leaving .fs-scrim,
+.fs-index[data-held] .fs-scrim,
+.fs-study:not(.is-arrived) .fs-scrim {
+  opacity: 0;
+}
+.fs-index.is-leaving .fs-scrim {
+  transition-duration: 1.1s;
 }
 .fs-flat {
   position: absolute;
@@ -190,7 +210,6 @@
 
 .fs-index {
   position: relative;
-  height: calc((var(--n) + 1) * 100svh);
 }
 .fs-index-stage {
   position: sticky;
@@ -201,12 +220,40 @@
   color: var(--fs-ink);
   transition: color 0.9s var(--ease-out-expo);
 }
+/*
+  Chapter 02 warms its foot as it hands over (`.chapter-intro[data-dawn]::after`, opacity ≈ 0.9 × the
+  next section's --enter + 0.05 at the boundary). This continues the same light downwards from the
+  boundary, at the same strength, under the world's feathered top edge, so the two grounds join.
+*/
+.fs-dawn {
+  --enter: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 45svh;
+  z-index: 0;
+  pointer-events: none;
+  /* Edge to edge, as Chapter 02's own foot is (a border-image outset: painted, never scrollable). */
+  border-image: linear-gradient(to bottom, rgb(226 204 168 / 0.2), rgb(226 204 168 / 0.06) 40%, transparent) fill 0 / 0 / 0 100vw;
+  opacity: clamp(0, var(--enter) * 0.9 + 0.05, 1);
+}
+/* Each study's stretch: its arrival (the world and its name), then its article, read over the held world
+   (reading.css). The runway lies over the stage's first screen and above it, letting the hand through to the world
+   wherever there is no text. */
 .fs-index-runway {
+  position: relative;
+  z-index: 3;
   margin-top: -100svh;
-  padding-bottom: 100svh;
+  padding-bottom: 18svh;
+  pointer-events: none;
 }
 .fs-index-panel {
-  height: 100svh;
+  height: calc((var(--arrival, 1) + var(--lead, 0)) * 100svh);
+}
+/* Under the survey plate's last screen the first world is still arriving through the dissolve: its arrival runs on. */
+.grounds.is-pinned + .fs-index .fs-index-stretch:first-child .fs-index-panel {
+  --lead: 0.6;
 }
 
 .fs-index-head {
@@ -526,7 +573,13 @@
     inset: -2.5rem -3rem;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(closest-side, var(--fs-scrim) 55%, transparent);
+    /* Fades long before its edge, so over a bright sky it steadies the list without printing as a shape. */
+    background: radial-gradient(closest-side, var(--fs-scrim) 22%, color-mix(in srgb, var(--fs-scrim) 48%, transparent) 64%, transparent);
+  }
+  /* The Thar's low sun stands right behind the list: a deeper veil there, still the evening's own dark. */
+  [data-study='great-indian-bustard'] .fs-index-list::before {
+    inset: -3rem -3.5rem;
+    background: radial-gradient(closest-side, rgb(24 14 16 / 0.7) 34%, rgb(24 14 16 / 0.38) 68%, transparent);
   }
 }
 .fs-index-list ol {
@@ -583,7 +636,9 @@
 }
 
 .fs-index.is-leaving .fs-index-list,
-.fs-index.is-leaving .fs-index-head {
+.fs-index.is-leaving .fs-index-head,
+.fs-index[data-held] .fs-index-list,
+.fs-index[data-held] .fs-index-head {
   opacity: 0;
   transition: opacity 0.4s;
 }
@@ -805,6 +860,93 @@
   color: var(--fs-ink);
   margin-bottom: 0.2rem;
 }
+/* The light, by hand (FieldLight.tsx): a short line with the sun on it, over the anchor's coordinates. A sideways
+   drag across the study turns it too, so the study keeps vertical panning and pinch-zoom for the page and hands the
+   sideways part of a touch to the light. */
+.fs-study {
+  touch-action: pan-y pinch-zoom;
+}
+.fs-light {
+  right: clamp(1.25rem, 3.4vw, 3rem);
+  bottom: calc(clamp(1.25rem, 3.6svh, 2.4rem) + 5.2rem);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.fs-light-label {
+  font-size: var(--text-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fs-muted);
+}
+.fs-light-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 5.5rem;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: pan-y pinch-zoom;
+}
+.fs-light-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--fs-line);
+}
+.fs-light-range::-moz-range-track {
+  height: 1px;
+  background: var(--fs-line);
+}
+.fs-light-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fs-ink);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fs-ink) 16%, transparent);
+}
+.fs-light-range::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fs-ink);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fs-ink) 16%, transparent);
+}
+.fs-light-range:focus-visible {
+  outline: 1px solid var(--fs-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+/* The hint stands in the label's place, on the control's own row, so it never prints over the study's type. */
+.fs-light-label {
+  transition: opacity 0.5s;
+}
+.fs-light-hint {
+  position: absolute;
+  right: calc(5.5rem + 0.75rem);
+  top: 50%;
+  white-space: nowrap;
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  color: var(--fs-ink);
+  opacity: 0;
+  translate: 0.4rem -50%;
+  transition:
+    opacity 0.6s,
+    translate 0.6s var(--ease-out-expo);
+  pointer-events: none;
+}
+.fs-light[data-hint] .fs-light-hint {
+  opacity: 0.9;
+  translate: 0 -50%;
+}
+.fs-light[data-hint] .fs-light-label {
+  opacity: 0;
+}
+
 .fs-exit {
   right: clamp(1.25rem, 3.4vw, 3rem);
   bottom: clamp(1.25rem, 3.6svh, 2.4rem);
@@ -846,7 +988,16 @@
   opacity: 0;
   visibility: hidden;
 }
-.fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud) {
+/* Its foot and corner plate shade the world too: while the world is held over the page they wait, and come up with the
+   study's words rather than all at once at the hand-back. */
+.fs-study[data-held] .fs-hud-layer {
+  opacity: 0;
+}
+/* Arriving (and coming back up from the study's end) it eases in, as the scrim does; it still steps aside quickly. */
+.fs-study:not([data-ended]) .fs-hud-layer {
+  transition: opacity 1.2s var(--ease-cinema);
+}
+.fs-study.is-leaving :is(.fs-ch-inner, .fs-type, .fs-hud, .fs-scrim, .fs-hud-layer) {
   opacity: 0 !important;
   transition: opacity 0.45s;
 }
@@ -869,6 +1020,12 @@
   width: min(31rem, 100%);
   pointer-events: auto;
   isolation: isolate;
+  /* Where a chapter faces the low sun (the river's glare, the grassland's range, the forest's shafts on a phone) the
+     words keep a little of the world's own dark close round each letter: soft enough to read as air rather than an
+     outline, and nothing at all where the ground behind them is already dark. */
+  text-shadow:
+    0 0 0.32em var(--fs-scrim),
+    0 0 1.4em var(--fs-scrim);
   opacity: 0;
   translate: 0 1.6rem;
   /* Leaving is quick, so two chapters never read over each other. */
@@ -888,8 +1045,14 @@
     background: radial-gradient(closest-side, var(--fs-scrim) 50%, transparent);
   }
   [data-tone='dark'] .fs-ch-inner::before {
-    /* A dark world can light its subject right under the words (the forest's lantern): veil harder. */
-    background: radial-gradient(closest-side, rgba(6, 9, 8, 0.8) 50%, transparent);
+    /* Every world is lit by one low sun and keeps its words over its darker ground; the veil only steadies them,
+       in the world's own dark, and fades out long before its edge so it never prints as a shape. */
+    background: radial-gradient(closest-side, var(--fs-scrim) 18%, color-mix(in srgb, var(--fs-scrim) 45%, transparent) 62%, transparent);
+  }
+  /* The river's words stand in the glare of the far bank's water as well as its sky: a fuller veil there, still
+     fading out well before its edge. */
+  [data-tone='dark'][data-study='ganges-river-dolphin'] .fs-ch-inner::before {
+    background: radial-gradient(closest-side, var(--fs-scrim) 40%, color-mix(in srgb, var(--fs-scrim) 55%, transparent) 70%, transparent);
   }
 }
 .fs-ch.is-current .fs-ch-inner {
@@ -951,6 +1114,10 @@
   /* Only the arrival waits for the title; leaving the first chapter is as quick as any. */
   transition-delay: 0.9s;
 }
+/* Before the arrival (the world still held over the page, or not yet cut in) the first chapter waits with the title. */
+.fs-study:not(.is-arrived) .fs-ch:first-child .fs-ch-inner {
+  opacity: 0;
+}
 .fs-ch-label {
   margin: 0 0 1.4rem;
   display: flex;
@@ -988,6 +1155,12 @@
   font-size: var(--text-label);
   line-height: 1.45;
   color: var(--fs-faint);
+  /* The note says what is drawn and what is photographed, so it has to read wherever it lands; at its small size the
+     chapter's halo is too tight to steady it. */
+  text-shadow:
+    0 0 0.5em var(--fs-scrim),
+    0 0 1.2em var(--fs-scrim),
+    0 0 2.4em var(--fs-scrim);
 }
 .fs-note-rule {
   flex: none;
@@ -1398,18 +1571,26 @@
     padding: 1rem 0 1.25rem;
   }
   .fs-ch-inner::before {
-    /* On a phone the words sit over the world: give them a ground. */
+    /* On a phone the words sit over the world: give them a ground. Laid twice: over a dark world it is no
+       different, and where a chapter faces the low sun (the grassland's range, the forest's shafts) it is dense
+       enough for the words to read. */
     content: '';
     position: absolute;
     inset: -1rem -1.25rem;
     z-index: -1;
-    background: linear-gradient(180deg, transparent, var(--fs-scrim) 18%, var(--fs-scrim) 82%, transparent);
+    background:
+      linear-gradient(180deg, transparent, var(--fs-scrim) 18%, var(--fs-scrim) 82%, transparent),
+      linear-gradient(180deg, transparent, var(--fs-scrim) 18%, var(--fs-scrim) 82%, transparent);
   }
   .fs-type-place {
     display: none;
   }
   .fs-hud-coord {
     display: none;
+  }
+  /* The coordinates are not shown on a phone: the light takes their place over the way out. */
+  .fs-light {
+    bottom: calc(clamp(1.25rem, 3.6svh, 2.4rem) + 2.7rem);
   }
   /* On a phone the chapters run full width: the furniture gets a foot of the world's ground to stand on. */
   .fs-hud-layer::before {
@@ -1424,18 +1605,30 @@
     flex-direction: column;
     gap: 1.2rem;
   }
-  [data-study='bengal-tiger'] .fs-type {
-    bottom: 12svh;
+  /* The study's name stands clear of the light's row over the way out (its top: the furniture's foot, the row's
+     offset and its 44 px target), whatever height the study gives it on a wide screen. */
+  [data-study='bengal-tiger'] .fs-type,
+  [data-study='indian-rhinoceros'] .fs-type {
+    bottom: max(12svh, calc(clamp(1.25rem, 3.6svh, 2.4rem) + 2.7rem + 44px + 0.5rem));
   }
 }
 
 /* ---------------------------------------------------------- reduced motion */
 
 @media (prefers-reduced-motion: reduce) {
+  .fs-index *,
+  .fs-study * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
   .fs-word > span,
   .fs-comp *,
   .fs-ch-inner,
-  .fs-type {
+  .fs-type,
+  .fs-scrim {
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
   }

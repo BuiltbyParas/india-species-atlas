@@ -43,12 +43,17 @@ export interface SourceRef {
   url: string;
   /** Publisher / issuing body, e.g. "IUCN Red List", "MoEFCC". */
   publisher: string;
+  /** When the document was published or released (ISO date, or a year), where it states one. */
+  published?: string;
 }
 
 /**
  * An approximate point used to place a species marker on the map.
  * These are indicative locations within a known range — never exact
  * population boundaries. See the map disclaimer.
+ *
+ * No point is finer than a named protected area, river stretch or landscape:
+ * the atlas holds no nest, roost, colony, camera-trap or sighting locations.
  */
 export interface DistributionPoint {
   lat: number;
@@ -57,6 +62,32 @@ export interface DistributionPoint {
   label: string;
   /** Optional note clarifying what this point represents. */
   note?: string;
+  /** A conservation-breeding centre: animals held in captivity, not a wild population. */
+  captive?: true;
+  /**
+   * Print the place, never the coordinates, wherever the record is named. For the most sensitive records
+   * (tiny populations of species that are disturbed, collected or killed at known sites), a coordinate readout
+   * implies a precision the point does not have and is the part of the record that would help someone find them.
+   */
+  withholdCoordinates?: true;
+}
+
+/**
+ * A published population figure, with what it counts. Figures are only comparable when their scope, method and
+ * year agree, so each one carries all three rather than being folded into a sentence.
+ */
+export interface PopulationEstimate {
+  /** What was counted, e.g. "Wild elephants in India". */
+  scope: string;
+  /** The figure as the source publishes it, e.g. "22,446 (95% CI 18,255–26,645)". */
+  value: string;
+  /** When the survey was made, e.g. "2021–2025". */
+  surveyed: string;
+  /** How, in a few words, where the source says. */
+  method?: string;
+  /** What the figure cannot be used for, e.g. comparison with an earlier count made another way. */
+  caveat?: string;
+  source: SourceRef;
 }
 
 /**
@@ -95,8 +126,13 @@ export interface Species {
   group: 'mammal' | 'bird' | 'reptile' | 'fish' | 'amphibian';
   status: IucnStatus;
   statusFullName: string;
-  /** Year of the IUCN assessment this status is drawn from. */
+  /** Year the cited IUCN assessment was made (the Red List's "date assessed"). */
   statusAssessedYear: number;
+  /**
+   * Year the Red List published that assessment, the year in its citation. Often a year or two after
+   * `statusAssessedYear`; for an amended assessment, the year the amended version was published.
+   */
+  statusPublishedYear: number;
   /** Dated Red List listings, oldest first. Absent where none is recorded. */
   statusHistory?: StatusAssessment[];
   /** Whether the species is endemic to India / the Indian subcontinent. */
@@ -111,6 +147,8 @@ export interface Species {
   description: string;
   /** How the species is distributed in India, in words. */
   indianDistribution: string;
+  /** Published population figures, each with its scope, survey years and source. Absent where none is cited. */
+  population?: PopulationEstimate[];
   habitatNote: string;
   majorThreats: ThreatId[];
   threatNote: string;
@@ -123,7 +161,7 @@ export interface Species {
   distributionPoints: DistributionPoint[];
   image: SpeciesImage;
   sources: SourceRef[];
-  /** ISO date the species entry was last checked against its sources. */
+  /** ISO date the species entry's figures, status and localities were last checked against the sources it lists. */
   lastVerified: string;
 }
 

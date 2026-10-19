@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Species } from '../../types';
 import { STATUS_INFO } from '../../data/statusInfo';
 import { REGION_LABELS } from '../../data/regions';
-import { formatDeg } from '../../geo/india';
+import { localityCoords } from '../../geo/india';
 import { prefersReducedMotion } from '../../motion/preferences';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
 import { PhotoCredit } from '../ui/PhotoCredit';
@@ -25,8 +25,38 @@ import { photoSources } from '../../utils/photo';
  * (mouse or touch) turns it with inertia and settles on the nearest species;
  * the arrow keys step one species at a time; the pointer leans it slightly
  * while it rests. It only animates while something is moving it.
+ *
+ * Set as an object on a lit table rather than in a box: its atmosphere
+ * dissolves into the page on every side, a pool of light sits under the
+ * species facing the reader, and the corners say what the bands are and how
+ * to turn it. A chapter can turn it from outside (`control`) and follow which
+ * species faces the reader (`onCenter`) — Chapter 03's index does both.
+ *
+ * Chapter 03 also stands it on ground (`ground`, laid under the sphere), raises
+ * it out of that ground with the scroll (`control.rise`: the lower band first,
+ * then the photographs, then the upper band), and adds a line to its caption
+ * (`detail`). Choosing the species in front is played before the profile opens:
+ * the sphere draws in on it, the rest of the dome dims, a rule runs under its
+ * name, and then the existing profile opens. With reduced motion it opens at once.
  */
 const LAT = 21;
+
+export interface DomeControl {
+  goTo(index: number): void;
+  /** 0 → 1: the dome coming up out of its ground, band by band. */
+  rise(t: number): void;
+}
+
+/** How long the choice is played before the profile opens, in ms. */
+const COMMIT_MS = 640;
+/** Where in the rise each band starts (lower, middle, upper) and how much of it each takes. */
+const RISE_FROM = { down: 0, mid: 0.22, up: 0.42 } as const;
+const RISE_SPAN = 0.58;
+
+const smooth01 = (v: number) => {
+  const t = v < 0 ? 0 : v > 1 ? 1 : v;
+  return t * t * (3 - 2 * t);
+};
 
 interface Tile {
   key: string;
@@ -34,16 +64,31 @@ interface Tile {
   lat: number;
   species: Species;
   kind: 'photo' | 'place';
-  place?: { label: string; lat: number; lng: number };
+  place?: { label: string; lat: number; lng: number; withholdCoordinates?: true };
 }
 
 function wrap(deg: number) {
   return ((((deg + 180) % 360) + 360) % 360) - 180;
 }
 
-export function DomeGallery({ species }: { species: Species[] }) {
+export function DomeGallery({
+  species,
+  control,
+  onCenter,
+  ground,
+  detail,
+}: {
+  species: Species[];
+  control?: RefObject<DomeControl | null>;
+  onCenter?: (index: number) => void;
+  /** Laid under the sphere, inside the dome's own box. */
+  ground?: ReactNode;
+  /** A further line for the caption, about the species in front. */
+  detail?: (s: Species) => ReactNode;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
   const sphereRef = useRef<HTMLDivElement>(null);
+  const lensRef = useRef<HTMLDivElement>(null);
   const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
   const { open } = useSpeciesProfile();
   const [center, setCenter] = useState(0);
@@ -66,7 +111,8 @@ export function DomeGallery({ species }: { species: Species[] }) {
           lat,
           species: entry.s,
           kind: 'place',
-          place: { label: entry.p.label, lat: entry.p.lat, lng: entry.p.lng },
+          // The record's withholding travels with the place, so the band prints "coordinates withheld" where it should.
+          place: { label: entry.p.label, lat: entry.p.lat, lng: entry.p.lng, withholdCoordinates: entry.p.withholdCoordinates },
         });
       }
     };
@@ -133,6 +179,16 @@ export function DomeGallery({ species }: { species: Species[] }) {
     if (!raf.current) raf.current = requestAnimationFrame(() => loopRef.current());
   }, []);
 
+  // The choice being played (the species' id), and the timers that end it.
+  const [opening, setOpening] = useState<string | null>(null);
+  const openTimers = useRef<number[]>([]);
+  const cancelOpening = useCallback(() => {
+    openTimers.current.forEach((t) => window.clearTimeout(t));
+    openTimers.current = [];
+    setOpening(null);
+  }, []);
+  useEffect(() => () => openTimers.current.forEach((t) => window.clearTimeout(t)), []);
+
   const goTo = useCallback(
     (index: number) => {
       const p = pose.current;
@@ -152,6 +208,50 @@ export function DomeGallery({ species }: { species: Species[] }) {
     },
     [apply, kick, step],
   );
+
+  const commit = useCallback(
+    (index: number) => {
+      const s = species[index];
+      if (!s) return;
+      cancelOpening();
+      if (prefersReducedMotion()) {
+        open(s.id);
+        return;
+      }
+      goTo(index);
+      setOpening(s.id);
+      openTimers.current = [
+        window.setTimeout(() => open(s.id), COMMIT_MS),
+        // Back to rest behind the profile, so closing it returns to the dome as it was.
+        window.setTimeout(() => setOpening(null), COMMIT_MS + 900),
+      ];
+    },
+    [species, cancelOpening, goTo, open],
+  );
+
+  // The rise is written straight to the tiles and the lens: it follows the scroll, never React.
+  const riseAt = useRef(1);
+  const rise = useCallback(
+    (t: number) => {
+      if (Math.abs(t - riseAt.current) < 0.0005) return;
+      riseAt.current = t;
+      tiles.forEach((tile, i) => {
+        const el = tileRefs.current[i];
+        if (!el) return;
+        const from = tile.lat < 0 ? RISE_FROM.down : tile.lat > 0 ? RISE_FROM.up : RISE_FROM.mid;
+        el.style.setProperty('--rise', smooth01((t - from) / RISE_SPAN).toFixed(3));
+      });
+      const lens = lensRef.current;
+      if (lens) lens.style.translate = `0 ${((1 - smooth01(t)) * 14).toFixed(2)}%`;
+    },
+    [tiles],
+  );
+
+  useImperativeHandle(control, () => ({ goTo, rise }), [goTo, rise]);
+
+  useEffect(() => {
+    onCenter?.(center);
+  }, [onCenter, center]);
 
   // Size the sphere to its stage.
   useEffect(() => {
@@ -216,6 +316,8 @@ export function DomeGallery({ species }: { species: Species[] }) {
         }
       }
       if (!p.dragging) {
+        // A turn of the dome takes back a choice still being played.
+        cancelOpening();
         p.dragging = true;
         stage.setPointerCapture(e.pointerId);
         stage.dataset.dragging = 'true';
@@ -266,18 +368,20 @@ export function DomeGallery({ species }: { species: Species[] }) {
       stage.removeEventListener('pointercancel', up);
       stage.removeEventListener('pointerleave', leave);
     };
-  }, [kick, radius]);
+  }, [kick, radius, cancelOpening]);
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowRight') {
       e.preventDefault();
+      cancelOpening();
       goTo((center + 1) % count);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
+      cancelOpening();
       goTo((center - 1 + count) % count);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      open(species[center].id);
+      commit(center);
     }
   };
 
@@ -289,9 +393,21 @@ export function DomeGallery({ species }: { species: Species[] }) {
   const placeH = Math.round(tileW * 0.62);
 
   return (
-    <div className="dome" style={{ ['--status' as string]: info.hex }}>
+    <div className="dome" style={{ ['--status' as string]: info.hex }} data-opening={opening ? 'true' : undefined}>
       <div className="dome-atmos" aria-hidden="true">
         {focusPhoto && <img key={focus.id} src={focusPhoto.small} alt="" className="dome-atmos-img" />}
+      </div>
+      {ground}
+      <div className="dome-lamp" aria-hidden="true" />
+      <div className="dome-furniture" aria-hidden="true">
+        <p className="dome-key">
+          <span className="dome-key-rule" />
+          Above and below: indicative localities from the atlas&rsquo;s records
+        </p>
+        <p className="dome-key is-right">
+          Drag, or use the arrow keys, to turn
+          <span className="dome-key-rule" />
+        </p>
       </div>
 
       <div
@@ -306,6 +422,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
         data-cursor-drag
         data-cursor-area="Turn"
       >
+        <div ref={lensRef} className="dome-lens">
         <div ref={sphereRef} className="dome-sphere">
           {tiles.map((t, i) => {
             const speciesIndex = species.indexOf(t.species);
@@ -317,6 +434,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
                   tileRefs.current[i] = n;
                 }}
                 className={cn('dome-tile', t.kind === 'photo' ? 'is-photo' : 'is-place', t.kind === 'photo' && speciesIndex === center && 'is-center')}
+                data-band={t.lat < 0 ? 'down' : t.lat > 0 ? 'up' : 'mid'}
                 style={{
                   width: tileW,
                   height: t.kind === 'photo' ? tileH : placeH,
@@ -330,7 +448,7 @@ export function DomeGallery({ species }: { species: Species[] }) {
                     type="button"
                     tabIndex={-1}
                     className="dome-card"
-                    onClick={() => (speciesIndex === center ? open(t.species.id) : goTo(speciesIndex))}
+                    onClick={() => (speciesIndex === center ? commit(speciesIndex) : goTo(speciesIndex))}
                     data-cursor={speciesIndex === center ? 'Discover' : 'Turn'}
                     aria-hidden="true"
                   >
@@ -352,45 +470,56 @@ export function DomeGallery({ species }: { species: Species[] }) {
                     <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="dome-place-line">
                       <path d="M0 18 C 20 4, 40 22, 60 10 S 90 6, 100 14" />
                     </svg>
-                    <p className="font-serif text-[0.95em] leading-tight text-canvas/80">{t.place!.label.split(',')[0]}</p>
-                    <p className="mt-1 text-[0.7em] tabular-nums text-canvas/40">
-                      {formatDeg(t.place!.lat, 'lat')} {formatDeg(t.place!.lng, 'lng')}
+                    <p className="dome-place-name font-serif text-[0.95em] leading-tight">{t.place!.label.split(',')[0]}</p>
+                    <p className="dome-place-coord mt-1 text-[0.7em] tabular-nums">
+                      {localityCoords(t.place!)}
                     </p>
-                    <p className="mt-0.5 text-[0.7em] italic text-canvas/35">{t.species.commonName}</p>
+                    <p className="dome-place-of mt-0.5 text-[0.7em] italic">{t.species.commonName}</p>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
+        </div>
       </div>
 
       <div className="dome-caption" aria-live="polite">
         <div key={focus.id} className="dome-caption-inner">
-          <p className="text-small tabular-nums text-canvas/45">
-            {center + 1} / {count}
+          <p className="dome-count tabular-nums">
+            <span className="dome-count-n">{String(center + 1).padStart(2, '0')}</span>
+            <span className="dome-count-of">of {count}</span>
           </p>
-          <p className="mt-2 font-serif text-[clamp(2rem,4vw,3.4rem)] font-light leading-none tracking-[-0.025em] text-canvas">
-            {focus.commonName}
-          </p>
-          <p className="mt-2 font-serif italic text-canvas/60">{focus.scientificName}</p>
-          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-small text-canvas/65">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: info.colorVar }} aria-hidden="true" />
-              {info.name}
-            </span>
-            <span>{focus.regions.map((r) => REGION_LABELS[r]).join(', ')}</span>
-          </p>
-          <PhotoCredit species={focus} className="mt-3" />
+          <div className="dome-caption-text">
+            <p className="dome-name font-serif">
+              <span>{focus.commonName}</span>
+            </p>
+            <p className="dome-sci font-serif">{focus.scientificName}</p>
+            <p className="dome-meta">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: info.colorVar }} aria-hidden="true" />
+                {info.name}
+              </span>
+              <span>{focus.regions.map((r) => REGION_LABELS[r]).join(', ')}</span>
+            </p>
+            {detail?.(focus)}
+            <PhotoCredit species={focus} className="dome-credit" />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button type="button" className="dome-arrow" onClick={() => goTo((center - 1 + count) % count)} aria-label="Previous species" data-cursor="Turn" data-magnetic="0.4">
+        <div className="dome-controls flex items-center gap-2">
+          <button type="button" className="dome-arrow" onClick={() => {
+            cancelOpening();
+            goTo((center - 1 + count) % count);
+          }} aria-label="Previous species" data-cursor="Turn" data-magnetic="0.4">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
           </button>
-          <button type="button" className="dome-arrow" onClick={() => goTo((center + 1) % count)} aria-label="Next species" data-cursor="Turn" data-magnetic="0.4">
+          <button type="button" className="dome-arrow" onClick={() => {
+            cancelOpening();
+            goTo((center + 1) % count);
+          }} aria-label="Next species" data-cursor="Turn" data-magnetic="0.4">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button type="button" className="text-link ml-4" onClick={() => open(focus.id)} data-cursor="Discover" data-magnetic="0.22">
+          <button type="button" className="text-link ml-4" onClick={() => commit(center)} data-cursor="Discover" data-magnetic="0.22">
             Open profile
           </button>
         </div>

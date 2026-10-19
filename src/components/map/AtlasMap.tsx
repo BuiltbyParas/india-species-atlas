@@ -10,20 +10,23 @@ import {
   TileLayer,
   Tooltip,
   useMap,
+  useMapEvent,
 } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import type { ConservationMode, Species } from '../../types';
-import { iconForSpecies } from './markerIcons';
+import { coincidentOffsets, iconForSpecies } from './markerIcons';
 import { countSpeciesByState, recordedInDrawnState, densityOpacity, densityStep } from '../../utils/stateCounts';
 import { useSpeciesProfile } from '../species/SpeciesProfileProvider';
-import { formatDeg, loadIndiaGeoJson } from '../../geo/india';
+import { formatDeg, localityCoords, loadIndiaGeoJson } from '../../geo/india';
 import { threadRuns } from '../../geo/line/paths';
 import { hasFinePointer } from '../../motion/preferences';
 import { STATUS_INFO } from '../../data/statusInfo';
 import { SPECIES } from '../../data/species';
+import { PALETTE } from '../../theme';
 import { project } from '../../geo/india';
 import { getWorld, setWorld, useWorld } from '../../world/worldState';
 import { registerAtlasCamera } from '../../world/journeys';
+import { cn } from '../../utils/cn';
 
 const INDIA_CENTER: L.LatLngExpression = [22.6, 80.5];
 const INDIA_BOUNDS = L.latLngBounds([5.5, 66.5], [37.6, 98.5]);
@@ -34,6 +37,8 @@ interface MapPoint {
   lng: number;
   label: string;
   note?: string;
+  captive?: true;
+  withholdCoordinates?: true;
 }
 
 const FIT_PADDING: L.PointExpression = [12, 12];
@@ -90,6 +95,24 @@ function WorldSync() {
     return () => {
       map.off('moveend', write);
     };
+  }, [map]);
+  return null;
+}
+
+/**
+ * Leaflet closes a popup on Escape only while the map container itself holds
+ * focus; a focused marker (the keyboard route to a popup) never gives it
+ * that, so Escape did nothing. Listen on the container instead.
+ */
+function PopupEscape() {
+  const map = useMap();
+  useEffect(() => {
+    const el = map.getContainer();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') map.closePopup();
+    };
+    el.addEventListener('keydown', onKey);
+    return () => el.removeEventListener('keydown', onKey);
   }, [map]);
   return null;
 }
@@ -185,6 +208,58 @@ function Instruments() {
   );
 }
 
+/** Hands every click or tap on the map's own ground to `onTap` (state outlines hand theirs over themselves). */
+function GroundTap({ onTap }: { onTap: (e: L.LeafletMouseEvent) => void }) {
+  useMapEvent('click', onTap);
+  return null;
+}
+
+/**
+ * Wheel zoom that waits to be asked for, where the map sits in a scrolling page (the home page's working map): the wheel
+ * scrolls the page past the map until the reader clicks or focuses it, and the map lets go again when the pointer
+ * leaves or focus moves on. A wheel over the sleeping map says so, rather than doing nothing silently.
+ */
+function WheelOnRequest() {
+  const map = useMap();
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    const el = map.getContainer();
+    let timer = 0;
+    const wake = () => {
+      map.scrollWheelZoom.enable();
+      setHint(false);
+    };
+    const sleep = () => map.scrollWheelZoom.disable();
+    const onWheel = () => {
+      if (map.scrollWheelZoom.enabled()) return;
+      setHint(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setHint(false), 1600);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      if (!el.contains(e.relatedTarget as Node | null)) sleep();
+    };
+    map.on('click', wake);
+    el.addEventListener('focusin', wake);
+    el.addEventListener('focusout', onFocusOut);
+    el.addEventListener('mouseleave', sleep);
+    el.addEventListener('wheel', onWheel, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      map.off('click', wake);
+      el.removeEventListener('focusin', wake);
+      el.removeEventListener('focusout', onFocusOut);
+      el.removeEventListener('mouseleave', sleep);
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, [map]);
+  return (
+    <p className={cn('map-wheel-hint pointer-events-none absolute inset-x-0 top-1/2 z-(--z-map-ui) mx-auto w-fit', hint && 'is-on')} aria-hidden="true">
+      Click the map to zoom with the wheel
+    </p>
+  );
+}
+
 function ResetView({ onReset }: { onReset: () => void }) {
   const map = useMap();
   return (
@@ -209,6 +284,7 @@ export function AtlasMap({
   onSelectState,
   shadeByCount = false,
   showThreads = false,
+  wheelZoom = 'always',
 }: {
   results: Species[];
   mode: ConservationMode;
@@ -218,6 +294,8 @@ export function AtlasMap({
   shadeByCount?: boolean;
   /** Draw each species' thread through its localities. */
   showThreads?: boolean;
+  /** `on-request` where the map sits in a scrolling page: the wheel zooms only once the map is clicked or focused. */
+  wheelZoom?: 'always' | 'on-request';
 }) {
   const { open } = useSpeciesProfile();
   const [statesGeo, setStatesGeo] = useState<GeoJsonObject | null>(null);
@@ -249,14 +327,53 @@ export function AtlasMap({
   const points = useMemo<MapPoint[]>(
     () =>
       SPECIES.flatMap((s) =>
-        s.distributionPoints.map((p) => ({ species: s, lat: p.lat, lng: p.lng, label: p.label, note: p.note })),
+        s.distributionPoints.map((p) => ({
+          species: s,
+          lat: p.lat,
+          lng: p.lng,
+          label: p.label,
+          note: p.note,
+          captive: p.captive,
+          withholdCoordinates: p.withholdCoordinates,
+        })),
       ),
     [],
+  );
+  // Localities two species share are set side by side, each with a hairline back to the one true point.
+  const offsets = useMemo(() => coincidentOffsets(points), [points]);
+  // Built once per mode: a new icon object on every render made Leaflet replace each marker's element.
+  const icons = useMemo(
+    () => points.map((p, i) => iconForSpecies(p.species, mode, { captive: p.captive, offset: offsets[i] })),
+    [points, offsets, mode],
   );
   const inView = useMemo(() => points.filter((p) => shown.has(p.species.id)), [points, shown]);
   const visited = useWorld((w) => w.visited);
   const [hot, setHot] = useState<string | null>(null);
   const markerEls = useRef(new Map<string, L.Marker>());
+
+  /**
+   * A click or tap that misses every disc but lands within reach of one opens that marker. The discs stay 20 px;
+   * the target grows to a 44 px circle on touch (24 px with a mouse), and is resolved to the nearest disc, so in a
+   * crowd one marker's reach never hides another's disc. Returns whether a marker was opened.
+   */
+  const openNearest = (e: L.LeafletMouseEvent) => {
+    const event = e.originalEvent;
+    if (!event || typeof event.clientX !== 'number') return false;
+    let best: L.Marker | null = null;
+    let bestDistance = hasFinePointer() ? 12 : 22;
+    for (const marker of markerEls.current.values()) {
+      const el = marker.getElement();
+      if (!el || el.classList.contains('is-out')) continue;
+      const r = el.getBoundingClientRect();
+      const d = Math.hypot(r.left + r.width / 2 - event.clientX, r.top + r.height / 2 - event.clientY);
+      if (d < bestDistance) {
+        best = marker;
+        bestDistance = d;
+      }
+    }
+    best?.openPopup();
+    return best !== null;
+  };
   /** Where the pointer entered the hovered species, for the kin ping's timing. */
   const hotFrom = useRef<[number, number] | null>(null);
 
@@ -317,22 +434,24 @@ export function AtlasMap({
   const maxCount = useMemo(() => Math.max(0, ...counts.values()), [counts]);
 
   // Leaflet writes these onto SVG presentation attributes, which do not
-  // resolve CSS custom properties — so use literal colours here.
+  // resolve CSS custom properties — so use literal colours here. Boundaries are
+  // the sheet's canvas hairline; a chosen state is outlined in contour copper;
+  // the count shading is the same sage as its legend.
   const styleFor = (isSelected: boolean, name?: string) => {
     if (shadeByCount && !isSelected) {
       const n = name ? (counts.get(name) ?? 0) : 0;
       return {
-        color: 'rgba(143,199,170,0.35)',
+        color: 'rgba(232,225,207,0.28)',
         weight: 0.8,
-        fillColor: '#5aa47e',
+        fillColor: PALETTE.forest400,
         fillOpacity: densityOpacity(densityStep(n, maxCount)),
       };
     }
     return {
-      color: isSelected ? '#8fc7aa' : 'rgba(143,199,170,0.35)',
+      color: isSelected ? PALETTE.contour : 'rgba(232,225,207,0.28)',
       weight: isSelected ? 2 : 0.8,
-      fillColor: isSelected ? '#347d59' : '#5aa47e',
-      fillOpacity: isSelected ? 0.28 : 0.06,
+      fillColor: isSelected ? PALETTE.contour : PALETTE.canvas,
+      fillOpacity: isSelected ? 0.18 : 0.03,
     };
   };
 
@@ -346,7 +465,7 @@ export function AtlasMap({
         zoomSnap={0.25}
         maxBounds={INDIA_BOUNDS.pad(0.3)}
         className="h-full w-full"
-        scrollWheelZoom
+        scrollWheelZoom={wheelZoom === 'always'}
         worldCopyJump={false}
       >
         {/* Esri World Ocean Base (no API key): relief, vegetation and rivers,
@@ -378,10 +497,14 @@ export function AtlasMap({
               if (!name) return;
               const n = counts.get(name) ?? 0;
               layer.on({
-                click: () => onSelectState(name === selectedState ? null : name),
+                click: (e) => {
+                  // A tap just beside a marker is meant for the marker, not for the state under it.
+                  if (openNearest(e)) return;
+                  onSelectState(name === selectedState ? null : name);
+                },
                 mouseover: (e) =>
                   (e.target as L.Path).setStyle({
-                    fillOpacity: Math.max(0.2, densityOpacity(densityStep(n, maxCount))),
+                    fillOpacity: Math.max(0.12, densityOpacity(densityStep(n, maxCount))),
                     weight: 1.4,
                   }),
                 mouseout: (e) => (e.target as L.Path).setStyle(styleFor(name === selectedState, name)),
@@ -424,7 +547,7 @@ export function AtlasMap({
               else markerEls.current.delete(k);
             }}
             position={[p.lat, p.lng]}
-            icon={iconForSpecies(p.species, mode)}
+            icon={icons[i]}
             eventHandlers={{
               mouseover: () => {
                 hotFrom.current = [p.lat, p.lng];
@@ -439,9 +562,10 @@ export function AtlasMap({
               <span className="mp-name">{p.species.commonName}</span>
               <span className="mp-meta">
                 <span style={{ color: STATUS_INFO[p.species.status].colorVar }}>{p.species.status}</span> ·{' '}
-                {formatDeg(p.lat, 'lat')} {formatDeg(p.lng, 'lng')}
+                {localityCoords(p)}
               </span>
               <span className="mp-place">{p.label}</span>
+              {p.captive && <span className="mp-place">Breeding centre: captive birds, not a wild population</span>}
             </Tooltip>
             <Popup>
               <div className="min-w-[200px]">
@@ -485,15 +609,18 @@ export function AtlasMap({
           </Marker>
         ))}
 
+        <GroundTap onTap={openNearest} />
         <FitIndia />
         <WorldSync />
         <JourneyCamera />
+        <PopupEscape />
         <Breathe points={inView} selectedState={selectedState} />
         <Instruments />
         <ResetView onReset={() => onSelectState(null)} />
+        {wheelZoom === 'on-request' && <WheelOnRequest />}
       </MapContainer>
 
-      <p className="pointer-events-none absolute bottom-12 left-1 z-(--z-map-ui) max-w-[70%] bg-forest-950/75 px-2 py-1 text-micro leading-tight text-canvas/55 sm:bottom-1">
+      <p className="pointer-events-none absolute bottom-12 left-1 z-(--z-map-ui) max-w-[70%] sm:max-w-[min(70%,calc(100%-30rem))] bg-forest-950/75 px-2 py-1 text-micro leading-tight text-canvas/70 sm:bottom-1">
         Map locations are simplified educational representations and should not be interpreted as exact
         population boundaries.
       </p>

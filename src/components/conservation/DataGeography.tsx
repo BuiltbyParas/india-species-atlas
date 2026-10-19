@@ -201,7 +201,7 @@ export function DataGeography() {
               ))}
             </ol>
           )}
-          <p className="mt-8 text-label text-canvas/45">
+          <p className="mt-8 text-label text-canvas/62">
             Points are each species&rsquo; anchor locality: an indicative place inside the recorded range, not its
             boundary. <Link to="/atlas" className="text-link">Every locality is on the map.</Link>
           </p>

@@ -9,7 +9,7 @@ function ChartFrame({ title, note, children }: { title: string; note?: string; c
     <figure className="sheet">
       <figcaption className="mb-4">
         <h3 className="font-serif text-lg font-normal tracking-tight text-canvas">{title}</h3>
-        {note && <p className="mt-0.5 text-xs text-canvas/55">{note}</p>}
+        {note && <p className="mt-0.5 text-xs text-canvas/70">{note}</p>}
       </figcaption>
       {children}
     </figure>
@@ -25,7 +25,7 @@ export function StatusChart() {
   return (
     <ChartFrame title="Species by IUCN status" note="Counts from this atlas’ 12-species selection.">
       <BarChart data={data} unit=" species" labelWidth="minmax(7rem,12rem)" />
-      <div className="mt-4 flex gap-4 border-t border-forest-800 pt-3 text-xs text-canvas/55">
+      <div className="mt-4 flex gap-4 border-t border-forest-800 pt-3 text-xs text-canvas/70">
         {statusChartData().map((d) => (
           <span key={d.code} className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: STATUS_INFO[d.code].hex }} />

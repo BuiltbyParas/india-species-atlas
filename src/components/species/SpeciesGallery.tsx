@@ -202,13 +202,10 @@ export function SpeciesGallery({
         />
 
         {!ready && (
-          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/45">
+          <p className="absolute inset-0 grid place-items-center text-sm text-canvas/62">
             Preparing the gallery…
           </p>
         )}
-
-        {/* The card at the front, located: its ground behind the ring, redrawn as each card comes round. */}
-        {ready && <SpeciesLocator key={current.id} species={current} className="gallery-locator" />}
 
         <p className="pointer-events-none absolute bottom-3 right-4 max-w-[15rem] text-right text-micro leading-snug text-forest-300/45">
           Photographs mounted in a 3D frame — the cards are modelled, the animals are not.
@@ -223,19 +220,24 @@ export function SpeciesGallery({
       {/* The caption for whatever is at the front. Kept out of the canvas so it
           stays real text: selectable, translatable and crisp at any zoom. */}
       <div className="mt-5 grid gap-5 sm:grid-cols-[1fr_auto] sm:items-end">
-        <div aria-live="polite" className="min-h-[6.5rem]">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <StatusBadge status={current.status} showName size="sm" />
-            <span className="text-xs text-canvas/40">
-              {index + 1} / {species.length}
-            </span>
+        <div className="flex min-h-[6.5rem] items-start gap-5 sm:gap-7">
+          {/* The card at the front, located: its ground as the caption's key, redrawn as each card comes round.
+              Beside the name rather than over the ring, where it would sit on the neighbouring card. */}
+          {ready && <SpeciesLocator key={current.id} species={current} className="gallery-locator" />}
+          <div aria-live="polite" className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <StatusBadge status={current.status} showName size="sm" />
+              <span className="text-xs text-canvas/62">
+                {index + 1} / {species.length}
+              </span>
+            </div>
+            <h3 className="mt-2 font-serif text-3xl font-light tracking-tight leading-tight text-canvas">
+              {current.commonName}
+            </h3>
+            <p className="text-sm italic text-canvas/70">{current.scientificName}</p>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-canvas/70">{current.summary}</p>
+            <PhotoCredit species={current} className="mt-2" />
           </div>
-          <h3 className="mt-2 font-serif text-3xl font-light tracking-tight leading-tight text-canvas">
-            {current.commonName}
-          </h3>
-          <p className="text-sm italic text-canvas/55">{current.scientificName}</p>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-canvas/70">{current.summary}</p>
-          <PhotoCredit species={current} className="mt-2" />
         </div>
 
         <div className="flex items-center gap-2">

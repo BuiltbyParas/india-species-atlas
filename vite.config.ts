@@ -10,6 +10,8 @@ const base = process.env.VITE_BASE ?? '/'
 export default defineConfig({
   base,
   plugins: [react(), tailwindcss()],
+  server: { allowedHosts: ['.trycloudflare.com'] },
+  preview: { allowedHosts: ['.trycloudflare.com'] },
   build: {
     // The hero's three.js relief is a lazy chunk (~536 kB raw / ~137 kB gzipped)
     // that most visitors never request. Raised just far enough to clear it,

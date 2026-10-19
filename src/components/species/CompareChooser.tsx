@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { Species } from '../../types';
 import { SPECIES } from '../../data/species';
 import { STATUS_INFO } from '../../data/statusInfo';
-import { formatDeg, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
+import { localityCoords, MAP_HEIGHT, MAP_VIEWBOX, MAP_WIDTH, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { useInView } from '../../motion/useInView';
 import { cn } from '../../utils/cn';
@@ -74,15 +74,15 @@ export function CompareChooser({ onPick }: { onPick: (ids: string[]) => void }) 
             ))}
           </ul>
         </div>
-        <p className="cc-readout mt-4 min-h-[2.6em] text-small text-canvas/55" aria-hidden="true">
+        <p className="cc-readout mt-4 min-h-[2.6em] text-small text-canvas/70" aria-hidden="true">
           {h ? (
             <>
               <span className="font-serif text-[1.15em] text-canvas">{h.s.commonName}</span>
-              <span className="mx-2 text-canvas/30">·</span>
+              <span className="mx-2 text-canvas/62">·</span>
               {h.s.status}
-              <span className="mx-2 text-canvas/30">·</span>
+              <span className="mx-2 text-canvas/62">·</span>
               <span className="tabular-nums">
-                {h.a.label.split(',')[0]} {formatDeg(h.a.lat, 'lat')} {formatDeg(h.a.lng, 'lng')}
+                {h.a.label.split(',')[0]} {localityCoords(h.a)}
               </span>
             </>
           ) : (
@@ -93,7 +93,7 @@ export function CompareChooser({ onPick }: { onPick: (ids: string[]) => void }) 
 
       <div className="lg:col-span-5 lg:pt-6">
         <p className="caps">Or begin from shared ground</p>
-        <p className="mt-2 max-w-sm text-small text-canvas/55">
+        <p className="mt-2 max-w-sm text-small text-canvas/70">
           The pairs recorded in the most of the same states, read from the dataset.
         </p>
         <ul className="mt-6 border-t border-canvas/10">
@@ -103,7 +103,7 @@ export function CompareChooser({ onPick }: { onPick: (ids: string[]) => void }) 
                 <span className="font-serif text-[1.2rem] font-light text-canvas">
                   {a.commonName} <span className="cc-pair-rule" aria-hidden="true" /> {b.commonName}
                 </span>
-                <span className="text-micro tabular-nums text-canvas/45">
+                <span className="text-micro tabular-nums text-canvas/62">
                   {shared} shared {shared === 1 ? 'state' : 'states'} of record
                 </span>
               </button>

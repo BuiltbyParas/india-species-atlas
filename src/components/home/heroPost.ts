@@ -82,6 +82,7 @@ const COMPOSITE_FRAGMENT = /* glsl */ `
   uniform float uSaturation;
   uniform float uContrast;
   uniform float uLift;
+  uniform float uExposure;
   varying vec2 vUv;
 
   #ifdef USE_DOF
@@ -109,6 +110,9 @@ const COMPOSITE_FRAGMENT = /* glsl */ `
     #endif
 
     color += texture2D(tBloom, vUv).rgb * uBloom;
+    // Exposure ahead of the curve: ACES's toe takes a dark scene down to a fifth of its value, so a scene
+    // lit for the screen needs bringing up before it, not after.
+    color *= uExposure;
 
     // Atmospheric grade. Saturation and tint travel with the journey: cool and
     // desaturated out in the dark, warmer and fuller as the camera descends.
@@ -138,6 +142,8 @@ export interface PostUniforms {
   saturation: number;
   contrast: number;
   lift: number;
+  /** Linear exposure before the tone curve; 1 when not given. */
+  exposure?: number;
 }
 
 /** 0 = everything, 1 = no depth of field, 2 = no bloom either. */
@@ -215,6 +221,7 @@ export function createPostChain(renderer: THREE.WebGLRenderer, samples: number):
       uSaturation: { value: 1 },
       uContrast: { value: 1 },
       uLift: { value: 0 },
+      uExposure: { value: 1 },
   };
 
   // Two materials sharing one uniform block, rather than one material whose
@@ -301,6 +308,7 @@ export function createPostChain(renderer: THREE.WebGLRenderer, samples: number):
       c.uSaturation.value = u.saturation;
       c.uContrast.value = u.contrast;
       c.uLift.value = u.lift;
+      c.uExposure.value = u.exposure ?? 1;
     },
 
     setQuality(next) {

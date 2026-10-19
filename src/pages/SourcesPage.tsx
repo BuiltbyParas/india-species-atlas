@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import type { SourceRef, Species } from '../types';
 import { SPECIES } from '../data/species';
 import { BIBLIOGRAPHY } from '../data/sources';
-import { STATUS_INFO } from '../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../data/statusInfo';
 import { SectionHeading } from '../components/ui/SectionHeading';
 
 /**
@@ -15,15 +15,15 @@ import { SectionHeading } from '../components/ui/SectionHeading';
  * entries. Below, each species' own record: its Red List assessment year and
  * the date the entry was last checked, from the dataset.
  *
- * Nothing is added to the references. They carry no publication year in the
- * dataset, so none is shown; "kind" is the atlas' own grouping of the
- * publisher, and is labelled as such.
+ * Nothing is added to the references. A publication date is shown only where
+ * the dataset records one for the reference; "kind" is the atlas' own grouping
+ * of the publisher, and is labelled as such.
  */
 type Kind = 'Red List' | 'Government of India' | 'Research & conservation';
 
 function kindOf(s: SourceRef): Kind {
   const p = `${s.publisher} ${s.url}`.toLowerCase();
-  if (p.includes('iucnredlist') || p.includes('red list') || p.includes('birdlife')) return 'Red List';
+  if (p.includes('iucnredlist') || p.includes('red list') || p.includes('birdlife') || p.includes('10.2305/iucn')) return 'Red List';
   if (
     p.includes('.gov.in') ||
     p.includes('.nic.in') ||
@@ -50,8 +50,8 @@ const REGISTER: Entry[] = (() => {
   const byKey = new Map<string, Entry>();
   for (const s of SPECIES) {
     for (const ref of s.sources) {
-      // The Red List search links differ per species but come from one source.
-      const key = ref.url.includes('iucnredlist.org/search') ? ref.publisher : ref.url;
+      // Each species cites its own Red List assessment, but they come from one source.
+      const key = isAssessment(ref) ? ref.publisher : ref.url;
       const e = byKey.get(key) ?? { ref, kind: kindOf(ref), species: [] };
       if (!e.species.includes(s)) e.species.push(s);
       byKey.set(key, e);
@@ -61,6 +61,17 @@ const REGISTER: Entry[] = (() => {
     (a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || b.species.length - a.species.length,
   );
 })();
+
+/** A species' own Red List assessment (linked by DOI), listed once in the register and per species below. */
+function isAssessment(ref: SourceRef) {
+  return ref.url.includes('doi.org/10.2305/IUCN');
+}
+
+/** "2025", or "March 2025" where the dataset records the month. */
+function fmtPublished(iso: string) {
+  if (/^\d{4}$/.test(iso)) return iso;
+  return new Date(iso).toLocaleDateString('en-GB', { ...(iso.length > 7 ? { day: 'numeric' } : {}), month: 'long', year: 'numeric' });
+}
 
 const ORGANISATIONS = new Set(REGISTER.map((e) => e.ref.publisher.split(/[,(]/)[0].trim())).size;
 const CITATIONS = SPECIES.reduce((n, s) => n + s.sources.length, 0);
@@ -124,8 +135,7 @@ export function SourcesPage() {
         </h2>
         <p className="mt-2 max-w-2xl text-small text-canvas/60">
           Every reference the species entries cite, once, with the species that rest on it. &ldquo;Kind&rdquo; is
-          the atlas&rsquo; grouping of the publisher. The dataset records no publication year for these references,
-          so none is given.
+          the atlas&rsquo; grouping of the publisher. A date is given where the reference states one.
         </p>
         <div className="mt-6 overflow-x-auto">
           <table className="src-table">
@@ -142,15 +152,18 @@ export function SourcesPage() {
               {REGISTER.map((e) => (
                 <tr key={e.ref.url} data-kind={e.kind}>
                   <th scope="row">
-                    {e.ref.url.includes('iucnredlist.org/search') ? (
+                    {isAssessment(e.ref) ? (
                       <span>
                         {e.ref.publisher}
-                        <span className="block text-label text-canvas/45">One assessment per species — linked below</span>
+                        <span className="block text-label text-canvas/62">One assessment per species — linked below</span>
                       </span>
                     ) : (
                       <a href={e.ref.url} target="_blank" rel="noopener noreferrer" className="src-ref">
                         {e.ref.label}
                       </a>
+                    )}
+                    {!isAssessment(e.ref) && e.ref.published && (
+                      <span className="block text-label tabular-nums text-canvas/62">{fmtPublished(e.ref.published)}</span>
                     )}
                   </th>
                   <td>{e.ref.publisher}</td>
@@ -175,8 +188,9 @@ export function SourcesPage() {
           Each species&rsquo; record
         </h2>
         <p className="mt-2 max-w-2xl text-small text-canvas/60">
-          The year of the Red List assessment each entry cites, the date the entry was last checked against its
-          sources, and the sources themselves.
+          The Red List assessment each entry cites, with the year it was made and the year it was published; each
+          population figure with what it counts and when; the date the entry was last checked against its sources;
+          and the sources themselves.
         </p>
         <ol className="mt-6">
           {SPECIES.map((s, i) => (
@@ -185,12 +199,18 @@ export function SourcesPage() {
               <div>
                 <p>
                   <SpeciesTag s={s} />{' '}
-                  <span className="font-serif italic text-canvas/50">{s.scientificName}</span>
+                  <span className="font-serif italic text-canvas/70">{s.scientificName}</span>
                 </p>
-                <p className="mt-1 text-label tabular-nums text-canvas/50">
-                  <span style={{ color: STATUS_INFO[s.status].colorVar }}>{STATUS_INFO[s.status].name}</span> · assessed{' '}
-                  {s.statusAssessedYear} · checked {fmtDate(s.lastVerified)}
+                <p className="mt-1 text-label tabular-nums text-canvas/70">
+                  <span style={{ color: STATUS_INFO[s.status].colorVar }}>{STATUS_INFO[s.status].name}</span> ·{' '}
+                  {redListYears(s)} · checked {fmtDate(s.lastVerified)}
                 </p>
+                {s.population?.map((e) => (
+                  <p key={e.scope} className="src-pop mt-1 text-label text-canvas/70">
+                    <span className="tabular-nums text-canvas/85">{e.value}</span> · {e.scope}, {e.surveyed}
+                    {e.caveat && <span className="block text-canvas/62">{e.caveat}</span>}
+                  </p>
+                ))}
               </div>
               <ul className="src-list">
                 {s.sources.map((src) => (
@@ -198,8 +218,9 @@ export function SourcesPage() {
                     <a href={src.url} target="_blank" rel="noopener noreferrer" className="src-ref">
                       {src.label}
                     </a>
-                    <span className="block text-label text-canvas/45">
+                    <span className="block text-label text-canvas/62">
                       {src.publisher} · {kindOf(src)}
+                      {src.published && <span className="tabular-nums"> · {fmtPublished(src.published)}</span>}
                     </span>
                   </li>
                 ))}
@@ -223,7 +244,7 @@ export function SourcesPage() {
                     <a href={e.url} target="_blank" rel="noopener noreferrer" className="src-ref">
                       {e.label}
                     </a>
-                    <span className="block text-label text-canvas/45">{e.publisher}</span>
+                    <span className="block text-label text-canvas/62">{e.publisher}</span>
                   </li>
                 ))}
               </ul>
@@ -232,7 +253,62 @@ export function SourcesPage() {
         </div>
       </section>
 
-      <p className="mt-12 max-w-2xl text-label text-canvas/45">
+      <section className="mt-16" aria-labelledby="src-terrain">
+        <h2 id="src-terrain" className="font-serif text-subheading font-light text-canvas">
+          Home page terrain
+        </h2>
+        <div className="mt-6 grid gap-x-10 gap-y-6 sm:grid-cols-2">
+          <div>
+            <h3 className="caps">Elevation data</h3>
+            <ul className="src-list mt-3">
+              <li>
+                <a
+                  href="https://www.ncei.noaa.gov/products/etopo-global-relief-model"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="src-ref"
+                >
+                  ETOPO 2022 Global Relief Model
+                </a>
+                <span className="block text-label text-canvas/62">
+                  NOAA National Centers for Environmental Information (NCEI)
+                </span>
+              </li>
+              <li>
+                <a href="https://doi.org/10.25921/fd45-gt74" target="_blank" rel="noopener noreferrer" className="src-ref">
+                  doi:10.25921/fd45-gt74
+                </a>
+                <span className="block text-label text-canvas/62">Persistent identifier for the dataset</span>
+              </li>
+            </ul>
+          </div>
+          <div className="max-w-xl space-y-3 text-small text-canvas/70">
+            <p>
+              ETOPO is a global model of land elevation and sea-floor depth. The relief on the home page, under the
+              opening, Chapter 04 and the closing, and the shaded maps drawn without it, are made from it.
+            </p>
+            <p>
+              Two build scripts read a coarse subset of the model through NOAA&rsquo;s CoastWatch ERDDAP server and
+              store small derived grids. <code>scripts/geo/build-relief.mjs</code> averages it into cells of 3 arc
+              minutes (about 5.5&nbsp;km) and keeps the cells inside India&rsquo;s boundary, with the sea at 0&nbsp;m;
+              <code>scripts/geo/build-region.mjs</code> averages it into cells of 4 arc minutes (about 7.4&nbsp;km)
+              over India, its neighbours and the sea floor around them. Because the cells are averages, individual
+              peaks are smoothed away.
+            </p>
+            <p>
+              Heights are drawn about 20&times; taller than they are, so the mountains read at country scale. That is
+              a visualisation choice; real slopes are far gentler. The colours, contours, shading and lighting are
+              this project&rsquo;s own rendering of the data, not NOAA imagery.
+            </p>
+            <p className="text-label text-canvas/62">
+              NOAA&rsquo;s model gives elevation only. It does not verify the atlas&rsquo; state boundaries, species
+              locations or conservation statuses, and the atlas is not affiliated with NOAA.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <p className="mt-12 max-w-2xl text-label text-canvas/62">
         Wikipedia and similar general encyclopaedias were used only for orientation during research and are not
         cited as the authority for any conservation status. Where a fact could not be confirmed against an
         authoritative source, it was omitted or described as approximate.

@@ -5,6 +5,7 @@ import { lockScroll } from '../../motion/SmoothScroll';
 import { cn } from '../../utils/cn';
 import { describeRoute } from '../../interaction/routeCaption';
 import { FlowingMenu } from './FlowingMenu';
+import { LpuCredit, LPU_CREDIT_OFFSET } from './LpuCredit';
 import { onScroll as subscribeScroll } from '../../interaction/scroll';
 
 /**
@@ -68,7 +69,7 @@ export function Navbar() {
         data-open={open ? 'true' : 'false'}
       >
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-4 sm:px-8 lg:h-20 lg:px-12">
-          <Link to="/" className="group flex items-baseline gap-3" aria-label="India Species Atlas, home" data-magnetic="0.15" data-cursor="Return">
+          <Link to="/" className={cn('group flex items-baseline gap-3', LPU_CREDIT_OFFSET)} aria-label="India Species Atlas, home" data-magnetic="0.15" data-cursor="Return">
             <span className="font-serif text-[1.15rem] font-normal leading-none tracking-[-0.01em] text-canvas">
               India Species Atlas
             </span>
@@ -79,7 +80,7 @@ export function Navbar() {
               <span className={cn('chapter-title-inner', chapter && 'is-shown')} key={chapter?.index ?? -1}>
                 {chapter ? (
                   <>
-                    <span className="tabular-nums text-canvas/40">{String(chapter.index).padStart(2, '0')}</span>
+                    <span className="tabular-nums text-canvas/62">{String(chapter.index).padStart(2, '0')}</span>
                     <span className="chapter-title-rule" aria-hidden="true" />
                     {chapter.title}
                   </>
@@ -90,7 +91,7 @@ export function Navbar() {
           {page && (
             <p className="chapter-title hidden text-small text-canvas/60 md:block lg:hidden xl:block">
               <span className="chapter-title-inner is-shown" key={pathname}>
-                <span className="text-canvas/40">{page.eyebrow}</span>
+                <span className="text-canvas/62">{page.eyebrow}</span>
                 <span className="chapter-title-rule" aria-hidden="true" />
                 {page.title}
               </span>
@@ -132,6 +133,7 @@ export function Navbar() {
           </div>
         </div>
       </header>
+      <LpuCredit />
       <FlowingMenu open={open} onClose={close} />
     </>
   );

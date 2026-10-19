@@ -57,12 +57,33 @@ export function SmoothScroll() {
     if (reduced) return;
     const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9, smoothWheel: true });
     current = lenis;
+    // Development only: the audit scripts reach exact positions through it (a plain scrollTo is smoothed away).
+    if (import.meta.env.DEV) (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
     if (locks > 0) lenis.stop();
     lenis.on('scroll', ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
+
+    // Keyboard focus is followed through the smooth scroller. While Lenis is gliding to a target of its own (the
+    // field index moves the page as each study is focused), it writes that target back every frame and undoes the
+    // browser's own scroll to the focused element, which was left off screen (Chapter 03's first index rows).
+    let focusFrame = 0;
+    const onFocusIn = (event: FocusEvent) => {
+      const el = event.target;
+      if (!(el instanceof HTMLElement)) return;
+      cancelAnimationFrame(focusFrame);
+      focusFrame = requestAnimationFrame(() => {
+        if (locks > 0 || document.activeElement !== el || !el.matches(':focus-visible')) return;
+        const r = el.getBoundingClientRect();
+        if (r.height === 0 || (r.top >= 0 && r.bottom <= window.innerHeight)) return;
+        lenis.scrollTo(el, { offset: -window.innerHeight * 0.3, duration: 0.6, force: true });
+      });
+    };
+    document.addEventListener('focusin', onFocusIn);
     return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      cancelAnimationFrame(focusFrame);
       gsap.ticker.remove(tick);
       lenis.destroy();
       if (current === lenis) current = null;

@@ -121,7 +121,7 @@ export function CompareGeography({ species }: { species: Species[] }) {
             </g>
           ))}
         </svg>
-        <figcaption className="mt-3 text-label text-canvas/50">
+        <figcaption className="mt-3 text-label text-canvas/70">
           {shared.length > 0
             ? `Shared ground — recorded in all ${species.length}: ${shared.join(', ')}.`
             : species.length > 1

@@ -34,7 +34,7 @@ export function ProgrammeLegend({ results }: { results: Species[] }) {
     <div className="sheet text-xs">
       <p className="mb-2 caps">Legend</p>
       {rows.length === 0 ? (
-        <p className="text-canvas/55">
+        <p className="text-canvas/70">
           No species in the current selection is linked to a conservation programme.
         </p>
       ) : (
@@ -46,11 +46,11 @@ export function ProgrammeLegend({ results }: { results: Species[] }) {
               </span>
               <span className="text-canvas/80">
                 <span className="font-semibold">{row.name}</span>
-                <span className="text-canvas/55"> — {row.species.join(', ')}</span>
+                <span className="text-canvas/70"> — {row.species.join(', ')}</span>
               </span>
             </li>
           ))}
-          <li className="flex items-start gap-2 pt-1 text-canvas/50">
+          <li className="flex items-start gap-2 pt-1 text-canvas/70">
             <span
               aria-hidden="true"
               className="mt-1 h-2.5 w-3.5 shrink-0 rounded-[2px] border-t-2 border-forest-300/70 bg-forest-600"

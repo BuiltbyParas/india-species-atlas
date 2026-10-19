@@ -243,7 +243,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
                   openMedia(FILM, null, document.querySelector<HTMLElement>('.menu-button'));
                 }}
               >
-                Play the film <span className="tabular-nums text-canvas/45">· {FILM_RUNTIME}</span>
+                Play the film <span className="tabular-nums text-canvas/62">· {FILM_RUNTIME}</span>
               </button>
             </li>
             <li>
@@ -259,7 +259,7 @@ export function FlowingMenu({ open, onClose }: { open: boolean; onClose: () => v
               </button>
             </li>
           </ul>
-          <p className="mt-8 max-w-[18rem] text-xs leading-relaxed text-canvas/40">
+          <p className="mt-8 max-w-[18rem] text-xs leading-relaxed text-canvas/62">
             Status follows the IUCN Red List. Map locations are indicative localities, not range boundaries.
           </p>
         </div>

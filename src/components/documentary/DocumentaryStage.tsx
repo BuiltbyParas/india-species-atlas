@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { SPECIES } from '../../data/species';
-import { STATUS_INFO } from '../../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../../data/statusInfo';
 import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMMES } from '../../data/programmes';
-import { formatDeg, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
+import { formatDeg, localityCoords, MAP_VIEWBOX, project, useIndiaGeo } from '../../geo/india';
 import { GeoLine } from '../../geo/line/GeoLine';
 import { bowedLeg } from '../../geo/line/paths';
 import { conservationRegionCount, statesCovered, threatChartData, totalSpecies } from '../../utils/stats';
@@ -94,7 +94,7 @@ function TitleScene({ t }: { t: number }) {
           <p className="font-serif text-[150px] font-light leading-[0.86] tracking-[-0.045em] text-canvas">Atlas</p>
         </Rise>
         <Rise t={t} a={6.2} className="mt-10">
-          <p className="font-serif text-[40px] font-light text-canvas/85">Mapping endangered species.</p>
+          <p className="font-serif text-[40px] font-light text-canvas/85">Mapping threatened species.</p>
         </Rise>
         <Rise t={t} a={6.7}>
           <p className="font-serif text-[40px] font-light text-canvas/60">Tracing the lines that shape survival.</p>
@@ -175,7 +175,7 @@ function SpeciesSegment({ s, u, index }: { s: Species; u: number; index: number 
           </svg>
         </div>
         <div className="absolute left-[120px] top-[250px] w-[1000px]">
-          <p className="text-[24px] tabular-nums text-canvas/45">{index + 1} of {DOC_SPECIES.length}</p>
+          <p className="text-[24px] tabular-nums text-canvas/62">{index + 1} of {DOC_SPECIES.length}</p>
           <Rise t={u} a={0.5} className="mt-6">
             <p className="font-serif text-[164px] font-light leading-[0.9] tracking-[-0.04em] text-canvas">{s.commonName}</p>
           </Rise>
@@ -186,12 +186,12 @@ function SpeciesSegment({ s, u, index }: { s: Species; u: number; index: number 
             <p className="flex items-center gap-4 text-[28px] text-canvas/85">
               <span className="inline-block h-4 w-4 rounded-full" style={{ backgroundColor: info.hex }} />
               {info.name}
-              <span className="text-canvas/45">IUCN {info.code}, assessed {s.statusAssessedYear}</span>
+              <span className="text-canvas/62">IUCN {info.code}, {redListYears(s)}</span>
             </p>
           </Rise>
           <Rise t={u} a={3} className="mt-6">
-            <p className="text-[24px] tabular-nums text-canvas/45">
-              {anchor.label} · {formatDeg(anchor.lat, 'lat')} {formatDeg(anchor.lng, 'lng')}
+            <p className="text-[24px] tabular-nums text-canvas/62">
+              {anchor.label} · {localityCoords(anchor)}
             </p>
           </Rise>
         </div>
@@ -210,7 +210,7 @@ function SpeciesSegment({ s, u, index }: { s: Species; u: number; index: number 
             <div className="absolute inset-0 bg-gradient-to-r from-forest-950 via-forest-950/10 to-transparent" />
           </div>
         )}
-        <p className="absolute bottom-[40px] right-[60px] text-[18px] text-canvas/55">
+        <p className="absolute bottom-[40px] right-[60px] text-[18px] text-canvas/70">
           Photograph: {s.image.credit} · {s.image.license} · via Wikimedia Commons
         </p>
       </Layer>
@@ -262,7 +262,7 @@ function SpeciesSegment({ s, u, index }: { s: Species; u: number; index: number 
                 </li>
               ))}
             </ul>
-            <p className="mt-8 text-[20px] leading-snug text-canvas/45">Each hatch is one recorded threat, laid over the states of record. Threats are recorded for the species, not mapped by place.</p>
+            <p className="mt-8 text-[20px] leading-snug text-canvas/62">Each hatch is one recorded threat, laid over the states of record. Threats are recorded for the species, not mapped by place.</p>
           </Layer>
           <Layer opacity={window01(u, BEAT.cons + 0.4, SPECIES_LEN - 0.4, 1, 0.8)}>
             <p className="doc-beat">What protects it</p>
@@ -307,7 +307,7 @@ function ConsScene({ u }: { u: number }) {
                 <li key={r.id} style={{ opacity: hlThreat && hlThreat !== r.id ? 0.4 : 1 }}>
                   <p className="flex justify-between text-[24px] text-canvas/85">
                     <span>{r.name}</span>
-                    <span className="tabular-nums text-canvas/50">{r.value} of {totalSpecies}</span>
+                    <span className="tabular-nums text-canvas/70">{r.value} of {totalSpecies}</span>
                   </p>
                   <div className="mt-2 h-px bg-canvas/10">
                     <div className="h-px bg-[var(--color-contour)]" style={{ width: `${(r.value / THREAT_ROWS[0].value) * 100 * easeOut(seg(u, 3, 6))}%` }} />
@@ -320,7 +320,7 @@ function ConsScene({ u }: { u: number }) {
             <ul className="space-y-2">
               {programmes.map((p) => (
                 <li key={p.id} className="flex gap-6 text-[24px]" style={{ opacity: hlProgramme && hlProgramme !== p.id ? 0.4 : 1 }}>
-                  <span className="w-20 tabular-nums text-canvas/45">{p.startedYear}</span>
+                  <span className="w-20 tabular-nums text-canvas/62">{p.startedYear}</span>
                   <span className="text-canvas/85">{p.name.split(' (')[0]}</span>
                 </li>
               ))}
@@ -342,7 +342,7 @@ function CloseScene({ u }: { u: number }) {
       <Layer opacity={statements}>
         <div className="absolute left-[120px] top-[340px] w-[1600px]">
           <Rise t={u} a={0.6}>
-            <p className="font-serif text-[104px] font-light leading-[1.02] tracking-[-0.03em] text-canvas/55">Mapping is not just about where species are.</p>
+            <p className="font-serif text-[104px] font-light leading-[1.02] tracking-[-0.03em] text-canvas/70">Mapping is not just about where species are.</p>
           </Rise>
           <Rise t={u} a={4.2} className="mt-8">
             <p className="font-serif text-[104px] font-light leading-[1.02] tracking-[-0.03em] text-canvas">It is about where we choose to protect them.</p>
@@ -375,7 +375,7 @@ function CloseScene({ u }: { u: number }) {
           <div className="mt-12 space-y-2 font-serif text-[40px] font-light">
             <Rise t={u} a={14}><p className="text-canvas/90">Mapping what remains.</p></Rise>
             <Rise t={u} a={14.8}><p className="text-canvas/70">Understanding what is at risk.</p></Rise>
-            <Rise t={u} a={15.6}><p className="text-canvas/50">Protecting what can still be saved.</p></Rise>
+            <Rise t={u} a={15.6}><p className="text-canvas/70">Protecting what can still be saved.</p></Rise>
           </div>
         </div>
       </Layer>

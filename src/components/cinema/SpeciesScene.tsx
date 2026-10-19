@@ -68,7 +68,7 @@ export function SpeciesScene({ species, index, total }: { species: Species; inde
 function Header({ species, index, total, play }: { species: Species; index: number; total: number; play?: boolean }) {
   return (
     <div>
-      <p className="scene-count text-small tabular-nums text-canvas/45">
+      <p className="scene-count text-small tabular-nums text-canvas/62">
         {index + 1} of {total}
       </p>
       <h3 className="mt-4 font-serif text-title font-light text-canvas">
@@ -95,10 +95,13 @@ function RangeFacts({ species, play, brief }: { species: Species; play?: boolean
             {species.statusAssessedYear}
           </p>
           <p className="mt-3 text-sm text-canvas/80">Assessed</p>
-          <p className="mt-1 text-xs text-canvas/45">year of the cited IUCN assessment</p>
+          <p className="mt-1 text-xs text-canvas/62">
+            year of the cited IUCN assessment
+            {species.statusPublishedYear !== species.statusAssessedYear && `, published ${species.statusPublishedYear}`}
+          </p>
         </div>
       </div>
-      <p className="mt-6 max-w-md text-small leading-relaxed text-canvas/55">
+      <p className="mt-6 max-w-md text-small leading-relaxed text-canvas/70">
         {brief ? species.indianDistribution.split(/(?<=\.)\s/)[0] : species.indianDistribution}
       </p>
     </div>
@@ -144,13 +147,13 @@ export function ConservationFacts({ species, onHover }: { species: Species; onHo
         ))}
       </ul>
       {species.conservationProgrammes.length > 0 && (
-        <p className="mt-5 max-w-md text-small leading-relaxed text-canvas/55">
+        <p className="mt-5 max-w-md text-small leading-relaxed text-canvas/70">
           Programmes:{' '}
           {species.conservationProgrammes.map((id) => PROGRAMME_BY_ID[id]?.name ?? id).join('; ')}.
         </p>
       )}
       {species.protectedAreas.length > 0 && (
-        <p className="mt-2 max-w-md text-small leading-relaxed text-canvas/55">
+        <p className="mt-2 max-w-md text-small leading-relaxed text-canvas/70">
           Protected areas: {species.protectedAreas.join('; ')}.
         </p>
       )}
@@ -495,7 +498,7 @@ function StackedScene({ species, index, total }: { species: Species; index: numb
           <div className="mx-auto mt-4" style={{ width: 'min(100%, calc(78svh * 1000 / 1105))' }}>
             <SpeciesMap ref={mapRef} species={species} highlightThreat={hlThreat} highlightSites={hlSites} className="aspect-[1000/1105] w-full" showLegend={false} />
           </div>
-          <p className="mt-3 text-label leading-snug text-canvas/45">
+          <p className="mt-3 text-label leading-snug text-canvas/62">
             {phase === 'range' && 'Shaded: states of record. Points: indicative localities, not a range boundary.'}
             {phase === 'threats' && 'Each hatch is one recorded threat. Threats are recorded for the species, not mapped by place.'}
             {phase === 'conservation' && 'Rings mark programme sites the dataset links to this species, at its anchor locality.'}

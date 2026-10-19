@@ -63,7 +63,7 @@ export function InteractiveStat({
       </p>
       <p className="mt-3 text-sm text-canvas/80">{label}</p>
       {note && (
-        <p className="stat-note mt-1 text-xs leading-snug text-canvas/45 transition-[color] duration-300 group-hover:text-canvas/75">
+        <p className="stat-note mt-1 text-xs leading-snug text-canvas/62 transition-[color] duration-300 group-hover:text-canvas/75">
           {note}
         </p>
       )}

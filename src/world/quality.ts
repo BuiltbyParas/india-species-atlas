@@ -138,6 +138,25 @@ export interface GovernorOptions {
  * itself a very slow frame, and counting it walks the scene down a ladder it
  * did not need to descend.
  */
+const HOLD = import.meta.env.DEV && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('hold') === '1';
+
+/** Until when the page has excused its frames from judgement (`excuseFrames`). */
+let excusedUntil = 0;
+/** The longest a single excuse may cover: a page that keeps excusing itself is still judged between excuses. */
+const MAX_EXCUSE_MS = 1200;
+
+/**
+ * The page is about to spend a few frames on work of its own — a restyle of the whole document when the
+ * environment changes, a reading's movement rising in, the next chapter building its canvases as a scene's section
+ * hands over to it. Those frames are slow for reasons that say nothing about whether a scene can hold its world, so
+ * no governor judges them (the field stage likewise leaves its own dissolves unjudged). Bounded and short: a device
+ * that is slow in steady state is still stepped down, and still falls back to the flat page.
+ */
+export function excuseFrames(ms: number) {
+  if (typeof performance === 'undefined') return;
+  excusedUntil = Math.max(excusedUntil, performance.now() + Math.min(ms, MAX_EXCUSE_MS));
+}
+
 export class FrameGovernor {
   rung = 0;
   private readonly o: Required<Omit<GovernorOptions, 'onTooSlow'>> & Pick<GovernorOptions, 'onTooSlow'>;
@@ -180,6 +199,12 @@ export class FrameGovernor {
 
   /** Call with the frame's timestamp, once per rendered frame. */
   sample(now: number) {
+    // Development only: `?hold=1` keeps every scene at full quality, for visual review on a loaded machine.
+    if (HOLD) return;
+    if (now < excusedUntil) {
+      this.reset();
+      return;
+    }
     const gap = this.previous ? now - this.previous : 0;
     this.previous = now;
     if (this.cooldown > 0) {

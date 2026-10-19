@@ -1,52 +1,45 @@
 import * as THREE from 'three';
-import { GLSL_GRAIN, GLSL_HASH, GLSL_NOISE } from '../../gl/chunks';
+import { GLSL_HASH, GLSL_NOISE } from '../../gl/chunks';
 import { seededRandom } from '../../gl/particles';
 import { CameraRig, type Shot } from '../cameraRig';
-import { rgb } from '../gl/color';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { fbm, seg } from '../noise';
+import { lin } from '../gl/color';
+import { GLSL_AIR, GLSL_FIELD_SUN, airUniforms, skyDome } from '../gl/air';
+import { foliageGeometry, foliageMaterial, foliageMesh, type Clump } from '../gl/foliage';
+import { grade } from '../gl/look';
+import { subjectFor } from '../gl/modelSubject';
+import { GLSL_SUNLIGHT, Sunlight, stampBand, stampSolid, type LightGrid } from '../gl/sunlight';
+import { fbm, lerp, seg } from '../noise';
 import cutoutUrl from '../../../assets/field/bengal-tiger-cutout.webp';
 import type { FieldInput, FieldWorld, WorldContext } from '../types';
 
 /**
- * FIELD STUDY 04 · the Bengal tiger, the central Indian forests.
+ * FIELD STUDY 04 · the Bengal tiger, the central Indian forests, mid-morning.
  *
- * A deciduous forest in the first hours of a dry-season morning. Straight,
- * fissured trunks stand at different distances and in clumps and gaps; between
- * them a layer of saplings and shrub, hanging foliage and drifts of dry
- * grass; leaf litter, a few fallen logs. The sun is low and warm and comes in
- * from the camera's side, broken by the canopy into patches of light on the
- * floor and on the trunks; everything else is in cool green shade. Distance
- * is carried by haze, not by darkness.
+ * A deciduous forest with the sun some thirty degrees up behind the tiger. The canopy is high and broken: where
+ * it opens, the sun comes down through the haze of the forest air in shafts, lies on the floor in flecks and
+ * pools, and catches the trunks it passes; everywhere else is green shade. The tiger stands in a small clearing
+ * where one of those shafts comes down, so it is lit and the forest around it is not.
  *
- * The tiger is the record's photograph, cut out of its background and
- * standing on the forest floor in a small clearing. Grass hides its feet, a
- * soft shadow lies under it, and its colour is matched to the light. From
- * above, the canopy is a roof of crowns.
+ * The light is the other studies' model in three layers: the trunks stand in the world's sun grid as columns and
+ * the crowns as a band of foliage held above open air (gl/sunlight.ts), so the trunks' shadows and the canopy's
+ * flecks on the floor come from what is drawn; the shafts are the same sun marched through the air along each
+ * view ray (the film's volume pass, gl/look.ts). The hand turns the sun a little, and the shafts and flecks move.
  *
- * Nothing here is added to make the scene "do" something: no lantern, no
- * motes, no marks. The camera walks in, stays with the animal, rises above
- * the crowns while the reserves are named, and comes back down.
+ * The tiger is the record's photograph, cut out of its background (Tisha Mukherjee, CC BY-SA 4.0), lit by the
+ * shaft it stands in, with a rim of sun along its back and the grass at its feet.
  *
- * Honesty: the forest is drawn, an impression of a central Indian forest and
- * not of any reserve; the reserves are listed in the text and not drawn. The
- * tiger is a photograph (cut out), not a drawn animal.
+ * Honesty: the forest is drawn, an impression of a central Indian forest and not of any reserve; the hour is
+ * chosen, not recorded; the reserves are listed in the text and not drawn. The tiger is a photograph (cut out),
+ * not a drawn animal.
  */
 
-const FOG = 0.0085;
+/** Development only: `?novol=1` turns the shafts off, to judge the rest of the light without them. */
+const NO_VOLUME = import.meta.env.DEV && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('novol') === '1';
 
 /** Where the tiger stands. */
 const T = new THREE.Vector3(4, 0, -36);
-
-const SUN = /* glsl */ `
-  // How much of the low sun reaches a point: the canopy breaks it into patches.
-  float sunReach(vec3 p, vec3 sunDir) {
-    vec2 q = p.xz + sunDir.xz / max(sunDir.y, 0.2) * (70.0 - p.y);
-    float a = fbm3(q * 0.1);
-    float b = valueNoise(q * 0.31 + 7.0);
-    return smoothstep(0.46, 0.6, a * 0.75 + b * 0.25);
-  }
-`;
+/** The canopy: its underside, and the band its crowns fill. */
+const CANOPY = { plane: 78, lo: 80, hi: 112 };
 
 const TRUNK_VERTEX = /* glsl */ `
   attribute float aSeed;
@@ -54,7 +47,6 @@ const TRUNK_VERTEX = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vLocal;
   varying float vSeed;
-  varying float vDepth;
   void main() {
     vec3 p = position;
     // The foot flares into buttress roots; the trunk is never a clean cylinder.
@@ -65,28 +57,27 @@ const TRUNK_VERTEX = /* glsl */ `
     vec4 w = modelMatrix * instanceMatrix * vec4(p, 1.0);
     vWorld = w.xyz;
     vLocal = vec3(ang, p.y, 0.0);
-    vNormal = normalize(mat3(modelMatrix) * mat3(instanceMatrix) * normal);
+    // The instance is scaled unevenly (a radius of one or two, a height of ninety): the normal takes the inverse
+    // scale, or every trunk's taper tilts it toward the sky and the bark is lit like the floor.
+    mat3 im = mat3(instanceMatrix);
+    vec3 inv = vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2]));
+    vNormal = normalize(mat3(modelMatrix) * im * (normal / max(inv, vec3(1e-6))));
     vSeed = aSeed;
-    vec4 mv = viewMatrix * w;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
+    gl_Position = projectionMatrix * viewMatrix * w;
   }
 `;
 
 const TRUNK_FRAGMENT = /* glsl */ `
   ${GLSL_HASH}
   ${GLSL_NOISE}
-  ${SUN}
-  uniform vec3 uSun;
-  uniform vec3 uSunCol;
-  uniform vec3 uShade;
-  uniform vec3 uHaze;
-  uniform float uFog;
+  ${GLSL_FIELD_SUN}
+  ${GLSL_AIR}
+  ${GLSL_SUNLIGHT}
+  uniform vec3 uSkyCol;
   varying vec3 vWorld;
   varying vec3 vNormal;
   varying vec3 vLocal;
   varying float vSeed;
-  varying float vDepth;
   void main() {
     vec3 n = normalize(vNormal);
     float h = vWorld.y;
@@ -94,132 +85,68 @@ const TRUNK_FRAGMENT = /* glsl */ `
     float u = vLocal.x * 1.9 + vSeed * 40.0;
     float fiss = valueNoise(vec2(u * 3.0, h * 0.8)) * 0.6 + valueNoise(vec2(u * 8.0, h * 2.0 + 3.0)) * 0.4;
     float ridge = smoothstep(0.3, 0.75, fiss);
-    vec3 dark = mix(vec3(0.12, 0.09, 0.07), vec3(0.17, 0.14, 0.1), vSeed);
-    vec3 light = mix(vec3(0.55, 0.48, 0.38), vec3(0.7, 0.6, 0.45), fract(vSeed * 7.0));
-    vec3 bark = mix(dark, light, ridge);
-    // Green on the shaded foot and the side away from the sun.
+    vec3 dark = mix(vec3(0.012, 0.009, 0.007), vec3(0.025, 0.018, 0.011), vSeed);
+    vec3 pale = mix(vec3(0.24, 0.19, 0.13), vec3(0.4, 0.31, 0.19), fract(vSeed * 7.0));
+    vec3 bark = mix(dark, pale, ridge);
     float moss = (1.0 - smoothstep(0.0, 6.0, h)) * smoothstep(0.1, 0.9, valueNoise(vWorld.xz * 0.9 + vSeed * 9.0));
-    bark = mix(bark, vec3(0.22, 0.3, 0.14), moss * 0.5);
-    float reach = sunReach(vWorld, normalize(uSun));
-    float diff = max(dot(n, normalize(uSun)), 0.0);
-    vec3 col = bark * (uShade * (0.65 + 0.35 * n.y) + uSunCol * diff * reach * 1.15);
-    float fog = 1.0 - exp(-pow(vDepth * uFog, 1.15));
-    col = mix(col, uHaze, fog);
+    bark = mix(bark, vec3(0.04, 0.07, 0.015), moss * 0.5);
+    // Below the canopy, the sun that reaches a trunk is the canopy's fleck where the trunk's ray crosses it.
+    float sun = h < ${CANOPY.plane.toFixed(1)} ? sunUnder(vWorld) : sunCanopy(vWorld);
+    float diff = max(dot(n, uSunDir), 0.0);
+    float sky = skyGround(vWorld.xz);
+    vec3 col = bark * (uSunCol * diff * sun + uSkyCol * sky * (0.55 + 0.35 * n.y) + uSkyCol * 0.18);
+    col = applyAir(col, vWorld);
     gl_FragColor = vec4(col, 1.0);
   }
 `;
 
 const FLOOR_VERTEX = /* glsl */ `
   varying vec3 vWorld;
-  varying float vDepth;
   void main() {
     vec4 w = modelMatrix * vec4(position, 1.0);
     vWorld = w.xyz;
-    vec4 mv = viewMatrix * w;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
+    gl_Position = projectionMatrix * viewMatrix * w;
   }
 `;
 
 const FLOOR_FRAGMENT = /* glsl */ `
   ${GLSL_HASH}
   ${GLSL_NOISE}
-  ${GLSL_GRAIN}
-  ${SUN}
-  uniform vec3 uSun;
-  uniform vec3 uSunCol;
-  uniform vec3 uShade;
-  uniform vec3 uHaze;
-  uniform float uFog;
+  ${GLSL_FIELD_SUN}
+  ${GLSL_AIR}
+  ${GLSL_SUNLIGHT}
+  uniform vec3 uSkyCol;
   varying vec3 vWorld;
-  varying float vDepth;
   void main() {
     vec2 p = vWorld.xz;
-    float near = 1.0 - smoothstep(30.0, 160.0, vDepth);
+    float d = distance(vWorld, cameraPosition);
+    float near = 1.0 - smoothstep(30.0, 160.0, d);
     // Leaf litter: dry, golden and brown, in drifts, with bare earth between.
     float drift = fbm3(p * 0.09);
     float fine = valueNoise(p * 2.6);
     float specks = step(0.72, valueNoise(p * 9.0 + 3.0)) * near;
-    vec3 litter = mix(vec3(0.3, 0.21, 0.12), vec3(0.5, 0.37, 0.19), drift);
-    litter = mix(litter, vec3(0.62, 0.47, 0.22), specks * 0.55);
-    litter *= 0.78 + 0.4 * fine;
-    // Earth shows through in patches.
-    litter = mix(litter, vec3(0.27, 0.2, 0.14), smoothstep(0.62, 0.8, fbm3(p * 0.05 + 9.0)) * 0.7);
-    // Green ground cover where the shade is deep.
+    vec3 litter = mix(vec3(0.06, 0.035, 0.018), vec3(0.16, 0.1, 0.05), drift);
+    litter = mix(litter, vec3(0.26, 0.17, 0.06), specks * 0.55);
+    litter *= 0.7 + 0.55 * fine;
+    litter = mix(litter, vec3(0.06, 0.035, 0.018), smoothstep(0.62, 0.8, fbm3(p * 0.05 + 9.0)) * 0.7);
     float cover = smoothstep(0.55, 0.72, fbm3(p * 0.045 + 31.0));
-    litter = mix(litter, vec3(0.2, 0.28, 0.11) * (0.8 + 0.4 * fine), cover * 0.6);
-    float reach = sunReach(vWorld, normalize(uSun));
-    float diff = normalize(uSun).y;
-    vec3 col = litter * (uShade + uSunCol * diff * reach * 1.05);
-    float fog = 1.0 - exp(-pow(vDepth * uFog, 1.15));
-    col = mix(col, uHaze, fog);
-    col += paperGrain(gl_FragCoord.xy, 0.006);
-    gl_FragColor = vec4(col, 1.0);
-  }
-`;
-
-const LEAF_VERTEX = /* glsl */ `
-  attribute float aSeed;
-  varying vec3 vWorld;
-  varying vec3 vNormal;
-  varying float vDepth;
-  varying float vSeed;
-  varying float vUp;
-  void main() {
-    vec3 p = position;
-    float bump = sin(p.x * 5.1 + aSeed * 17.0) * sin(p.y * 4.7 + aSeed * 9.0) * sin(p.z * 5.6 + aSeed * 3.0);
-    p *= 1.0 + 0.16 * bump;
-    vec4 w = modelMatrix * instanceMatrix * vec4(p, 1.0);
-    vWorld = w.xyz;
-    vNormal = normalize(mat3(modelMatrix) * mat3(instanceMatrix) * normal);
-    vSeed = aSeed;
-    vUp = position.y;
-    vec4 mv = viewMatrix * w;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
-  }
-`;
-
-const LEAF_FRAGMENT = /* glsl */ `
-  ${GLSL_HASH}
-  ${GLSL_NOISE}
-  uniform vec3 uSun;
-  uniform vec3 uSunCol;
-  uniform vec3 uShade;
-  uniform vec3 uHaze;
-  uniform float uFog;
-  uniform vec3 uLeafA;
-  uniform vec3 uLeafB;
-  uniform float uRoof;
-  uniform float uScale;
-  varying vec3 vWorld;
-  varying vec3 vNormal;
-  varying float vDepth;
-  varying float vSeed;
-  varying float vUp;
-  void main() {
-    vec3 n = normalize(vNormal);
-    vec3 L = normalize(uSun);
-    vec3 V = normalize(cameraPosition - vWorld);
-    vec3 q = (vWorld + vec3(vSeed * 20.0)) * uScale;
-    // Leaf mass: clustered, with gaps and lighter new growth.
-    float leaf = (valueNoise(q.xy * 2.2) + valueNoise(q.zy * 2.2 + 7.0) + valueNoise(q.xz * 2.2 + 5.0)) * 0.15 + (valueNoise(q.xy * 7.0 + 3.0) + valueNoise(q.zy * 7.0 + 11.0) + valueNoise(q.xz * 7.0 + 17.0)) * 0.183;
-    vec3 base = mix(uLeafA * 0.55, uLeafB * 0.9, smoothstep(0.4, 0.6, leaf));
-    base = mix(base, base * vec3(1.25, 1.2, 0.8), smoothstep(0.7, 0.9, leaf) * 0.5 + vSeed * 0.15);
-    float diff = max(dot(n, L), 0.0);
-    // Light passes through leaves: brightest when the sun is behind them.
-    float trans = pow(max(dot(-V, L), 0.0), 2.0) * 0.55 * (0.4 + 0.6 * leaf);
-    vec3 col = base * (uShade * (0.55 + 0.45 * n.y) + uSunCol * (diff * 0.7 + trans) * (0.55 + 0.6 * leaf));
-    col *= 0.8 + 0.3 * smoothstep(-0.4, 0.9, vUp);
-    // The roof of crowns seen from above is sunlit.
-    col = mix(col, base * (uShade * 0.8 + uSunCol * 1.0), uRoof * smoothstep(0.1, 0.8, n.y) * 0.6);
-    float fog = 1.0 - exp(-pow(vDepth * uFog, 1.15));
-    col = mix(col, uHaze, fog);
+    litter = mix(litter, vec3(0.03, 0.06, 0.011) * (0.8 + 0.4 * fine), cover * 0.6);
+    // Litter is rough: a little relief for the sun to catch.
+    vec3 n = normalize(vec3((fine - 0.5) * 0.6 * near, 1.0, (valueNoise(p * 2.6 + 9.0) - 0.5) * 0.6 * near));
+    float sun = near > 0.0 ? sunGroundSoft(p) : sunGround(p);
+    float sky = skyGround(p);
+    vec3 col = litter * (uSunCol * max(dot(n, uSunDir), 0.0) * sun + uSkyCol * sky);
+    col = applyAir(col, vWorld);
     gl_FragColor = vec4(col, 1.0);
   }
 `;
 
 const GRASS_VERTEX = /* glsl */ `
+  ${GLSL_HASH}
+  ${GLSL_NOISE}
+  ${GLSL_FIELD_SUN}
+  ${GLSL_AIR}
+  ${GLSL_SUNLIGHT}
   attribute float aTip;
   attribute float aShade;
   attribute vec4 aInst;
@@ -228,8 +155,12 @@ const GRASS_VERTEX = /* glsl */ `
   varying float vTip;
   varying float vShade;
   varying float vRand;
-  varying float vDepth;
   varying vec3 vWorld;
+  varying float vSun;
+  varying float vSky;
+  // The air, worked out per vertex: haze changes slowly across a blade or a leaf.
+  varying float vAirT;
+  varying vec3 vAirGlow;
   void main() {
     float a = aRand.x * 6.28318;
     mat2 R = mat2(cos(a), -sin(a), sin(a), cos(a));
@@ -242,145 +173,139 @@ const GRASS_VERTEX = /* glsl */ `
     vTip = aTip;
     vShade = aShade;
     vRand = aRand.y;
-    vec4 mv = viewMatrix * vec4(w, 1.0);
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
+    vSun = sunGround(aInst.xz);
+    vSky = skyGround(aInst.xz);
+    vAirT = airTransmittance(w);
+    vAirGlow = airGlow(normalize(w - cameraPosition)) * (1.0 - vAirT);
+    gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
   }
 `;
 
 const GRASS_FRAGMENT = /* glsl */ `
   ${GLSL_HASH}
   ${GLSL_NOISE}
-  ${SUN}
-  uniform vec3 uSun;
-  uniform vec3 uSunCol;
-  uniform vec3 uShade;
-  uniform vec3 uHaze;
-  uniform float uFog;
+  ${GLSL_FIELD_SUN}
+  ${GLSL_AIR}
+  uniform vec3 uSkyCol;
   varying float vTip;
   varying float vShade;
   varying float vRand;
-  varying float vDepth;
   varying vec3 vWorld;
+  varying float vSun;
+  varying float vSky;
+  varying float vAirT;
+  varying vec3 vAirGlow;
   void main() {
-    vec3 base = mix(vec3(0.2, 0.22, 0.08), vec3(0.32, 0.3, 0.1), vRand);
-    vec3 tip = mix(vec3(0.7, 0.6, 0.28), vec3(0.78, 0.68, 0.36), vRand);
-    vec3 albedo = mix(base, tip, pow(vTip, 1.2)) * (0.8 + 0.3 * vShade);
-    float reach = sunReach(vWorld, normalize(uSun));
-    vec3 col = albedo * (uShade * 1.1 + uSunCol * reach * 0.95 * (0.4 + 0.6 * vTip));
-    float fog = 1.0 - exp(-pow(vDepth * uFog, 1.15));
-    col = mix(col, uHaze, fog);
+    float t = clamp(vTip, 0.0, 1.0);
+    vec3 base = mix(vec3(0.02, 0.03, 0.006), vec3(0.06, 0.06, 0.01), vRand);
+    vec3 tip = mix(vec3(0.4, 0.3, 0.07), vec3(0.52, 0.4, 0.12), vRand);
+    vec3 albedo = mix(base, tip, pow(t, 1.2)) * (0.8 + 0.3 * vShade);
+    vec3 V = normalize(vWorld - cameraPosition);
+    float through = pow(max(dot(V, uSunDir), 0.0), 4.0);
+    float sun = clamp(vSun, 0.0, 1.0);
+    vec3 light = uSunCol * sun * (0.35 + 0.4 * vShade + through * (0.4 + 1.2 * t)) + uSkyCol * vSky * (0.6 + 0.4 * t);
+    vec3 col = albedo * light;
+    col = col * vAirT + vAirGlow;
     gl_FragColor = vec4(col, 1.0);
   }
 `;
 
-const PANEL_VERTEX = /* glsl */ `
+/**
+ * The shafts: for each pixel, the sun scattered toward the eye by the forest's air between the eye and the surface
+ * it sees, wherever that air is in the sun — read from the canopy's flecks where each sample's ray to the sun
+ * crosses the canopy. Drawn at half the frame's size by the film, blurred once and added before its curve.
+ */
+const VOLUME_VERTEX = /* glsl */ `
   varying vec2 vUv;
-  varying vec3 vWorld;
-  varying float vDepth;
   void main() {
     vUv = uv;
-    vec4 w = modelMatrix * vec4(position, 1.0);
-    vWorld = w.xyz;
-    vec4 mv = viewMatrix * w;
-    vDepth = -mv.z;
-    gl_Position = projectionMatrix * mv;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `;
 
-/**
- * The tiger: the record's photograph with its background removed, standing in
- * the same light as the drawn forest. The picture's soft edge is pulled in a
- * little so no halo of its old background shows, and the feet, which the cut
- * leaves faint, are given to the floor.
- */
-const PANEL_FRAGMENT = /* glsl */ `
+const VOLUME_FRAGMENT = /* glsl */ `
   ${GLSL_HASH}
   ${GLSL_NOISE}
-  ${SUN}
-  uniform sampler2D uMap;
-  uniform vec3 uSun;
-  uniform vec3 uSunCol;
-  uniform vec3 uShade;
-  uniform vec3 uHaze;
-  uniform float uFog;
-  uniform float uFade;
+  ${GLSL_FIELD_SUN}
+  ${GLSL_SUNLIGHT}
+  uniform sampler2D tDepth;
+  uniform mat4 uInvProj;
+  uniform mat4 uCamWorld;
+  uniform vec3 uCamPos;
+  uniform vec2 uSize;
+  uniform float uDensity;
+  uniform float uStrength;
+  uniform float uG;
   varying vec2 vUv;
-  varying vec3 vWorld;
-  varying float vDepth;
   void main() {
-    vec4 t = texture2D(uMap, vUv);
-    float a = smoothstep(0.12, 0.7, t.a);
-    vec3 col = t.rgb;
-    // The picture was lit softly from the front: take a little of the forest's colour and its patchy light.
-    float reach = sunReach(vWorld + vec3(0.0, 10.0, 0.0), normalize(uSun));
-    vec3 light = mix(vec3(0.9, 0.93, 0.88), vec3(1.04, 1.0, 0.9), reach * 0.8);
-    col = col * light * 0.97;
-    // The foot sinks into the ground cover.
-    a *= smoothstep(0.02, 0.2, vUv.y);
-    float fog = 1.0 - exp(-pow(vDepth * uFog, 1.15));
-    col = mix(col, uHaze, fog);
-    gl_FragColor = vec4(col, a * uFade);
+    float depth = texture2D(tDepth, vUv).x;
+    vec4 ndc = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 view = uInvProj * ndc;
+    view /= view.w;
+    vec3 world = (uCamWorld * view).xyz;
+    vec3 ray = world - uCamPos;
+    float len = min(length(ray), 240.0);
+    vec3 dir = normalize(ray);
+    float mu = dot(dir, uSunDir);
+    float g = uG;
+    float k = 1.0 + g * g - 2.0 * g * mu;
+    float phase = (1.0 - g * g) / (k * sqrt(k)) * 0.08 + 0.02;
+    const int STEPS = 16;
+    float dt = len / float(STEPS);
+    float jitter = hash12(gl_FragCoord.xy + fract(uCamPos.xz * 0.37));
+    float lit = 0.0;
+    float tr = 1.0;
+    for (int i = 0; i < STEPS; i++) {
+      vec3 s = uCamPos + dir * (float(i) + jitter) * dt;
+      if (s.y > uLightPlane) break;
+      float v = sunUnder(s);
+      lit += v * tr * dt;
+      tr *= exp(-uDensity * dt);
+    }
+    gl_FragColor = vec4(uSunCol * phase * lit * uDensity * uStrength, 1.0);
   }
 `;
 
-const SHADOW_FRAGMENT = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vec2 q = (vUv - 0.5) * 2.0;
-    float d = length(q * vec2(1.0, 1.35));
-    float a = pow(clamp(1.0 - d, 0.0, 1.0), 1.4) * 0.5;
-    gl_FragColor = vec4(0.06, 0.05, 0.03, a);
-  }
-`;
-
-const SHADOW_VERTEX = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-export async function createForest({ tier }: WorldContext): Promise<FieldWorld> {
+export async function createForest({ tier, species }: WorldContext): Promise<FieldWorld> {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.3, 1600);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.3, 2000);
   const C = {
-    haze: rgb('#a8b27f'),
-    hazeLate: rgb('#c9b27a'),
-    shade: rgb('#5e7058'),
-    sunCol: rgb('#ffd9a0'),
-    sunColLate: rgb('#ffbd7a'),
-    leafA: rgb('#3a5a22'),
-    leafB: rgb('#7f9a34'),
+    sky: lin('#6f8a76', 0.34),
+    sun: lin('#ffd9a0', 5.2),
+    sunLate: lin('#ffc98a', 5.0),
+    air: lin('#40523f', 0.32),
+    zenith: lin('#6f93b8', 0.9),
   };
-  const sun = new THREE.Vector3(0.5, 0.36, 0.78).normalize();
-  const sunLate = new THREE.Vector3(0.6, 0.2, 0.75).normalize();
-  const sunCol = C.sunCol.clone();
-  const haze = C.haze.clone();
-  const shared = {
-    uSun: { value: sun },
-    uSunCol: { value: sunCol },
-    uShade: { value: C.shade },
-    uHaze: { value: haze },
-    uFog: { value: FOG },
+  const sunDir = new THREE.Vector3();
+  const sunCol = C.sun.clone();
+  const setSun = (azimuth: number, elevation: number) => {
+    sunDir.set(Math.cos(elevation) * Math.cos(azimuth), Math.sin(elevation), Math.cos(elevation) * Math.sin(azimuth)).normalize();
   };
+  // Behind the tiger and a little to the right of the camera's walk: the shafts slant down toward the eye.
+  const AZ = -1.19;
+  const EL = 0.56;
+  setSun(AZ, EL);
+
+  // The sun's scatter in this air is drawn by the shafts, so the surfaces' own air carries only the sky's.
+  const air = airUniforms({ density: 0.006, falloff: 0.004, base: 0, colour: C.air, mie: 0, g: 0.6, zenith: C.zenith, disc: 8, discSize: 0.012 });
+  const shared = { uSunDir: { value: sunDir }, uSunCol: { value: sunCol }, ...air };
   const rand = seededRandom(53);
 
-  /* the floor */
-  const floorGeo = new THREE.PlaneGeometry(1200, 1200);
-  floorGeo.rotateX(-Math.PI / 2);
-  const floor = new THREE.Mesh(floorGeo, new THREE.ShaderMaterial({ vertexShader: FLOOR_VERTEX, fragmentShader: FLOOR_FRAGMENT, uniforms: { ...shared } }));
-  floor.position.z = -150;
-  scene.add(floor);
+  /* the light grid: floor, trunks, shrubs and the tiger as solids; the crowns as a band above open air */
+  const cell = { high: 0.7, balanced: 0.85, low: 1.2 }[tier];
+  const rect: [number, number, number, number] = [T.x - 175, T.z - 340, T.x + 175, T.z + 115];
+  const nx = Math.round((rect[2] - rect[0]) / cell) + 1;
+  const nz = Math.round((rect[3] - rect[1]) / cell) + 1;
+  const grid: LightGrid = { rect, nx, nz, solid: new Float32Array(nx * nz), bandDensity: 0.95, plane: CANOPY.plane };
 
   /* the trunks: tapering, varied in girth and lean, in clumps with gaps between */
   const trunkCount = { high: 440, balanced: 310, low: 190 }[tier];
   const trunkGeo = new THREE.CylinderGeometry(0.72, 1, 1, tier === 'low' ? 8 : 12, 8, true);
   trunkGeo.translate(0, 0.5, 0);
   const seeds = new Float32Array(trunkCount);
-  const trunkMat = new THREE.ShaderMaterial({ vertexShader: TRUNK_VERTEX, fragmentShader: TRUNK_FRAGMENT, uniforms: { ...shared }, side: THREE.DoubleSide });
-  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, trunkCount);
+  const trunkMats: THREE.Matrix4[] = [];
+  /** Each standing trunk, for the canopy below (which may shorten it and crown it). */
+  const standing: Array<{ i: number; x: number; z: number; r: number; q: THREE.Quaternion }> = [];
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const eu = new THREE.Euler();
@@ -391,12 +316,10 @@ export async function createForest({ tier }: WorldContext): Promise<FieldWorld> 
     for (let tries = 0; tries < 60; tries++) {
       x = T.x + (rand() - 0.5) * 200;
       z = T.z + 60 - rand() * 260;
-      // The tiger's clearing, and the way the camera walks in: no trunk in either.
       const dx = x - T.x;
       const dz = z - T.z;
       if (Math.abs(dx) < 13 && dz > -22 && dz < 62) continue;
       if (Math.abs(dx) < 7 && dz < -22 && dz > -48) continue;
-      // Clumps and gaps.
       if (fbm(x * 0.02 + 5, z * 0.02, 3, 71) + (rand() - 0.5) * 0.3 < 0.42) continue;
       ok = true;
       break;
@@ -404,80 +327,131 @@ export async function createForest({ tier }: WorldContext): Promise<FieldWorld> 
     const r = 0.9 + Math.pow(rand(), 2.2) * 1.9;
     eu.set((rand() - 0.5) * 0.05, rand() * Math.PI, (rand() - 0.5) * 0.05);
     q.setFromEuler(eu);
-    m.compose(new THREE.Vector3(x, -0.5, z), q, new THREE.Vector3(ok ? r : 0, 100 + rand() * 14, ok ? r : 0));
-    trunks.setMatrixAt(i, m);
+    const tall = 86 + rand() * 6;
+    m.compose(new THREE.Vector3(x, -0.5, z), q, new THREE.Vector3(ok ? r : 0, tall, ok ? r : 0));
+    trunkMats.push(m.clone());
     seeds[i] = rand();
+    if (ok) standing.push({ i, x, z, r, q: q.clone() });
   }
   trunkGeo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seeds, 1));
-  trunks.frustumCulled = false;
-  scene.add(trunks);
 
-  /* foliage: the roof of crowns, hanging leaf in the middle layer, saplings and shrub below */
-  const leafUniforms = { ...shared, uLeafA: { value: C.leafA }, uLeafB: { value: C.leafB }, uRoof: { value: 1 } };
-  const leafMat = new THREE.ShaderMaterial({ vertexShader: LEAF_VERTEX, fragmentShader: LEAF_FRAGMENT, uniforms: { ...leafUniforms, uScale: { value: 1 } } });
-  // The crowns are far and huge: their leaf pattern is drawn coarser, so it does not melt into a smear.
-  const crownMat = new THREE.ShaderMaterial({ vertexShader: LEAF_VERTEX, fragmentShader: LEAF_FRAGMENT, uniforms: { ...leafUniforms, uScale: { value: 0.4 } } });
-  // Welded and smooth: no flat facets showing through the foliage.
-  const ico = new THREE.IcosahedronGeometry(1, tier === 'low' ? 2 : 3);
-  ico.deleteAttribute('normal');
-  ico.deleteAttribute('uv');
-  const leafGeo = mergeVertices(ico);
-  leafGeo.computeVertexNormals();
-  const clear = (x: number, z: number, pad: number) => Math.abs(x - T.x) < 13 + pad && z > T.z - 24 - pad && z < T.z + 62;
-  type Blob = [number, number, number, number, number]; // x, y, z, radius, squash
-  const blobs: Blob[] = [];
-  const crown = { high: 460, balanced: 320, low: 190 }[tier];
-  for (let i = 0; i < crown; i++) {
-    blobs.push([T.x + (rand() - 0.5) * 520, 94 + rand() * 12, T.z + 80 - rand() * 460, 18 + rand() * 12, 0.5]);
+  /*
+   * The canopy: crowns with gaps between them; one gap placed so a shaft comes down on the tiger. A crown is a dome
+   * (one lobe on top, the rest round and below it), so from above it reads as a mass with a lit top and a shaded
+   * skirt; the roof rises and falls, about one crown in eight stands clear of it (an emergent), and where a trunk
+   * has no crown over it a lower tree fills the gap (the midstorey), so looking down into a gap finds foliage in
+   * shade rather than bare floor and trunk tops. Every new choice here comes from a second random stream (`vary`),
+   * so the trunks, shrubs and grass round the tiger stand exactly where they did.
+   */
+  const crowns: Clump[] = [];
+  const crownCount = { high: 520, balanced: 420, low: 260 }[tier];
+  const leafK = { high: 1, balanced: 0.8, low: 0.5 }[tier];
+  const vary = seededRandom(97);
+  const gap = new THREE.Vector2(T.x + (sunDir.x / sunDir.y) * 96, T.z + (sunDir.z / sunDir.y) * 96);
+  const lobesAt: Array<[number, number, number]> = [];
+  for (let i = 0, tries = 0; i < crownCount && tries < crownCount * 20; tries++) {
+    const x = T.x + (rand() - 0.5) * 560;
+    const z = T.z + 110 - rand() * 520;
+    if (Math.hypot(x - gap.x, z - gap.y) < 22) continue;
+    if (fbm(x * 0.011 + 3, z * 0.011, 3, 77) < 0.3) continue;
+    i++;
+    const emergent = vary() < 0.13;
+    const R = (13 + rand() * 9) * (emergent ? 1.2 : 1);
+    const y = 88 + rand() * 10 + (vary() - 0.5) * 6 + (emergent ? 9 + vary() * 6 : 0);
+    const lobes = 3 + Math.floor(rand() * 3);
+    // Every camera in the study looks up the forest (toward −z): crowns behind the walk are never seen and keep only
+    // a few leaves (their light is in the grid all the same); far crowns are seen only from above, through haze, as
+    // fewer, larger sprays.
+    const reach = z > T.z + 70 ? 0.3 : z < T.z - 280 ? 0.6 : 1;
+    const far = z < T.z - 280;
+    for (let l = 0; l < lobes; l++) {
+      const a = rand() * Math.PI * 2;
+      const d = rand() * R * 0.55;
+      const lr = R * (0.45 + rand() * 0.25);
+      const dy = (rand() - 0.5) * 6;
+      const top = l === 0;
+      const out = top ? d * 0.2 : R * (0.32 + 0.5 * (d / (R * 0.55)));
+      const cx = x + Math.cos(a) * out;
+      const cz = z + Math.sin(a) * out;
+      const cy = y + (top ? lr * 0.4 : -lr * 0.12 + dy * 0.4);
+      crowns.push({ x: cx, y: cy, z: cz, rx: lr, ry: lr * 0.62, rz: lr, leaves: Math.round(lr * lr * 0.78 * leafK * reach), size: far ? 6.4 : undefined });
+      stampBand(grid, cx, cz, lr * 0.9, cy - lr * 0.55, cy + lr * 0.55);
+      lobesAt.push([cx, cz, lr]);
+    }
   }
-  const shrubs = { high: 120, balanced: 85, low: 50 }[tier];
-  const shrubStart = blobs.length;
-  for (let i = 0; blobs.length < shrubStart + shrubs && i < shrubs * 12; i++) {
+  // The midstorey: a trunk with no crown over it is shortened and crowned below the roof — except along the shaft's
+  // way down to the tiger, which must stay open. Its trunks are stamped into the light at their own height.
+  const covered = (x: number, z: number) => lobesAt.some(([cx, cz, lr]) => (cx - x) ** 2 + (cz - z) ** 2 < (lr * 0.8) ** 2);
+  const offShaft = (x: number, z: number, h: number) => Math.hypot(x - (T.x + (sunDir.x / sunDir.y) * h), z - (T.z + (sunDir.z / sunDir.y) * h)) > 18;
+  const sv = new THREE.Vector3();
+  for (const t of standing) {
+    let top = CANOPY.lo + 4;
+    if (!covered(t.x, t.z)) {
+      const h = 50 + vary() * 22;
+      if (offShaft(t.x, t.z, h + 6)) {
+        top = h;
+        trunkMats[t.i].compose(sv.set(t.x, -0.5, t.z), t.q, new THREE.Vector3(t.r * 0.85, h, t.r * 0.85));
+        const R = 7 + vary() * 4;
+        const n = 2 + Math.floor(vary() * 2);
+        for (let l = 0; l < n; l++) {
+          const a = vary() * Math.PI * 2;
+          const out = l === 0 ? 0 : R * (0.35 + vary() * 0.3);
+          const lr = R * (0.55 + vary() * 0.2);
+          const cx = t.x + Math.cos(a) * out;
+          const cz = t.z + Math.sin(a) * out;
+          const cy = h + 3 + (l === 0 ? lr * 0.35 : 0);
+          crowns.push({ x: cx, y: cy, z: cz, rx: lr, ry: lr * 0.6, rz: lr, leaves: Math.round(lr * lr * 0.85 * leafK * (t.z > T.z + 70 ? 0.3 : 1)) });
+          stampBand(grid, cx, cz, lr * 0.85, cy - lr * 0.5, cy + lr * 0.5);
+        }
+      }
+    }
+    stampSolid(grid, t.x, t.z, t.r * 1.05, t.r * 1.05, 0, top, 'column');
+    stampSolid(grid, t.x, t.z, t.r * 1.9, t.r * 1.9, 0, 1.2, 'dome');
+  }
+  const crownGeo = foliageGeometry(crowns, { size: 5.6, seed: 21, ragged: 0.3, shell: 0.72 });
+
+  /* the understorey: saplings and shrub, in lobes of small leaves */
+  const clear = (x: number, z: number, pad: number) => Math.abs(x - T.x) < 13 + pad && z > T.z - 24 - pad && z < T.z + 62;
+  const shrubs: Clump[] = [];
+  const shrubCount = { high: 120, balanced: 90, low: 50 }[tier];
+  for (let i = 0, tries = 0; i < shrubCount && tries < shrubCount * 12; tries++) {
     const x = T.x + (rand() - 0.5) * 130;
     const z = T.z + 55 - rand() * 130;
     if (clear(x, z, 0)) continue;
     if (Math.abs(x - T.x) < 9 && z > T.z - 14 && z < T.z + 3) continue;
     if (fbm(x * 0.05 + 2, z * 0.05, 2, 83) < 0.42) continue;
-    const r = 0.9 + rand() * 1.8;
-    blobs.push([x, r * 0.5, z, r, 0.55]);
+    i++;
+    const r = 1 + rand() * 1.9;
+    const lobes = 2 + Math.floor(rand() * 3);
+    for (let l = 0; l < lobes; l++) {
+      const a = rand() * Math.PI * 2;
+      const d = rand() * r * 0.6;
+      const lr = r * (0.55 + rand() * 0.3);
+      shrubs.push({ x: x + Math.cos(a) * d, y: lr * 0.7 + rand() * r * 0.5, z: z + Math.sin(a) * d, rx: lr, ry: lr * 0.75, rz: lr, leaves: Math.round(lr * lr * 70 * leafK) });
+    }
+    stampSolid(grid, x, z, r * 1.1, r * 1.1, 0, r * 1.5, 'dome');
   }
-  const leafSeeds = new Float32Array(blobs.length);
-  const crownMesh = new THREE.InstancedMesh(leafGeo, crownMat, crown);
-  const shrubMesh = new THREE.InstancedMesh(leafGeo, leafMat, blobs.length - crown);
-  blobs.forEach(([x, y, z, r, sq], i) => {
-    eu.set(0, rand() * 6.28, 0);
-    q.setFromEuler(eu);
-    m.compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(r * (1 + rand() * 0.3), r * sq, r * (1 + rand() * 0.3)));
-    if (i < crown) crownMesh.setMatrixAt(i, m);
-    else shrubMesh.setMatrixAt(i - crown, m);
-    leafSeeds[i] = rand();
-  });
-  leafGeo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(leafSeeds, 1));
-  for (const mesh of [crownMesh, shrubMesh]) {
-    mesh.frustumCulled = false;
-    scene.add(mesh);
-  }
+  const shrubGeo = foliageGeometry(shrubs, { size: 0.32, seed: 23, ragged: 0.25 });
 
   /* fallen logs */
   const logGeo = new THREE.CylinderGeometry(0.8, 0.95, 1, 9, 1, false);
-  // The trunk shader flares the foot (y = 0); a log stands on the same footing.
   logGeo.translate(0, 0.5, 0);
   const logCount = 6;
-  const logs = new THREE.InstancedMesh(logGeo, trunkMat, logCount);
+  const logMats: THREE.Matrix4[] = [];
   const logSeeds = new Float32Array(logCount);
   for (let i = 0; i < logCount; i++) {
     const x = T.x + (i % 2 ? 1 : -1) * (14 + rand() * 30);
     const z = T.z - 8 - rand() * 80;
     const len = 9 + rand() * 12;
-    eu.set(0, rand() * 3.14, Math.PI / 2 + (rand() - 0.5) * 0.08, 'YXZ');
+    const yaw = rand() * 3.14;
+    eu.set(0, yaw, Math.PI / 2 + (rand() - 0.5) * 0.08, 'YXZ');
     q.setFromEuler(eu);
     m.compose(new THREE.Vector3(x, 0.55, z), q, new THREE.Vector3(1.0 + rand() * 0.5, len, 1.0 + rand() * 0.5));
-    logs.setMatrixAt(i, m);
+    logMats.push(m.clone());
     logSeeds[i] = rand();
+    stampSolid(grid, x, z, 2, 2, 0, 1.6, 'dome');
   }
   logGeo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(logSeeds, 1));
-  logs.frustumCulled = false;
-  scene.add(logs);
 
   /* grass: drifts of it, dry at the tip, and a row in front of the tiger's feet */
   const grassCount = { high: 6000, balanced: 4000, low: 2300 }[tier];
@@ -485,8 +459,8 @@ export async function createForest({ tier }: WorldContext): Promise<FieldWorld> 
   const inst = new Float32Array((grassCount + front) * 4);
   const rnd = new Float32Array((grassCount + front) * 4);
   let placed = 0;
-  const put = (x: number, z: number, s: number) => {
-    inst.set([x, -0.1, z, s], placed * 4);
+  const put = (x: number, z: number, sc: number) => {
+    inst.set([x, -0.1, z, sc], placed * 4);
     rnd.set([rand(), rand(), rand(), rand()], placed * 4);
     placed++;
   };
@@ -501,38 +475,92 @@ export async function createForest({ tier }: WorldContext): Promise<FieldWorld> 
   grassGeo.setAttribute('aInst', new THREE.InstancedBufferAttribute(inst, 4));
   grassGeo.setAttribute('aRand', new THREE.InstancedBufferAttribute(rnd, 4));
   grassGeo.instanceCount = placed;
-  const grassMat = new THREE.ShaderMaterial({ vertexShader: GRASS_VERTEX, fragmentShader: GRASS_FRAGMENT, uniforms: { ...shared, uTime: { value: 0 } }, side: THREE.DoubleSide });
+
+  /* the tiger's bulk */
+  stampSolid(grid, T.x, T.z, 5.5, 1.6, 0, 3.6, 'dome');
+
+  const light = new Sunlight(grid, { penumbra: 0.006, reach: 260, steps: 40, scale: 0.75 });
+  const lightU = light.uniforms;
+
+  scene.add(skyDome(1800, { ...shared }));
+
+  const floorGeo = new THREE.PlaneGeometry(1400, 1400);
+  floorGeo.rotateX(-Math.PI / 2);
+  const floor = new THREE.Mesh(floorGeo, new THREE.ShaderMaterial({ vertexShader: FLOOR_VERTEX, fragmentShader: FLOOR_FRAGMENT, uniforms: { ...shared, ...lightU, uSkyCol: { value: C.sky } } }));
+  floor.position.z = -150;
+  scene.add(floor);
+
+  const trunkMat = new THREE.ShaderMaterial({ vertexShader: TRUNK_VERTEX, fragmentShader: TRUNK_FRAGMENT, uniforms: { ...shared, ...lightU, uSkyCol: { value: C.sky } }, side: THREE.DoubleSide });
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, trunkCount);
+  trunkMats.forEach((mm, i) => trunks.setMatrixAt(i, mm));
+  trunks.frustumCulled = false;
+  scene.add(trunks);
+  const logs = new THREE.InstancedMesh(logGeo, trunkMat, logCount);
+  logMats.forEach((mm, i) => logs.setMatrixAt(i, mm));
+  logs.frustumCulled = false;
+  scene.add(logs);
+
+  const crownMat = foliageMaterial(
+    { ...shared, ...lightU },
+    { leafA: lin('#24361a', 0.55), leafB: lin('#56702a', 0.6), leafLit: lin('#c8d070'), translucency: 1.1, skyCol: C.sky, sway: 0.25, canopy: true, spray: true, depthShade: 1 },
+  );
+  scene.add(foliageMesh(crownGeo, crownMat));
+  const shrubMat = foliageMaterial(
+    { ...shared, ...lightU },
+    { leafA: lin('#22341a', 0.5), leafB: lin('#5a7a2c', 0.6), leafLit: lin('#c8d070'), translucency: 1.0, skyCol: C.sky, sway: 0.03 },
+  );
+  scene.add(foliageMesh(shrubGeo, shrubMat));
+
+  const grassMat = new THREE.ShaderMaterial({
+    vertexShader: GRASS_VERTEX,
+    fragmentShader: GRASS_FRAGMENT,
+    uniforms: { ...shared, ...lightU, uSkyCol: { value: C.sky }, uTime: { value: 0 } },
+    side: THREE.DoubleSide,
+  });
   const grass = new THREE.Mesh(grassGeo, grassMat);
   grass.frustumCulled = false;
   scene.add(grass);
 
-  /* the tiger, standing, with a shadow under it */
-  const texture = await new THREE.TextureLoader().loadAsync(cutoutUrl);
-  texture.colorSpace = THREE.NoColorSpace;
-  texture.anisotropy = 4;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  const panelW = 13;
-  const panelH = panelW / 2;
-  const panelMat = new THREE.ShaderMaterial({
-    vertexShader: PANEL_VERTEX,
-    fragmentShader: PANEL_FRAGMENT,
-    uniforms: { ...shared, uMap: { value: texture }, uFade: { value: 1 } },
-    transparent: true,
+  const cutout = await new THREE.TextureLoader().loadAsync(cutoutUrl);
+  cutout.colorSpace = THREE.SRGBColorSpace;
+  cutout.anisotropy = 4;
+  // The species' licensed 3D model where one exists (content/models.ts), else the record's cut-out photograph.
+  const tiger = await subjectFor(species, {
+    texture: cutout,
+    width: 13,
+    at: T,
+    feet: 0.06,
+    uniforms: { ...shared, ...lightU },
+    skyCol: C.sky,
+    turn: 0.6,
+    fadeAbove: [0.35, 0.7],
+    gain: 0.62,
+    keep: 0.5,
+    rim: 1.3,
+    foot: 0.16,
+    footCut: 0.18,
+    lightReach: 2.5,
+  });
+  scene.add(tiger.mesh);
+
+  const volume = new THREE.ShaderMaterial({
+    vertexShader: VOLUME_VERTEX,
+    fragmentShader: VOLUME_FRAGMENT,
+    uniforms: {
+      ...shared,
+      ...lightU,
+      tDepth: { value: null },
+      uInvProj: { value: new THREE.Matrix4() },
+      uCamWorld: { value: new THREE.Matrix4() },
+      uCamPos: { value: new THREE.Vector3() },
+      uSize: { value: new THREE.Vector2(1, 1) },
+      uDensity: { value: 0.0035 },
+      uStrength: { value: 1 },
+      uG: { value: 0.62 },
+    },
+    depthTest: false,
     depthWrite: false,
   });
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), panelMat);
-  // The picture's feet are 6% up from its foot.
-  panel.position.set(T.x, panelH * 0.5 - panelH * 0.06 + 0.1, T.z);
-  panel.renderOrder = 3;
-  scene.add(panel);
-  const shadowGeo = new THREE.PlaneGeometry(panelW * 0.95, 4.4);
-  shadowGeo.rotateX(-Math.PI / 2);
-  const shadowMat = new THREE.ShaderMaterial({ vertexShader: SHADOW_VERTEX, fragmentShader: SHADOW_FRAGMENT, transparent: true, depthWrite: false });
-  const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-  shadow.position.set(T.x + 0.5, 0.05, T.z - 0.4);
-  shadow.renderOrder = 1;
-  scene.add(shadow);
 
   /* the camera: in at eye level, alongside, above the crowns for the reserves, and back */
   const S = (dx: number, up: number, dz: number): [number, number, number] => [T.x + dx, up, T.z + dz];
@@ -540,63 +568,87 @@ export async function createForest({ tier }: WorldContext): Promise<FieldWorld> 
   const at = (i: number) => (i + 0.5) / N;
   const path: Shot[] = [
     // The tiger above the title, the forest around it.
-    { at: 0, pos: S(0, 3.8, 36), look: S(-3, -1.2, 0), fov: 40 },
-    { at: at(0), pos: S(0, 3.8, 35), look: S(-3, -1.2, 0), fov: 40 },
+    { at: 0, pos: S(0, 3.8, 36), look: S(-3, 0.6, 0), fov: 40 },
+    { at: at(0), pos: S(0, 3.8, 35), look: S(-3, 0.6, 0), fov: 40 },
     // Text at the right: the tiger to the left.
-    { at: at(1), pos: S(2, 3.6, 25), look: S(10, 1.2, -4), fov: 40 },
+    { at: at(1), pos: S(2, 3.6, 25), look: S(10, 2.2, -4), fov: 40 },
     // The 1973 chapter, text at the left: the tiger to the right, nearer.
-    { at: at(2), pos: S(-3, 3.4, 21), look: S(-10, 2, -2), fov: 40 },
-    // The crowns from above, for the reserves the record names.
-    { at: at(3), pos: S(10, 330, 90), look: S(10, 40, -60), fov: 46 },
-    { at: at(4), pos: S(-6, 3.2, 16), look: S(-9, 2.2, 0), fov: 38 },
-    { at: at(5), pos: S(4, 3.6, 22), look: S(13, 2, -3), fov: 40 },
-    { at: at(6), pos: S(-4, 5, 54), look: S(30, 1.5, -8), fov: 42 },
-    { at: 1, pos: S(-6, 5.2, 57), look: S(32, 1.5, -8), fov: 42 },
+    { at: at(2), pos: S(-3, 3.4, 21), look: S(-10, 2.6, -2), fov: 40 },
+    // Over the canopy, for the reserves the record names: the roof of crowns running away into the morning.
+    { at: at(3), pos: S(30, 140, 30), look: S(-20, 82, -260), fov: 46 },
+    { at: at(4), pos: S(-6, 3.2, 16), look: S(-9, 2.4, 0), fov: 38 },
+    { at: at(5), pos: S(4, 3.6, 22), look: S(13, 2.4, -3), fov: 40 },
+    { at: at(6), pos: S(-4, 5, 54), look: S(30, 4, -8), fov: 42 },
+    { at: 1, pos: S(-6, 5.2, 57), look: S(32, 4, -8), fov: 42 },
   ];
   const rig = new CameraRig(camera, {
-    preview: { at: 0, pos: S(-3, 4, 46), look: S(-6, 0, 0), fov: 38 },
-    engage: { at: 0, pos: S(-1, 3.9, 38), look: S(-4, -0.8, 0), fov: 37 },
+    preview: { at: 0, pos: S(-3, 4, 46), look: S(-6, 1.5, 0), fov: 38 },
+    engage: { at: 0, pos: S(-1, 3.9, 38), look: S(-4, 1, 0), fov: 37 },
     path,
     sway: [3, 1.8],
     lambda: 4.6,
   });
 
+  const film = grade({
+    exposure: 1.6,
+    tint: new THREE.Vector3(1.0, 1.0, 0.96),
+    saturation: 0.95,
+    contrast: 1.06,
+    shadows: new THREE.Vector3(-0.004, 0.006, 0.0),
+    highlights: new THREE.Vector3(1.03, 1.0, 0.94),
+    vignette: 0.48,
+    bloom: 0.45,
+    threshold: 1.2,
+  });
+
   let phase = 0;
-  const camDir = new THREE.Vector3();
   return {
     scene,
     camera,
-    clear: '#a8b27f',
+    clear: '#121a12',
+    grade: film,
+    volume,
     update(i: FieldInput) {
       const p = i.progress;
       const en = i.enter;
       rig.update({ engage: i.engage, enter: en, progress: p, pointer: i.pointer, dt: i.dt, snap: i.snap || i.reduced });
 
-      // The sun climbs a little as the day goes on and warms as the study ends.
-      const late = seg(p, 0.82, 1) * en;
-      sun.set(0.5 + i.pointer.x * 0.06, 0.36 + i.pointer.y * 0.02, 0.78).lerp(sunLate, late).normalize();
-      sunCol.lerpVectors(C.sunCol, C.sunColLate, late);
-      haze.lerpVectors(C.haze, C.hazeLate, late * 0.8);
-      // Seen from above, the air between the camera and the crowns is thin.
-      shared.uFog.value = FOG * (1 - 0.85 * THREE.MathUtils.smoothstep(camera.position.y, 20, 300));
+      // The hand turns the sun a few degrees, and the shafts and flecks move with it. The scroll does not move it:
+      // three layers of canopy light are re-marched whenever it moves, and a sun that crept with every scrolled
+      // frame cost more than the change was worth.
+      const late = seg(p, 0.1, 1) * en;
+      setSun(AZ + i.light.x * 0.09, EL + i.light.y * 0.02);
+      sunCol.lerpVectors(C.sun, C.sunLate, late);
+      // From above the crowns, the air below them is not between the eye and anything.
+      const aloft = THREE.MathUtils.smoothstep(camera.position.y, 20, 200);
+      volume.uniforms.uStrength.value = (1 - aloft) * (NO_VOLUME ? 0 : 1);
+      // Over the crowns, the roof runs away into the morning haze.
+      air.uAirDensity.value = 0.006 * (1 - 0.4 * aloft);
+      // The reserves are read over a quieter canopy.
+      const dim = Math.max(0, Math.min(seg(p, 0.4, 0.46), 1 - seg(p, 0.56, 0.62))) * en;
+      film.exposure = lerp(1.6, 1.4, aloft) * (1 - dim * 0.25);
+
       phase += i.reduced ? 0 : i.dt;
       grassMat.uniforms.uTime.value = phase;
-
-      // The tiger turns to face the camera (not past 35°), and gives way when seen from above.
-      camDir.copy(camera.position).sub(panel.position);
-      panel.rotation.y = Math.max(-0.6, Math.min(0.6, Math.atan2(camDir.x, camDir.z)));
-      const sinEl = camDir.y / Math.max(1, camDir.length());
-      panelMat.uniforms.uFade.value = 1 - THREE.MathUtils.smoothstep(sinEl, 0.35, 0.7);
-      panel.visible = panelMat.uniforms.uFade.value > 0.01;
-      shadow.visible = panel.visible;
+      crownMat.uniforms.uTime.value = phase;
+      shrubMat.uniforms.uTime.value = phase;
+      tiger.update(camera, sunDir, i.reduced ? 0 : i.dt);
+    },
+    prerender(renderer) {
+      light.update(renderer, sunDir);
     },
     resize(width, height) {
       camera.aspect = width / Math.max(1, height);
       camera.updateProjectionMatrix();
     },
-    setRung() {},
+    setRung(r) {
+      grassGeo.instanceCount = r >= 2 ? Math.floor(placed * 0.5) : placed;
+    },
     dispose() {
-      texture.dispose();
+      cutout.dispose();
+      light.dispose();
+      tiger.dispose();
+      volume.dispose();
       scene.traverse((o) => {
         const mesh = o as THREE.Mesh;
         mesh.geometry?.dispose();

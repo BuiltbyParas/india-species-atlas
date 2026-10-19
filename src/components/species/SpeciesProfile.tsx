@@ -2,7 +2,7 @@ import { useId, useRef, useState } from 'react';
 import { ExternalLink, GitCompareArrows, History, MapPin, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Species } from '../../types';
-import { STATUS_INFO } from '../../data/statusInfo';
+import { redListYears, STATUS_INFO } from '../../data/statusInfo';
 import { REGION_LABELS, HABITAT_LABELS } from '../../data/regions';
 import { THREAT_BY_ID } from '../../data/threats';
 import { PROGRAMME_BY_ID } from '../../data/programmes';
@@ -49,7 +49,7 @@ function AssessmentHistory({ species }: { species: Species }) {
       {history.length === 0 ? (
         <p className="text-canvas/65">
           No earlier assessment is recorded in this atlas for {species.commonName}. The status above is taken
-          from the {species.statusAssessedYear} assessment cited under Sources; the Red List may hold earlier
+          from the assessment cited under Sources ({redListYears(species)}); the Red List may hold earlier
           assessments that have not been checked here.
         </p>
       ) : (
@@ -75,7 +75,8 @@ function AssessmentHistory({ species }: { species: Species }) {
           <li className="flex gap-3">
             <span className="w-12 shrink-0 font-mono text-sm text-canvas/70">{species.statusAssessedYear}</span>
             <span className="flex-1 text-canvas/65">
-              Assessment cited by this atlas entry.
+              Assessment cited by this atlas entry
+              {species.statusPublishedYear !== species.statusAssessedYear && ` (published ${species.statusPublishedYear})`}.
             </span>
           </li>
         </ol>
@@ -175,7 +176,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
                   'shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
                   active
                     ? 'border-forest-400 text-canvas'
-                    : 'border-transparent text-canvas/55 hover:text-canvas',
+                    : 'border-transparent text-canvas/70 hover:text-canvas',
                 )}
               >
                 {t.label}
@@ -202,15 +203,15 @@ export function SpeciesProfile({ species }: { species: Species }) {
                 IUCN status — {status.name} ({status.code})
               </p>
               <p className="mt-1 text-canvas/75">{status.definition}</p>
-              <p className="mt-2 text-xs text-canvas/55">
-                Based on the IUCN Red List assessment cited under Sources ({species.statusAssessedYear}). The
+              <p className="mt-2 text-xs text-canvas/70">
+                Based on the IUCN Red List assessment cited under Sources ({redListYears(species)}). The
                 IUCN category describes global extinction risk, not the number of individuals in India.
               </p>
             </div>
 
             <Block title="Habitat">
               <p>{species.habitatNote}</p>
-              <p className="mt-2 text-xs text-canvas/55">
+              <p className="mt-2 text-xs text-canvas/70">
                 Habitat types: {species.habitats.map((h) => HABITAT_LABELS[h]).join(', ')}
               </p>
             </Block>
@@ -228,7 +229,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
             <Block title="Where it lives in India">
               <p>{species.indianDistribution}</p>
               {species.states.length > 0 && (
-                <p className="mt-2 text-xs text-canvas/55">States / UTs: {species.states.join(', ')}</p>
+                <p className="mt-2 text-xs text-canvas/70">States / UTs: {species.states.join(', ')}</p>
               )}
             </Block>
 
@@ -240,13 +241,13 @@ export function SpeciesProfile({ species }: { species: Species }) {
                       <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-forest-300" aria-hidden="true" />
                       <span>
                         <span className="font-medium text-canvas">{p.label}</span>
-                        {p.note && <span className="block text-xs text-canvas/55">{p.note}</span>}
+                        {p.note && <span className="block text-xs text-canvas/70">{p.note}</span>}
                       </span>
                     </span>
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-canvas/45">
+              <p className="mt-3 text-xs text-canvas/62">
                 Indicative locations within a known range, not population boundaries.
               </p>
             </Block>
@@ -271,7 +272,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
                   <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-en" aria-hidden="true" />
                   <span>
                     <span className="font-medium text-canvas">{THREAT_BY_ID[t].name}</span>
-                    <span className="block text-xs text-canvas/55">{THREAT_BY_ID[t].description}</span>
+                    <span className="block text-xs text-canvas/70">{THREAT_BY_ID[t].description}</span>
                   </span>
                 </li>
               ))}
@@ -299,8 +300,8 @@ export function SpeciesProfile({ species }: { species: Species }) {
                     return (
                       <li key={id}>
                         <span className="font-medium text-canvas">{p.name}</span>
-                        {p.startedYear && <span className="text-canvas/55"> · from {p.startedYear}</span>}
-                        <span className="block text-xs text-canvas/55">{p.authority}</span>
+                        {p.startedYear && <span className="text-canvas/70"> · from {p.startedYear}</span>}
+                        <span className="block text-xs text-canvas/70">{p.authority}</span>
                       </li>
                     );
                   })}
@@ -335,13 +336,13 @@ export function SpeciesProfile({ species }: { species: Species }) {
                       <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
                       <span>
                         {src.label}
-                        <span className="block text-xs text-canvas/45">{src.publisher}</span>
+                        <span className="block text-xs text-canvas/62">{src.publisher}</span>
                       </span>
                     </a>
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 flex items-center gap-1.5 text-xs text-canvas/45">
+              <p className="mt-3 flex items-center gap-1.5 text-xs text-canvas/62">
                 <History className="h-3.5 w-3.5" aria-hidden="true" />
                 Entry last checked against these sources on {species.lastVerified}.
               </p>
@@ -349,7 +350,7 @@ export function SpeciesProfile({ species }: { species: Species }) {
 
             <Block title="Photograph">
               <PhotoCredit species={species} />
-              <p className="mt-2 text-xs text-canvas/45">{species.image.alt}</p>
+              <p className="mt-2 text-xs text-canvas/62">{species.image.alt}</p>
             </Block>
           </>
         )}

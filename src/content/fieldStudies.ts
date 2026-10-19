@@ -110,6 +110,16 @@ export function previousStudy(id: string): FieldStudy {
   return FIELD_STUDIES[(i - 1 + FIELD_STUDIES.length) % FIELD_STUDIES.length];
 }
 
+/**
+ * The frame's tone over each world. Every world is lit by one low sun on a dark ground, as the homepage is, so
+ * the type is ivory; a study still listed here keeps the dark ink of the earlier daylight worlds.
+ */
+const LIGHT_TONE = new Set<string>();
+
+export function studyTone(id: string): 'light' | 'dark' {
+  return LIGHT_TONE.has(id) ? 'light' : 'dark';
+}
+
 /** The record's first sentence of a field, verbatim. */
 export function firstSentence(text: string): string {
   return text.split(/(?<=\.)\s/)[0];
@@ -122,7 +132,7 @@ export function firstSentence(text: string): string {
 export const MISSING_CONTENT: Record<string, string[]> = {
   'great-indian-bustard': [
     'The alignment of any transmission line in the Thar (none is drawn; the threat is in the words only).',
-    'A dated population series (the record says only "low hundreds").',
+    'A population series longer than two surveys (the record holds the 2017–18 and 2025 estimates only).',
   ],
   'snow-leopard': ['A terrain model of a real valley (the mountains are drawn and labelled so).'],
   'ganges-river-dolphin': [
@@ -130,5 +140,5 @@ export const MISSING_CONTENT: Record<string, string[]> = {
     'The sites of dams and barrages (none is drawn).',
   ],
   'bengal-tiger': ['Earlier national estimates, for a sourced recovery series (only the 2022 estimate is in the record).'],
-  'indian-rhinoceros': ['The number of animals translocated under IRV2020, and the population split by site beyond "more than two-thirds in Kaziranga".'],
+  'indian-rhinoceros': ['The number of animals translocated under IRV2020, and the population split by site beyond Kaziranga’s 2,613 of 4,018.'],
 };
